@@ -17,8 +17,6 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 [[github](https://github.com/aintnoweii)]
 
-* Role: Project Advisor
-
 ### Jane Doe
 
 <img src="images/johndoe.png" width="200px">
