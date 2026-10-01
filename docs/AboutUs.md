@@ -52,7 +52,7 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 ### Darren Song
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/nerrad2004.png" width="200px">
 
 [[github](http://github.com/nerrad2004)]
 [[portfolio](team/johndoe.md)]
