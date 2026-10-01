@@ -17,11 +17,11 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 [[github](https://github.com/aintnoweii)]
 
-### Jane Doe
+### Shawn Kok
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/shawnkok.png" width="200px">
 
-[[github](http://github.com/johndoe)]
+[[github](http://github.com/ShawnKokXK)]
 [[portfolio](team/johndoe.md)]
 
 * Role: Team Lead
