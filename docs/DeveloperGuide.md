@@ -342,25 +342,24 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 7.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
 8.  Every feature should be usable through typed commands alone, without needing the mouse.
 9.  Every error message should state what was wrong with the input and, where applicable, the expected format.
-10. The GUI should work well at screen resolutions of 1920x1080 and higher with screen scales of 100% and 125%, and should remain usable at resolutions of 1280x720 and higher with a screen scale of 150%.
 
 **Data**
 
-11. Data should be stored locally in a human-editable text file, without using a DBMS.
-12. Data should be saved automatically after every command that changes it, without the user needing to save manually.
-13. A command that fails should leave the stored data unchanged.
-14. If the data file is missing or cannot be read, the application should still start, without crashing.
-15. Student contact numbers and payment records should be stored only on the user's computer, and should never be sent elsewhere.
+10. Data should be stored locally in a human-editable text file, without using a DBMS.
+11. Data should be saved automatically after every command that changes it, without the user needing to save manually.
+12. A command that fails should leave the stored data unchanged.
+13. If the data file is missing or cannot be read, the application should still start, without crashing. 
+14. Student contact numbers and payment records should be stored only on the user's computer, and should never be sent elsewhere.
 
 **Scope**
 
-16. The application is intended for a single user, and is not required to support multiple users sharing the same data file.
+15. The application is intended for a single user, and is not required to support multiple users sharing the same data file.
 
 ### Glossary
 
 * **Cascading deletion**: The automatic removal of all enrollments tied to a student or lesson when that student or lesson is deleted.
 * **CLI (Command Line Interface)**: A way of using the application by typing text commands, rather than clicking with the mouse.
-* **Contact**: The phone number of a student (or of the student's parent or guardian), containing between 3 and 15 digits.
+* **Contact**: The Singaporean phone number of a student (or of the student's parent or guardian), containing 8 digits.
 * **Current month**: The calendar month given by the date on the user's computer. Payment statuses apply only to the current month.
 * **Data file**: The local, human-editable file in which TuiTracker stores all students, lessons and enrollments.
 * **Display index**: The position number shown beside a student in the currently displayed student list, starting from 1. It can change whenever the displayed list changes, and is used by the `mark` command. Not to be confused with a _student ID_.
