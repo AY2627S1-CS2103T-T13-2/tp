@@ -385,16 +385,65 @@ Use case ends.
 
 ### Non-Functional Requirements
 
-1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
-2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
-3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+**Environment**
 
-*{More to be added}*
+1.  Should work on any _mainstream OS_ that has Java `25` installed, without requiring any other Java version.
+2.  Should run without an installer, from a single JAR file of no more than 100MB.
+3.  Should not depend on any remote server, i.e., all features should work without an Internet connection.
+4.  Should not require the user to install any third-party software other than Java.
+
+**Performance**
+
+5.  Should be able to hold up to 200 students, 50 lessons and 500 enrollments without any command taking more than 1 second to complete on a typical modern laptop.
+6.  Should start up and display the main window within 5 seconds on a typical modern laptop.
+
+**Usability**
+
+7.  A user with above average typing speed (>50WPM) for regular English text (i.e. not code, not system admin commands) should be able to accomplish all of the tasks faster using commands than using the mouse.
+8.  Every feature should be usable through typed commands alone, without needing the mouse.
+9.  Every error message should state what was wrong with the input and, where applicable, the expected format.
+
+**Data**
+
+10. Data should be stored locally in a human-editable text file, without using a DBMS.
+11. Data should be saved automatically after every command that changes it, without the user needing to save manually.
+12. A command that fails should leave the stored data unchanged.
+13. If the data file is missing or cannot be read, the application should still start, without crashing. 
+14. Student contact numbers and payment records should be stored only on the user's computer, and should never be sent elsewhere.
+
+**Scope**
+
+15. The application is intended for a single user, and is not required to support multiple users sharing the same data file.
 
 ### Glossary
 
-* **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Cascading deletion**: The automatic removal of all enrollments tied to a student or lesson when that student or lesson is deleted.
+* **CLI (Command Line Interface)**: A way of using the application by typing text commands, rather than clicking with the mouse.
+* **Command**: A text instruction that the user types into TuiTracker to perform an action, made up of a command word (e.g., `add`, `list`) followed by any required parameters, e.g., `delete student 12`.
+* **Command word**: The first word of a command, which specifies the action to perform, e.g., `add`, `delete`, `list` or `mark`.
+* **Contact**: The Singaporean phone number of a student (or of the student's parent or guardian), containing 8 digits.
+* **Current month**: The calendar month given by the date on the user's computer. Payment statuses apply only to the current month.
+* **Data file**: The local, human-editable file in which TuiTracker stores all students, lessons and enrollments.
+* **Display index**: The position number shown beside a student in the currently displayed student list, starting from 1. It can change whenever the displayed list changes, and is used by the `mark` command. Not to be confused with a _student ID_.
+* **Duplicate lesson**: A lesson with the same subject, level, day, start time and end time as an existing lesson.
+* **Duplicate student**: A student with the same name and contact as an existing student.
+* **Enrollment**: The link between a student and a lesson that the student attends. A student can be enrolled in many lessons, and a lesson can have many students.
+* **Lesson**: A weekly class conducted by the tutor, defined by its subject, level, day, start time, end time and fee.
+* **Lesson clash**: The situation where two lessons on the same day have overlapping timeslots, e.g., `15:00-16:30` and `16:00-17:00` on Monday. A lesson that starts exactly when another ends (e.g., `15:00-16:00` and `16:00-17:00`) does not clash with it.
+* **Lesson fee**: The amount charged for a lesson, which must be a positive amount with at most two decimal places.
+* **Lesson ID**: A unique positive integer assigned to a lesson when it is created. It never changes, and is used to refer to the lesson in commands.
+* **Level**: The education level of a student or lesson, e.g., `Primary 6` or `Secondary 2`. Levels are compared without considering letter case or extra spaces, so `Primary 6` and `primary   6` are the same level, but `P6` and `Primary 6` are different levels.
+* **Level matching**: The requirement that a student's level must be the same as a lesson's level before the student can be enrolled in that lesson.
+* **Mainstream OS**: Windows, Linux, Unix, or macOS.
+* **Parameter**: A value given after the command word to provide the details a command needs, e.g., the student ID `12` in `delete student 12`. Some parameters are written after a _prefix_.
+* **Payment status**: Whether a student has paid for the current month (_Paid_) or not (_Unpaid_). Every student's payment status is reset to _Unpaid_ at the start of each month.
+* **Prefix**: A short label ending in `/` that marks which parameter a value belongs to, e.g., `c/` in `c/91234567` marks a contact. Parameters with prefixes can be given in any order.
+* **Student**: A person taught by the tutor, defined by their name, contact and level.
+* **Student ID**: A unique positive integer assigned to a student when they are created. It never changes, and is used to refer to the student in commands. Not to be confused with a _display index_.
+* **Subject**: The subject taught in a lesson, e.g., `Mathematics`.
+* **Timeslot**: The day, start time and end time of a lesson, e.g., Monday `15:00-16:30`. Times use the 24-hour `HH:mm` format.
+* **Tutor**: The user of TuiTracker, i.e., a private tutor who manages their own students, lessons and payments.
+* **WPM**: Words per minute, a standard measurement of how fast someone types.
 
 --------------------------------------------------------------------------------------------------------------------
 
