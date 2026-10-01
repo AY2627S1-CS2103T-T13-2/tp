@@ -296,32 +296,81 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+For all use cases below, the System is the tuition management application and the Actor is the user.
 
-**Use case: Delete a person**
+#### Use case: Delete a student or lesson
 
 **MSS**
 
-1.  User requests to list persons
-2.  AddressBook shows a list of persons
-3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+1. User requests to delete a student or lesson using its kind and ID.
+2. System identifies the specified student or lesson.
+3. System deletes the specified record and all enrolments associated with it.
+4. System confirms the deletion and identifies the deleted record.
 
-    Use case ends.
+Use case ends.
 
 **Extensions**
 
-* 2a. The list is empty.
+* 1a. The command is missing the kind, contains an unknown kind, or contains extra text.
+    * 1a1. System displays `Invalid command format. Use: delete student|lesson ID`.
+    * Use case ends.
 
-  Use case ends.
+* 1b. The ID is missing, non-numeric, or not a positive integer.
+    * 1b1. System displays `Invalid command format. Use: delete student|lesson ID`.
+    * Use case ends.
 
-* 3a. The given index is invalid.
+* 2a. No student or lesson exists with the specified kind and ID.
+    * 2a1. System displays an error stating that no record of the specified kind exists with the given ID.
+    * 2a2. System leaves all data unchanged.
+    * Use case ends.
 
-    * 3a1. AddressBook shows an error message.
+* 2b. The ID exists but belongs to the other kind of record.
+    * 2b1. System displays an error message.
+    * 2b2. System leaves all data unchanged.
+    * Use case ends.
 
-      Use case resumes at step 2.
+#### Use case: Mark a student's monthly payment as paid
 
-*{More to be added}*
+**MSS**
+
+1. User requests to mark a student as paid using the student's displayed index.
+2. System identifies the student corresponding to the specified index.
+3. System marks the student's payment status as paid for the current month.
+4. System confirms that the student's payment has been marked as paid.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The student list has not been displayed.
+    * 1a1. System displays `Please list the students before using the mark command`.
+    * Use case ends.
+
+* 1b. The student index is missing.
+    * 1b1. System displays `Please provide a student index`.
+    * Use case ends.
+
+* 1c. The student index is non-numeric or not positive.
+    * 1c1. System displays `Student index must be a positive integer`.
+    * Use case ends.
+
+* 1d. More than one student index is provided.
+    * 1d1. System displays `Only one student index may be provided`.
+    * Use case ends.
+
+* 2a. The student index is outside the displayed student list.
+    * 2a1. System displays `Student index is out of range`.
+    * Use case ends.
+
+* 3a. The student has already been marked as paid for the current month.
+    * 3a1. System leaves the payment status unchanged.
+    * 3a2. System informs the user that the student is already paid.
+    * Use case ends.
+
+* 3b. The payment status cannot be saved.
+    * 3b1. System displays `The payment status could not be saved. No changes were made`.
+    * 3b2. System leaves the payment status unchanged.
+    * Use case ends.
 
 ### Non-Functional Requirements
 
