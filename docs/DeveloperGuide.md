@@ -283,16 +283,27 @@ _{Explain here how the data archiving feature will be implemented}_
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a …                                    | I want to …                 | So that I can…                                                        |
-|----------|--------------------------------------------|------------------------------|------------------------------------------------------------------------|
-| `* * *`  | new user                                   | see usage instructions       | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person             |                                                                        |
-| `* * *`  | user                                       | delete a person              | remove entries that I no longer need                                   |
-| `* * *`  | user                                       | find a person by name        | locate details of persons without having to go through the entire list |
-| `* *`    | user                                       | hide private contact details | minimize chance of someone else seeing them by accident                |
-| `*`      | user with many persons in the address book | sort persons by name         | locate a person easily                                                 |
-
-*{More to be added}*
+| Priority | As a … | I want to … | So that I can … |
+|----------|--------|-------------|-----------------|
+| `* * *` | new tutor | see instructions for the available commands | learn how to use the application and check a command when I forget it |
+| `* * *` | tutor | enrol a student in a lesson whether the student or lesson is new or existing | set up my records without unnecessary separate steps |
+| `* * *` | tutor | be prevented from enrolling a student in a lesson at a different level | avoid assigning them to an unsuitable lesson |
+| `* * *` | tutor | be warned when a new lesson overlaps another lesson on the same day | avoid double-booking my teaching time |
+| `* * *` | tutor | be prevented from creating duplicate students, lessons, or enrollments | keep my records accurate |
+| `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
+| `* * *` | tutor | list my students with their contact details, levels, lessons, monthly fees, and payment statuses | review my roster and outstanding payments |
+| `* * *` | tutor | list my lessons with their timeslots, fees, and enrolled students | review my teaching schedule |
+| `* * *` | tutor | delete a student and their associated enrollments | remove a student who no longer attends lessons without leaving obsolete enrollments |
+| `* * *` | tutor | delete a lesson and its associated enrollments | remove a cancelled lesson without leaving obsolete enrollments |
+| `* * *` | tutor | mark a student as paid for the current month | track which students have paid |
+| `* * *` | tutor | have payment statuses reset for a new month | distinguish this month’s unpaid fees from last month’s payments |
+| `* *` | tutor | be shown matching existing students or lessons when adding an enrollment | reuse a record instead of creating a duplicate |
+| `* *` | tutor | use common aliases for education levels | enter levels quickly without creating accidental mismatches |
+| `* *` | tutor | undo an accidental addition | correct a mistake without manually deleting its records |
+| `* *` | tutor | change a student’s current-month status from paid back to unpaid | correct a payment recorded by mistake |
+| `* *` | tutor | view payment dates and history | check when a student paid in previous months |
+| `* *` | tutor | record a payment for a specific month | update an earlier month when a payment is received late |
+| `* *` | tutor | see how many students are paid and unpaid | assess outstanding payments at a glance |
 
 ### Use cases
 
