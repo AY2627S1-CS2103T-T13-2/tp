@@ -309,7 +309,84 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 For all use cases below, the System is the tuition management application and the Actor is the user.
 
-#### Use case: Delete a student or lesson
+**Use case: Enrol a student in a lesson**
+
+**MSS**
+
+1.  User enters an add command containing a student and a lesson.
+2.  System validates the command format and required parameters.
+3.  System retrieves the existing student and lesson, or prepares new records using the supplied details.
+4.  System checks that the student level matches the lesson level.
+5.  System checks that the student, lesson and enrolment are not duplicates.
+6.  System checks that a newly created lesson does not clash with another lesson on the same day.
+7.  System creates any required student or lesson records and assigns unique IDs.
+8.  System enrols the student in the lesson with payment status set to unpaid.
+9.  System saves the changes and displays the student and lesson IDs.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The command has an invalid format or a required parameter is missing.
+
+    * 1a1. System displays an error message.
+    * Use case ends.
+
+* 2a. A supplied student or lesson ID does not exist.
+
+    * 2a1. System displays an error message.
+    * Use case ends.
+
+* 4a. The student level does not match the lesson level.
+
+    * 4a1. System displays `Student level does not match lesson level`.
+    * 4a2. System makes no changes.
+    * Use case ends.
+
+* 5a. The student or lesson is a duplicate.
+
+    * 5a1. System displays an error message instructing the user to use the existing ID.
+    * 5a2. System makes no changes.
+    * Use case ends.
+
+* 5b. The student is already enrolled in the lesson.
+
+    * 5b1. System displays `The student is already added to this lesson`.
+    * 5b2. System makes no changes.
+    * Use case ends.
+
+* 6a. The new lesson clashes with an existing lesson.
+
+    * 6a1. System displays `Lesson clashes with an existing lesson`.
+    * 6a2. System makes no changes.
+    * Use case ends.
+
+**Use case: View students or lessons**
+
+**MSS**
+
+1.  User enters `list`, `list students`, or `list lessons`.
+2.  System validates the requested view.
+3.  System clears any active filter or search.
+4.  System retrieves the requested records.
+5.  System sorts students by student ID, or lessons by day, start time and lesson ID.
+6.  System displays the records and the total count.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. The user specifies an invalid, repeated or unknown view.
+
+    * 2a1. System displays `Invalid view. Use: list [students|lessons]`.
+    * Use case ends.
+
+* 4a. There are no records of the requested type.
+
+    * 4a1. System displays an empty list and an informative message.
+    * Use case ends.
+
+**Use case: Delete a student or lesson**
 
 **MSS**
 
@@ -318,10 +395,9 @@ For all use cases below, the System is the tuition management application and th
 3. System deletes the specified record and all enrolments associated with it.
 4. System confirms the deletion and identifies the deleted record.
 
-Use case ends.
+    Use case ends.
 
 **Extensions**
-
 * 1a. The command is missing the kind, contains an unknown kind, or contains extra text.
     * 1a1. System displays `Invalid command format. Use: delete student|lesson ID`.
     * Use case ends.
@@ -340,7 +416,8 @@ Use case ends.
     * 2b2. System leaves all data unchanged.
     * Use case ends.
 
-#### Use case: Mark a student's monthly payment as paid
+
+**Use case: Mark a student's monthly payment as paid**
 
 **MSS**
 
