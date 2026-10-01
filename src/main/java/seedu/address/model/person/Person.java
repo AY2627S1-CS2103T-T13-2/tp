@@ -33,6 +33,9 @@ public class Person {
         this(name, phone, email, address, new Remark(""), tags);
     }
 
+    /**
+     * Every field must be present and not null.
+     */
     public Person(Name name, Phone phone, Email email, Address address, Remark remark, Set<Tag> tags) {
         requireAllNonNull(name, phone, email, address, remark, tags);
         this.name = name;
