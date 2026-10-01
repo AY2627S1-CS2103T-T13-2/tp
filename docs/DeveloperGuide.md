@@ -283,22 +283,31 @@ _{Explain here how the data archiving feature will be implemented}_
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a …                                    | I want to …                 | So that I can…                                                        |
-|----------|--------------------------------------------|------------------------------|------------------------------------------------------------------------|
-| `* * *`  | new user                                   | see usage instructions       | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person             |                                                                        |
-| `* * *`  | user                                       | delete a person              | remove entries that I no longer need                                   |
-| `* * *`  | user                                       | find a person by name        | locate details of persons without having to go through the entire list |
-| `* *`    | user                                       | hide private contact details | minimize chance of someone else seeing them by accident                |
-| `*`      | user with many persons in the address book | sort persons by name         | locate a person easily                                                 |
-
-*{More to be added}*
+| Priority | As a … | I want to … | So that I can … |
+|----------|--------|-------------|-----------------|
+| `* * *` | new tutor | see instructions for the available commands | learn how to use the application and check a command when I forget it |
+| `* * *` | tutor | enrol a student in a lesson whether the student or lesson is new or existing | set up my records without unnecessary separate steps |
+| `* * *` | tutor | be prevented from enrolling a student in a lesson at a different level | avoid assigning them to an unsuitable lesson |
+| `* * *` | tutor | be warned when a new lesson overlaps another lesson on the same day | avoid double-booking my teaching time |
+| `* * *` | tutor | be prevented from creating duplicate students, lessons, or enrollments | keep my records accurate |
+| `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
+| `* * *` | tutor | list my students with their contact details, levels, lessons, monthly fees, and payment statuses | review my roster and outstanding payments |
+| `* * *` | tutor | list my lessons with their timeslots, fees, and enrolled students | review my teaching schedule |
+| `* * *` | tutor | delete a student and their associated enrollments | remove a student who no longer attends lessons without leaving obsolete enrollments |
+| `* * *` | tutor | delete a lesson and its associated enrollments | remove a cancelled lesson without leaving obsolete enrollments |
+| `* * *` | tutor | mark a student as paid for the current month | track which students have paid |
+| `* * *` | tutor | have payment statuses reset for a new month | distinguish this month’s unpaid fees from last month’s payments |
+| `* *` | tutor | be shown matching existing students or lessons when adding an enrollment | reuse a record instead of creating a duplicate |
+| `* *` | tutor | use common aliases for education levels | enter levels quickly without creating accidental mismatches |
+| `* *` | tutor | undo an accidental addition | correct a mistake without manually deleting its records |
+| `* *` | tutor | change a student’s current-month status from paid back to unpaid | correct a payment recorded by mistake |
+| `* *` | tutor | view payment dates and history | check when a student paid in previous months |
+| `* *` | tutor | record a payment for a specific month | update an earlier month when a payment is received late |
+| `* *` | tutor | see how many students are paid and unpaid | assess outstanding payments at a glance |
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
-
-**Use case: Delete a person**
+For all use cases below, the System is the tuition management application and the Actor is the user.
 
 **Use case: Enrol a student in a lesson**
 
@@ -314,49 +323,43 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 8.  System enrols the student in the lesson with payment status set to unpaid.
 9.  System saves the changes and displays the student and lesson IDs.
 
-    Use case ends.
+Use case ends.
 
 **Extensions**
 
 * 1a. The command has an invalid format or a required parameter is missing.
 
     * 1a1. System displays an error message.
-
-      Use case ends.
+    * Use case ends.
 
 * 2a. A supplied student or lesson ID does not exist.
 
     * 2a1. System displays an error message.
-
-      Use case ends.
+    * Use case ends.
 
 * 4a. The student level does not match the lesson level.
 
     * 4a1. System displays `Student level does not match lesson level`.
     * 4a2. System makes no changes.
-
-      Use case ends.
+    * Use case ends.
 
 * 5a. The student or lesson is a duplicate.
 
     * 5a1. System displays an error message instructing the user to use the existing ID.
     * 5a2. System makes no changes.
-
-      Use case ends.
+    * Use case ends.
 
 * 5b. The student is already enrolled in the lesson.
 
     * 5b1. System displays `The student is already added to this lesson`.
     * 5b2. System makes no changes.
-
-      Use case ends.
+    * Use case ends.
 
 * 6a. The new lesson clashes with an existing lesson.
 
     * 6a1. System displays `Lesson clashes with an existing lesson`.
     * 6a2. System makes no changes.
-
-      Use case ends.
+    * Use case ends.
 
 **Use case: View students or lessons**
 
@@ -376,28 +379,148 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2a. The user specifies an invalid, repeated or unknown view.
 
     * 2a1. System displays `Invalid view. Use: list [students|lessons]`.
-
-      Use case ends.
+    * Use case ends.
 
 * 4a. There are no records of the requested type.
 
     * 4a1. System displays an empty list and an informative message.
+    * Use case ends.
 
-      Use case ends.
+**Use case: Delete a student or lesson**
 
+**MSS**
+
+1. User requests to delete a student or lesson using its kind and ID.
+2. System identifies the specified student or lesson.
+3. System deletes the specified record and all enrolments associated with it.
+4. System confirms the deletion and identifies the deleted record.
+
+    Use case ends.
+
+**Extensions**
+* 1a. The command is missing the kind, contains an unknown kind, or contains extra text.
+    * 1a1. System displays `Invalid command format. Use: delete student|lesson ID`.
+    * Use case ends.
+
+* 1b. The ID is missing, non-numeric, or not a positive integer.
+    * 1b1. System displays `Invalid command format. Use: delete student|lesson ID`.
+    * Use case ends.
+
+* 2a. No student or lesson exists with the specified kind and ID.
+    * 2a1. System displays an error stating that no record of the specified kind exists with the given ID.
+    * 2a2. System leaves all data unchanged.
+    * Use case ends.
+
+* 2b. The ID exists but belongs to the other kind of record.
+    * 2b1. System displays an error message.
+    * 2b2. System leaves all data unchanged.
+    * Use case ends.
+
+
+**Use case: Mark a student's monthly payment as paid**
+
+**MSS**
+
+1. User requests to mark a student as paid using the student's displayed index.
+2. System identifies the student corresponding to the specified index.
+3. System marks the student's payment status as paid for the current month.
+4. System confirms that the student's payment has been marked as paid.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The student list has not been displayed.
+    * 1a1. System displays `Please list the students before using the mark command`.
+    * Use case ends.
+
+* 1b. The student index is missing.
+    * 1b1. System displays `Please provide a student index`.
+    * Use case ends.
+
+* 1c. The student index is non-numeric or not positive.
+    * 1c1. System displays `Student index must be a positive integer`.
+    * Use case ends.
+
+* 1d. More than one student index is provided.
+    * 1d1. System displays `Only one student index may be provided`.
+    * Use case ends.
+
+* 2a. The student index is outside the displayed student list.
+    * 2a1. System displays `Student index is out of range`.
+    * Use case ends.
+
+* 3a. The student has already been marked as paid for the current month.
+    * 3a1. System leaves the payment status unchanged.
+    * 3a2. System informs the user that the student is already paid.
+    * Use case ends.
+
+* 3b. The payment status cannot be saved.
+    * 3b1. System displays `The payment status could not be saved. No changes were made`.
+    * 3b2. System leaves the payment status unchanged.
+    * Use case ends.
 
 ### Non-Functional Requirements
 
-1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
-2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
-3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+**Environment**
 
-*{More to be added}*
+1.  Should work on any _mainstream OS_ that has Java `25` installed, without requiring any other Java version.
+2.  Should run without an installer, from a single JAR file of no more than 100MB.
+3.  Should not depend on any remote server, i.e., all features should work without an Internet connection.
+4.  Should not require the user to install any third-party software other than Java.
+
+**Performance**
+
+5.  Should be able to hold up to 200 students, 50 lessons and 500 enrollments without any command taking more than 1 second to complete on a typical modern laptop.
+6.  Should start up and display the main window within 5 seconds on a typical modern laptop.
+
+**Usability**
+
+7.  A user with above average typing speed (>50WPM) for regular English text (i.e. not code, not system admin commands) should be able to accomplish all of the tasks faster using commands than using the mouse.
+8.  Every feature should be usable through typed commands alone, without needing the mouse.
+9.  Every error message should state what was wrong with the input and, where applicable, the expected format.
+
+**Data**
+
+10. Data should be stored locally in a human-editable text file, without using a DBMS.
+11. Data should be saved automatically after every command that changes it, without the user needing to save manually.
+12. A command that fails should leave the stored data unchanged.
+13. If the data file is missing or cannot be read, the application should still start, without crashing. 
+14. Student contact numbers and payment records should be stored only on the user's computer, and should never be sent elsewhere.
+
+**Scope**
+
+15. The application is intended for a single user, and is not required to support multiple users sharing the same data file.
 
 ### Glossary
 
-* **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Cascading deletion**: The automatic removal of all enrollments tied to a student or lesson when that student or lesson is deleted.
+* **CLI (Command Line Interface)**: A way of using the application by typing text commands, rather than clicking with the mouse.
+* **Command**: A text instruction that the user types into TuiTracker to perform an action, made up of a command word (e.g., `add`, `list`) followed by any required parameters, e.g., `delete student 12`.
+* **Command word**: The first word of a command, which specifies the action to perform, e.g., `add`, `delete`, `list` or `mark`.
+* **Contact**: The Singaporean phone number of a student (or of the student's parent or guardian), containing 8 digits.
+* **Current month**: The calendar month given by the date on the user's computer. Payment statuses apply only to the current month.
+* **Data file**: The local, human-editable file in which TuiTracker stores all students, lessons and enrollments.
+* **Display index**: The position number shown beside a student in the currently displayed student list, starting from 1. It can change whenever the displayed list changes, and is used by the `mark` command. Not to be confused with a _student ID_.
+* **Duplicate lesson**: A lesson with the same subject, level, day, start time and end time as an existing lesson.
+* **Duplicate student**: A student with the same name and contact as an existing student.
+* **Enrollment**: The link between a student and a lesson that the student attends. A student can be enrolled in many lessons, and a lesson can have many students.
+* **Lesson**: A weekly class conducted by the tutor, defined by its subject, level, day, start time, end time and fee.
+* **Lesson clash**: The situation where two lessons on the same day have overlapping timeslots, e.g., `15:00-16:30` and `16:00-17:00` on Monday. A lesson that starts exactly when another ends (e.g., `15:00-16:00` and `16:00-17:00`) does not clash with it.
+* **Lesson fee**: The amount charged for a lesson, which must be a positive amount with at most two decimal places.
+* **Lesson ID**: A unique positive integer assigned to a lesson when it is created. It never changes, and is used to refer to the lesson in commands.
+* **Level**: The education level of a student or lesson, e.g., `Primary 6` or `Secondary 2`. Levels are compared without considering letter case or extra spaces, so `Primary 6` and `primary   6` are the same level, but `P6` and `Primary 6` are different levels.
+* **Level matching**: The requirement that a student's level must be the same as a lesson's level before the student can be enrolled in that lesson.
+* **Mainstream OS**: Windows, Linux, Unix, or macOS.
+* **Parameter**: A value given after the command word to provide the details a command needs, e.g., the student ID `12` in `delete student 12`. Some parameters are written after a _prefix_.
+* **Payment status**: Whether a student has paid for the current month (_Paid_) or not (_Unpaid_). Every student's payment status is reset to _Unpaid_ at the start of each month.
+* **Prefix**: A short label ending in `/` that marks which parameter a value belongs to, e.g., `c/` in `c/91234567` marks a contact. Parameters with prefixes can be given in any order.
+* **Student**: A person taught by the tutor, defined by their name, contact and level.
+* **Student ID**: A unique positive integer assigned to a student when they are created. It never changes, and is used to refer to the student in commands. Not to be confused with a _display index_.
+* **Subject**: The subject taught in a lesson, e.g., `Mathematics`.
+* **Timeslot**: The day, start time and end time of a lesson, e.g., Monday `15:00-16:30`. Times use the 24-hour `HH:mm` format.
+* **Tutor**: The user of TuiTracker, i.e., a private tutor who manages their own students, lessons and payments.
+* **WPM**: Words per minute, a standard measurement of how fast someone types.
 
 --------------------------------------------------------------------------------------------------------------------
 
