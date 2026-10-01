@@ -40,12 +40,12 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Data
 
-### Jean Doe
+### Ang Ee Yang
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/eeyang2026.png" width="200px">
 
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+[[homepage](https://github.com/eeyang2026/tp)]
+[[github](https://github.com/eeyang2026)]
 
 * Role: Developer
 * Responsibilities: Dev Ops + Threading
