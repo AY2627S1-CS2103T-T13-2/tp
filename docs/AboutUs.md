@@ -51,11 +51,11 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Dev Ops + Threading
 
-### James Doe
+### Darren Song
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/nerrad2004.png" width="200px">
 
-[[github](http://github.com/johndoe)]
+[[github](http://github.com/nerrad2004)]
 [[portfolio](team/johndoe.md)]
 
 * Role: Developer
