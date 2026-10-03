@@ -1,5 +1,6 @@
 package seedu.address.logic.commands;
 
+import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_REMARK;
 import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
@@ -7,6 +8,7 @@ import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import java.util.List;
 
 import seedu.address.commons.core.index.Index;
+import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
@@ -26,8 +28,6 @@ public class RemarkCommand extends Command {
             + "Parameters: INDEX (must be a positive integer) " + PREFIX_REMARK + "[REMARK]\n"
             + "Example: " + COMMAND_WORD + " 1 " + PREFIX_REMARK + "Likes to swim.";
 
-    public static final String MESSAGE_ARGUMENTS = "Index: %1$d, Remark: %2$s";
-
     public static final String MESSAGE_ADD_REMARK_SUCCESS = "Added remark to Person: %1$s";
     public static final String MESSAGE_DELETE_REMARK_SUCCESS = "Removed remark from Person: %1$s";
 
@@ -35,10 +35,7 @@ public class RemarkCommand extends Command {
     private final Remark remark;
 
     /**
-     * Constructs a command that changes a person's remark.
-     *
-     * @param index index of the person to update
-     * @param remark new remark
+     * Creates a {@code RemarkCommand} to update the remark of the person at {@code index}.
      */
     public RemarkCommand(Index index, Remark remark) {
         requireAllNonNull(index, remark);
@@ -48,6 +45,7 @@ public class RemarkCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        requireNonNull(model);
         List<Person> lastShownList = model.getFilteredPersonList();
 
         if (index.getZeroBased() >= lastShownList.size()) {
@@ -66,13 +64,11 @@ public class RemarkCommand extends Command {
     }
 
     /**
-     * Generates a command execution success message based on whether
-     * the remark is added to or removed from
-     * {@code personToEdit}.
+     * Generates a success message based on whether the remark was added or removed.
      */
-    private String generateSuccessMessage(Person personToEdit) {
-        String message = !remark.value.isEmpty() ? MESSAGE_ADD_REMARK_SUCCESS : MESSAGE_DELETE_REMARK_SUCCESS;
-        return String.format(message, Messages.format(personToEdit));
+    private String generateSuccessMessage(Person editedPerson) {
+        String message = remark.value.isEmpty() ? MESSAGE_DELETE_REMARK_SUCCESS : MESSAGE_ADD_REMARK_SUCCESS;
+        return String.format(message, Messages.format(editedPerson));
     }
 
     @Override
@@ -80,10 +76,20 @@ public class RemarkCommand extends Command {
         if (other == this) {
             return true;
         }
-        if (!(other instanceof RemarkCommand)) {
+
+        if (!(other instanceof RemarkCommand otherRemarkCommand)) {
             return false;
         }
-        RemarkCommand otherRemarkCommand = (RemarkCommand) other;
-        return index.equals(otherRemarkCommand.index) && remark.equals(otherRemarkCommand.remark);
+
+        return index.equals(otherRemarkCommand.index)
+                && remark.equals(otherRemarkCommand.remark);
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .add("index", index)
+                .add("remark", remark)
+                .toString();
     }
 }
