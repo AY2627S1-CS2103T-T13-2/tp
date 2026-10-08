@@ -36,11 +36,11 @@ public class StudentTest {
     }
 
     @Test
-    public void isPaid_isTrueThroughTheMonthLastPaid() {
+    public void isPaid_isTrueOnlyForTheMonthLastPaid() {
         assertFalse(ALICE.isPaid(CURRENT_MONTH)); // never paid
         assertTrue(BRYAN.isPaid(CURRENT_MONTH));
-        assertFalse(BRYAN.isPaid(CURRENT_MONTH.plusMonths(1)));
-        assertTrue(BRYAN.isPaid(LAST_MONTH));
+        assertFalse(BRYAN.isPaid(CURRENT_MONTH.plusMonths(1))); // resets by itself in a new month
+        assertFalse(BRYAN.isPaid(LAST_MONTH));
     }
 
     @Test

@@ -174,11 +174,6 @@ public class ModelManager implements Model {
         return tuiTracker.markPaid(studentId, currentMonth());
     }
 
-    @Override
-    public Student markPaid(StudentId studentId, YearMonth month) {
-        return tuiTracker.markPaid(studentId, month);
-    }
-
     //=========== Create and delete ==========================================================================
 
     @Override

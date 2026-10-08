@@ -119,12 +119,6 @@ public interface Model {
      */
     Student markPaid(StudentId studentId);
 
-    /**
-     * Marks the student as paid through {@code month} and returns the updated student.
-     * The student must exist.
-     */
-    Student markPaid(StudentId studentId, YearMonth month);
-
     //// create and delete
 
     /**
