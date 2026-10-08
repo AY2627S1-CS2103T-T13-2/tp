@@ -1,60 +1,52 @@
 package seedu.address.model.util;
 
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.time.YearMonth;
 
-import seedu.address.model.AddressBook;
-import seedu.address.model.ReadOnlyAddressBook;
-import seedu.address.model.person.Address;
-import seedu.address.model.person.Email;
-import seedu.address.model.person.Name;
-import seedu.address.model.person.Person;
-import seedu.address.model.person.Phone;
-import seedu.address.model.tag.Tag;
+import seedu.address.model.ReadOnlyTuiTracker;
+import seedu.address.model.TuiTracker;
+import seedu.address.model.common.Level;
+import seedu.address.model.lesson.Fee;
+import seedu.address.model.lesson.Lesson;
+import seedu.address.model.lesson.Subject;
+import seedu.address.model.lesson.Timeslot;
+import seedu.address.model.student.Contact;
+import seedu.address.model.student.Name;
+import seedu.address.model.student.Student;
 
 /**
- * Contains utility methods for populating {@code AddressBook} with sample data.
+ * Contains utility methods for populating {@code TuiTracker} with sample data.
  */
 public class SampleDataUtil {
-    public static Person[] getSamplePersons() {
-        return new Person[] {
-            new Person(new Name("Alex Yeoh"), new Phone("87438807"), new Email("alexyeoh@example.com"),
-                new Address("Blk 30 Geylang Street 29, #06-40"),
-                getTagSet("friends")),
-            new Person(new Name("Bernice Yu"), new Phone("99272758"), new Email("berniceyu@example.com"),
-                new Address("Blk 30 Lorong 3 Serangoon Gardens, #07-18"),
-                getTagSet("colleagues", "friends")),
-            new Person(new Name("Charlotte Oliveiro"), new Phone("93210283"), new Email("charlotte@example.com"),
-                new Address("Blk 11 Ang Mo Kio Street 74, #11-04"),
-                getTagSet("neighbours")),
-            new Person(new Name("David Li"), new Phone("91031282"), new Email("lidavid@example.com"),
-                new Address("Blk 436 Serangoon Gardens Street 26, #16-43"),
-                getTagSet("family")),
-            new Person(new Name("Irfan Ibrahim"), new Phone("92492021"), new Email("irfan@example.com"),
-                new Address("Blk 47 Tampines Street 20, #17-35"),
-                getTagSet("classmates")),
-            new Person(new Name("Roy Balakrishnan"), new Phone("92624417"), new Email("royb@example.com"),
-                new Address("Blk 45 Aljunied Street 85, #11-31"),
-                getTagSet("colleagues"))
-        };
-    }
-
-    public static ReadOnlyAddressBook getSampleAddressBook() {
-        AddressBook sampleAb = new AddressBook();
-        for (Person samplePerson : getSamplePersons()) {
-            sampleAb.addPerson(samplePerson);
-        }
-        return sampleAb;
-    }
 
     /**
-     * Returns a tag set containing the list of strings given.
+     * Returns a TuiTracker with three students, four lessons and their enrollments.
+     * Every student is enrolled only in lessons of their own level, and Bryan has paid for the current month.
      */
-    public static Set<Tag> getTagSet(String... strings) {
-        return Arrays.stream(strings)
-                .map(Tag::new)
-                .collect(Collectors.toSet());
+    public static ReadOnlyTuiTracker getSampleTuiTracker() {
+        TuiTracker sample = new TuiTracker();
+
+        Student alice = sample.addStudent(new Name("Alice Tan"), new Contact("91234567"), new Level("Primary 6"));
+        Student bryan = sample.addStudent(new Name("Bryan Lim"), new Contact("98765432"), new Level("Secondary 2"));
+        Student chloe = sample.addStudent(new Name("Chloe Ng"), new Contact("81234567"), new Level("Primary 4"));
+
+        Lesson mathematics = sample.addLesson(new Subject("Mathematics"), new Level("Primary 6"),
+                new Timeslot(DayOfWeek.MONDAY, LocalTime.of(15, 0), LocalTime.of(16, 30)), new Fee("50.00"));
+        Lesson science = sample.addLesson(new Subject("Science"), new Level("Primary 6"),
+                new Timeslot(DayOfWeek.THURSDAY, LocalTime.of(17, 0), LocalTime.of(18, 0)), new Fee("45.00"));
+        Lesson secondaryScience = sample.addLesson(new Subject("Science"), new Level("Secondary 2"),
+                new Timeslot(DayOfWeek.WEDNESDAY, LocalTime.of(16, 0), LocalTime.of(17, 30)), new Fee("60.00"));
+        Lesson english = sample.addLesson(new Subject("English"), new Level("Primary 4"),
+                new Timeslot(DayOfWeek.SATURDAY, LocalTime.of(10, 0), LocalTime.of(11, 0)), new Fee("40.00"));
+
+        sample.enroll(alice.getId(), mathematics.getId());
+        sample.enroll(alice.getId(), science.getId());
+        sample.enroll(bryan.getId(), secondaryScience.getId());
+        sample.enroll(chloe.getId(), english.getId());
+
+        sample.markPaid(bryan.getId(), YearMonth.now());
+        return sample;
     }
 
 }

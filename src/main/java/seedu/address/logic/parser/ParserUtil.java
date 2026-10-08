@@ -2,42 +2,72 @@ package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.math.BigInteger;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
 
-import seedu.address.commons.core.index.Index;
-import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.parser.exceptions.ParseException;
-import seedu.address.model.person.Address;
-import seedu.address.model.person.Email;
-import seedu.address.model.person.Name;
-import seedu.address.model.person.Phone;
-import seedu.address.model.tag.Tag;
+import seedu.address.model.common.Level;
+import seedu.address.model.lesson.Fee;
+import seedu.address.model.lesson.LessonId;
+import seedu.address.model.lesson.Subject;
+import seedu.address.model.lesson.Timeslot;
+import seedu.address.model.student.Contact;
+import seedu.address.model.student.Name;
+import seedu.address.model.student.StudentId;
 
 /**
  * Contains utility methods used for parsing strings in the various *Parser classes.
+ * Every method trims leading and trailing whitespace, and throws a {@code ParseException} carrying the exact
+ * error message from the specification when the value is invalid.
  */
 public class ParserUtil {
 
-    public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
+    public static final String MESSAGE_INVALID_ID = "ID must be a positive whole number.";
+
+    private static final String DIGITS_ONLY = "\\d+";
 
     /**
-     * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be
-     * trimmed.
-     * @throws ParseException if the specified index is invalid (not a non-zero unsigned integer).
+     * Returns true if {@code test} is an ID: digits only, no sign or decimal point, and not zero.
+     * Leading zeros are allowed, so "007" is an ID.
      */
-    public static Index parseIndex(String oneBasedIndex) throws ParseException {
-        String trimmedIndex = oneBasedIndex.trim();
-        if (!StringUtil.isNonZeroUnsignedInteger(trimmedIndex)) {
-            throw new ParseException(MESSAGE_INVALID_INDEX);
+    public static boolean isId(String test) {
+        requireNonNull(test);
+        String trimmed = test.trim();
+        return trimmed.matches(DIGITS_ONLY) && new BigInteger(trimmed).signum() > 0;
+    }
+
+    /**
+     * Parses {@code id} into a {@code StudentId}. Leading zeros are ignored. A number too large to be an ID is
+     * returned as the largest possible ID, which no student has.
+     *
+     * @throws ParseException if {@code id} is not a positive whole number.
+     */
+    public static StudentId parseStudentId(String id) throws ParseException {
+        return new StudentId(parseIdNumber(id));
+    }
+
+    /**
+     * Parses {@code id} into a {@code LessonId}. Leading zeros are ignored. A number too large to be an ID is
+     * returned as the largest possible ID, which no lesson has.
+     *
+     * @throws ParseException if {@code id} is not a positive whole number.
+     */
+    public static LessonId parseLessonId(String id) throws ParseException {
+        return new LessonId(parseIdNumber(id));
+    }
+
+    private static int parseIdNumber(String id) throws ParseException {
+        requireNonNull(id);
+        if (!isId(id)) {
+            throw new ParseException(MESSAGE_INVALID_ID);
         }
-        return Index.fromOneBased(Integer.parseInt(trimmedIndex));
+        BigInteger number = new BigInteger(id.trim());
+        return number.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0 ? Integer.MAX_VALUE : number.intValue();
     }
 
     /**
      * Parses a {@code String name} into a {@code Name}.
-     * Leading and trailing whitespaces will be trimmed.
      *
      * @throws ParseException if the given {@code name} is invalid.
      */
@@ -51,74 +81,107 @@ public class ParserUtil {
     }
 
     /**
-     * Parses a {@code String phone} into a {@code Phone}.
-     * Leading and trailing whitespaces will be trimmed.
+     * Parses a {@code String contact} into a {@code Contact}.
      *
-     * @throws ParseException if the given {@code phone} is invalid.
+     * @throws ParseException if the given {@code contact} is invalid.
      */
-    public static Phone parsePhone(String phone) throws ParseException {
-        requireNonNull(phone);
-        String trimmedPhone = phone.trim();
-        if (!Phone.isValidPhone(trimmedPhone)) {
-            throw new ParseException(Phone.MESSAGE_CONSTRAINTS);
+    public static Contact parseContact(String contact) throws ParseException {
+        requireNonNull(contact);
+        String trimmedContact = contact.trim();
+        if (!Contact.isValidContact(trimmedContact)) {
+            throw new ParseException(Contact.MESSAGE_CONSTRAINTS);
         }
-        return new Phone(trimmedPhone);
+        return new Contact(trimmedContact);
     }
 
     /**
-     * Parses a {@code String address} into an {@code Address}.
-     * Leading and trailing whitespaces will be trimmed.
+     * Parses a {@code String level} into the {@code Level} of a student.
      *
-     * @throws ParseException if the given {@code address} is invalid.
+     * @throws ParseException if the given {@code level} is invalid.
      */
-    public static Address parseAddress(String address) throws ParseException {
-        requireNonNull(address);
-        String trimmedAddress = address.trim();
-        if (!Address.isValidAddress(trimmedAddress)) {
-            throw new ParseException(Address.MESSAGE_CONSTRAINTS);
+    public static Level parseStudentLevel(String level) throws ParseException {
+        requireNonNull(level);
+        if (!Level.isValidLevel(level)) {
+            throw new ParseException(Level.MESSAGE_CONSTRAINTS_STUDENT);
         }
-        return new Address(trimmedAddress);
+        return new Level(level);
     }
 
     /**
-     * Parses a {@code String email} into an {@code Email}.
-     * Leading and trailing whitespaces will be trimmed.
+     * Parses a {@code String level} into the {@code Level} of a lesson.
      *
-     * @throws ParseException if the given {@code email} is invalid.
+     * @throws ParseException if the given {@code level} is invalid.
      */
-    public static Email parseEmail(String email) throws ParseException {
-        requireNonNull(email);
-        String trimmedEmail = email.trim();
-        if (!Email.isValidEmail(trimmedEmail)) {
-            throw new ParseException(Email.MESSAGE_CONSTRAINTS);
+    public static Level parseLessonLevel(String level) throws ParseException {
+        requireNonNull(level);
+        if (!Level.isValidLevel(level)) {
+            throw new ParseException(Level.MESSAGE_CONSTRAINTS_LESSON);
         }
-        return new Email(trimmedEmail);
+        return new Level(level);
     }
 
     /**
-     * Parses a {@code String tag} into a {@code Tag}.
-     * Leading and trailing whitespaces will be trimmed.
+     * Parses a {@code String subject} into a {@code Subject}.
      *
-     * @throws ParseException if the given {@code tag} is invalid.
+     * @throws ParseException if the given {@code subject} is invalid.
      */
-    public static Tag parseTag(String tag) throws ParseException {
-        requireNonNull(tag);
-        String trimmedTag = tag.trim();
-        if (!Tag.isValidTagName(trimmedTag)) {
-            throw new ParseException(Tag.MESSAGE_CONSTRAINTS);
+    public static Subject parseSubject(String subject) throws ParseException {
+        requireNonNull(subject);
+        String trimmedSubject = subject.trim();
+        if (!Subject.isValidSubject(trimmedSubject)) {
+            throw new ParseException(Subject.MESSAGE_CONSTRAINTS);
         }
-        return new Tag(trimmedTag);
+        return new Subject(trimmedSubject);
     }
 
     /**
-     * Parses {@code Collection<String> tags} into a {@code Set<Tag>}.
+     * Parses a {@code String day} such as "monday" into a {@code DayOfWeek}. Letter case is ignored.
+     *
+     * @throws ParseException if the given {@code day} is not a day of the week.
      */
-    public static Set<Tag> parseTags(Collection<String> tags) throws ParseException {
-        requireNonNull(tags);
-        final Set<Tag> tagSet = new HashSet<>();
-        for (String tagName : tags) {
-            tagSet.add(parseTag(tagName));
+    public static DayOfWeek parseDay(String day) throws ParseException {
+        requireNonNull(day);
+        return Timeslot.parseDay(day).orElseThrow(() -> new ParseException(Timeslot.MESSAGE_INVALID_DAY));
+    }
+
+    /**
+     * Parses a {@code String time} written exactly as {@code HH:mm} into the start time of a lesson.
+     *
+     * @throws ParseException if the given {@code time} is not in that format.
+     */
+    public static LocalTime parseStartTime(String time) throws ParseException {
+        requireNonNull(time);
+        return Timeslot.parseTime(time).orElseThrow(() -> new ParseException(Timeslot.MESSAGE_INVALID_START_TIME));
+    }
+
+    /**
+     * Parses a {@code String time} written exactly as {@code HH:mm} into the end time of a lesson.
+     *
+     * @param start The start time of the same lesson, which the end time must be later than.
+     * @throws ParseException if the given {@code time} is not in that format or is not later than {@code start}.
+     */
+    public static LocalTime parseEndTime(String time, LocalTime start) throws ParseException {
+        requireNonNull(time);
+        requireNonNull(start);
+        LocalTime end = Timeslot.parseTime(time)
+                .orElseThrow(() -> new ParseException(Timeslot.MESSAGE_INVALID_END_TIME));
+        if (!Timeslot.isValidTimeslot(start, end)) {
+            throw new ParseException(Timeslot.MESSAGE_INVALID_END_TIME);
         }
-        return tagSet;
+        return end;
+    }
+
+    /**
+     * Parses a {@code String fee} into a {@code Fee}.
+     *
+     * @throws ParseException if the given {@code fee} is invalid.
+     */
+    public static Fee parseFee(String fee) throws ParseException {
+        requireNonNull(fee);
+        String trimmedFee = fee.trim();
+        if (!Fee.isValidFee(trimmedFee)) {
+            throw new ParseException(Fee.MESSAGE_CONSTRAINTS);
+        }
+        return new Fee(trimmedFee);
     }
 }

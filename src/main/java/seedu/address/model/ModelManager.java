@@ -3,40 +3,85 @@ package seedu.address.model;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
+import java.time.Clock;
+import java.time.YearMonth;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
-import seedu.address.model.person.Person;
+import seedu.address.model.common.Level;
+import seedu.address.model.lesson.Fee;
+import seedu.address.model.lesson.Lesson;
+import seedu.address.model.lesson.LessonId;
+import seedu.address.model.lesson.Subject;
+import seedu.address.model.lesson.Timeslot;
+import seedu.address.model.student.Contact;
+import seedu.address.model.student.Name;
+import seedu.address.model.student.Student;
+import seedu.address.model.student.StudentId;
 
 /**
- * Represents the in-memory model of the address book data.
+ * Represents the in-memory model of the TuiTracker data.
  */
 public class ModelManager implements Model {
     private static final Logger logger = LogsCenter.getLogger(ModelManager.class);
 
-    private final AddressBook addressBook;
+    /** Students are shown in ascending order of ID. */
+    private static final Comparator<Student> STUDENT_ORDER = Comparator.comparing(Student::getId);
+
+    /** Lessons are shown by day of the week (Monday first), then start time, then ID. */
+    private static final Comparator<Lesson> LESSON_ORDER = Comparator
+            .comparing((Lesson lesson) -> lesson.getTimeslot().getDay())
+            .thenComparing(lesson -> lesson.getTimeslot().getStart())
+            .thenComparing(Lesson::getId);
+
+    private final TuiTracker tuiTracker;
     private final UserPrefs userPrefs;
-    private final FilteredList<Person> filteredPersons;
+    private final Clock clock;
+    private final FilteredList<Student> filteredStudents;
+    private final FilteredList<Lesson> filteredLessons;
+    private final ObjectProperty<ListView> listView = new SimpleObjectProperty<>(ListView.STUDENTS);
+
+    /** At most one of these is set: the filter that is currently active. */
+    private StudentId filteredByStudent;
+    private LessonId filteredByLesson;
 
     /**
-     * Initializes a ModelManager with the given addressBook and userPrefs.
+     * Initializes a ModelManager with the given tuiTracker, userPrefs and clock.
+     * The clock decides which month counts as the current month, so tests can fix the date.
      */
-    public ModelManager(ReadOnlyAddressBook addressBook, ReadOnlyUserPrefs userPrefs) {
-        requireAllNonNull(addressBook, userPrefs);
+    public ModelManager(ReadOnlyTuiTracker tuiTracker, ReadOnlyUserPrefs userPrefs, Clock clock) {
+        requireAllNonNull(tuiTracker, userPrefs, clock);
 
-        logger.fine("Initializing with address book: " + addressBook + " and user prefs " + userPrefs);
+        logger.fine("Initializing with TuiTracker: " + tuiTracker + " and user prefs " + userPrefs);
 
-        this.addressBook = new AddressBook(addressBook);
+        this.tuiTracker = new TuiTracker(tuiTracker);
         this.userPrefs = new UserPrefs(userPrefs);
-        filteredPersons = new FilteredList<>(this.addressBook.getPersonList());
+        this.clock = clock;
+        filteredStudents = new FilteredList<>(new SortedList<>(this.tuiTracker.getStudentList(), STUDENT_ORDER));
+        filteredLessons = new FilteredList<>(new SortedList<>(this.tuiTracker.getLessonList(), LESSON_ORDER));
+    }
+
+    /**
+     * Initializes a ModelManager that uses the system clock.
+     */
+    public ModelManager(ReadOnlyTuiTracker tuiTracker, ReadOnlyUserPrefs userPrefs) {
+        this(tuiTracker, userPrefs, Clock.systemDefaultZone());
     }
 
     public ModelManager() {
-        this(new AddressBook(), new UserPrefs());
+        this(new TuiTracker(), new UserPrefs());
     }
 
     //=========== UserPrefs ==================================================================================
@@ -57,57 +102,190 @@ public class ModelManager implements Model {
         userPrefs.setGuiSettings(guiSettings);
     }
 
-    //=========== AddressBook ================================================================================
+    //=========== TuiTracker =================================================================================
 
     @Override
-    public void setAddressBook(ReadOnlyAddressBook addressBook) {
-        this.addressBook.resetData(addressBook);
+    public void setTuiTracker(ReadOnlyTuiTracker newData) {
+        tuiTracker.resetData(newData);
+        refreshFilters();
     }
 
     @Override
-    public ReadOnlyAddressBook getAddressBook() {
-        return addressBook;
+    public ReadOnlyTuiTracker getTuiTracker() {
+        return tuiTracker;
     }
 
     @Override
-    public boolean hasPerson(Person person) {
-        requireNonNull(person);
-        return addressBook.hasPerson(person);
+    public Optional<Student> findStudent(StudentId id) {
+        return tuiTracker.findStudent(id);
     }
 
     @Override
-    public void deletePerson(Person target) {
-        addressBook.removePerson(target);
+    public Optional<Lesson> findLesson(LessonId id) {
+        return tuiTracker.findLesson(id);
     }
 
     @Override
-    public void addPerson(Person person) {
-        addressBook.addPerson(person);
-        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+    public Optional<Student> findDuplicateStudent(Name name, Contact contact) {
+        return tuiTracker.findDuplicateStudent(name, contact);
     }
 
     @Override
-    public void setPerson(Person target, Person editedPerson) {
-        requireAllNonNull(target, editedPerson);
-
-        addressBook.setPerson(target, editedPerson);
+    public Optional<Lesson> findIdenticalLesson(Subject subject, Level level, Timeslot timeslot) {
+        return tuiTracker.findIdenticalLesson(subject, level, timeslot);
     }
 
-    //=========== Filtered Person List Accessors =============================================================
+    @Override
+    public boolean isEnrolled(StudentId studentId, LessonId lessonId) {
+        return tuiTracker.isEnrolled(studentId, lessonId);
+    }
+
+    @Override
+    public boolean hasClash(Timeslot timeslot) {
+        return tuiTracker.hasClash(timeslot);
+    }
+
+    @Override
+    public List<LessonId> getLessonIdsOf(StudentId studentId) {
+        return tuiTracker.getLessonIdsOf(studentId);
+    }
+
+    @Override
+    public List<Student> getStudentsIn(LessonId lessonId) {
+        return tuiTracker.getStudentsIn(lessonId);
+    }
+
+    //=========== Payment ====================================================================================
+
+    @Override
+    public YearMonth currentMonth() {
+        return YearMonth.now(clock);
+    }
+
+    @Override
+    public boolean isPaid(StudentId studentId) {
+        return tuiTracker.findStudent(studentId)
+                .map(student -> student.isPaid(currentMonth()))
+                .orElse(false);
+    }
+
+    @Override
+    public Student markPaid(StudentId studentId) {
+        return tuiTracker.markPaid(studentId, currentMonth());
+    }
+
+    //=========== Create and delete ==========================================================================
+
+    @Override
+    public Student addStudent(Name name, Contact contact, Level level) {
+        Student student = tuiTracker.addStudent(name, contact, level);
+        refreshFilters();
+        return student;
+    }
+
+    @Override
+    public Lesson addLesson(Subject subject, Level level, Timeslot timeslot, Fee fee) {
+        Lesson lesson = tuiTracker.addLesson(subject, level, timeslot, fee);
+        refreshFilters();
+        return lesson;
+    }
+
+    @Override
+    public void enroll(StudentId studentId, LessonId lessonId) {
+        tuiTracker.enroll(studentId, lessonId);
+        refreshFilters();
+    }
+
+    @Override
+    public Student deleteStudent(StudentId studentId) {
+        Student deleted = tuiTracker.deleteStudent(studentId);
+        if (studentId.equals(filteredByStudent)) {
+            filteredByStudent = null;
+        }
+        refreshFilters();
+        return deleted;
+    }
+
+    @Override
+    public Lesson deleteLesson(LessonId lessonId) {
+        Lesson deleted = tuiTracker.deleteLesson(lessonId);
+        if (lessonId.equals(filteredByLesson)) {
+            filteredByLesson = null;
+        }
+        refreshFilters();
+        return deleted;
+    }
+
+    //=========== Filter =====================================================================================
+
+    @Override
+    public void filterLessonsByStudent(StudentId studentId) {
+        requireNonNull(studentId);
+        filteredByStudent = studentId;
+        filteredByLesson = null;
+        refreshFilters();
+    }
+
+    @Override
+    public void filterStudentsByLesson(LessonId lessonId) {
+        requireNonNull(lessonId);
+        filteredByLesson = lessonId;
+        filteredByStudent = null;
+        refreshFilters();
+    }
+
+    @Override
+    public void resetFilters() {
+        filteredByStudent = null;
+        filteredByLesson = null;
+        refreshFilters();
+    }
 
     /**
-     * Returns an unmodifiable view of the list of {@code Person} backed by the internal list of
-     * {@code addressBook}
+     * Applies the active filter, if any, to both lists. Setting a new predicate makes the lists re-check every
+     * item, which is how a filter stays correct after enrollments change even though the lists themselves did not.
      */
+    private void refreshFilters() {
+        final LessonId lessonFilter = filteredByLesson;
+        final StudentId studentFilter = filteredByStudent;
+
+        Predicate<Student> studentPredicate = lessonFilter == null
+                ? student -> true
+                : student -> tuiTracker.isEnrolled(student.getId(), lessonFilter);
+        Predicate<Lesson> lessonPredicate = studentFilter == null
+                ? lesson -> true
+                : lesson -> tuiTracker.isEnrolled(studentFilter, lesson.getId());
+
+        filteredStudents.setPredicate(studentPredicate);
+        filteredLessons.setPredicate(lessonPredicate);
+    }
+
+    //=========== View =======================================================================================
+
     @Override
-    public ObservableList<Person> getFilteredPersonList() {
-        return filteredPersons;
+    public ObservableList<Student> getStudentList() {
+        return filteredStudents;
     }
 
     @Override
-    public void updateFilteredPersonList(Predicate<Person> predicate) {
-        requireNonNull(predicate);
-        filteredPersons.setPredicate(predicate);
+    public ObservableList<Lesson> getLessonList() {
+        return filteredLessons;
+    }
+
+    @Override
+    public ListView getListView() {
+        return listView.get();
+    }
+
+    @Override
+    public void setListView(ListView listView) {
+        requireNonNull(listView);
+        this.listView.set(listView);
+    }
+
+    @Override
+    public ReadOnlyObjectProperty<ListView> listViewProperty() {
+        return listView;
     }
 
     @Override
@@ -121,9 +299,16 @@ public class ModelManager implements Model {
             return false;
         }
 
-        return addressBook.equals(otherModelManager.addressBook)
+        return tuiTracker.equals(otherModelManager.tuiTracker)
                 && userPrefs.equals(otherModelManager.userPrefs)
-                && filteredPersons.equals(otherModelManager.filteredPersons);
+                && filteredStudents.equals(otherModelManager.filteredStudents)
+                && filteredLessons.equals(otherModelManager.filteredLessons)
+                && getListView() == otherModelManager.getListView();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tuiTracker, userPrefs, getListView());
     }
 
 }

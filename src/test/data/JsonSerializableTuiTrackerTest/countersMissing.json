@@ -1,0 +1,9 @@
+{
+  "students": [
+    { "id": 7, "name": "Alice Tan", "contact": "91234567", "level": "Primary 6" }
+  ],
+  "lessons": [
+    { "id": 3, "subject": "Mathematics", "level": "Primary 6", "day": "Monday",
+      "start": "15:00", "end": "16:30", "fee": "50.00" }
+  ]
+}

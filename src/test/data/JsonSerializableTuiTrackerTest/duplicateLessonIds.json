@@ -1,0 +1,8 @@
+{
+  "lessons": [
+    { "id": 1, "subject": "Mathematics", "level": "Primary 6", "day": "Monday",
+      "start": "15:00", "end": "16:30", "fee": "50.00" },
+    { "id": 1, "subject": "English", "level": "Primary 4", "day": "Saturday",
+      "start": "10:00", "end": "11:00", "fee": "40.00" }
+  ]
+}

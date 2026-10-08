@@ -17,4 +17,14 @@ public abstract class Command {
      */
     public abstract CommandResult execute(Model model) throws CommandException;
 
+    /**
+     * Returns the message to show when the command succeeded but its changes could not be saved. The changes are
+     * undone before this message is shown. A command whose specification asks for its own wording overrides this.
+     *
+     * @param defaultMessage The general message for a failed save.
+     */
+    public String getSaveFailureMessage(String defaultMessage) {
+        return defaultMessage;
+    }
+
 }

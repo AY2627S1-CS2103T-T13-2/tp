@@ -1,0 +1,6 @@
+{
+  "students": [
+    { "id": 1, "name": "Alice Tan", "contact": "91234567", "level": "Primary 6" },
+    { "id": 2, "name": "Alice Tan", "contact": "91234567", "level": "Primary 6" }
+  ]
+}

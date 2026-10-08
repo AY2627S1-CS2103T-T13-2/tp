@@ -1,0 +1,61 @@
+{
+  "_comment": "TuiTracker data used by JsonSerializableTuiTrackerTest. It must equal TypicalTuiTracker.",
+  "nextStudentId": 5,
+  "nextLessonId": 6,
+  "students": [ {
+    "id": 1,
+    "name": "Alice Tan",
+    "contact": "91234567",
+    "level": "Primary 6"
+  }, {
+    "id": 2,
+    "name": "Bryan Lim",
+    "contact": "98765432",
+    "level": "Secondary 2",
+    "lastPaidMonth": "2026-10"
+  }, {
+    "id": 3,
+    "name": "Chloe Ng",
+    "contact": "81234567",
+    "level": "Primary 4"
+  } ],
+  "lessons": [ {
+    "id": 1,
+    "subject": "Mathematics",
+    "level": "Primary 6",
+    "day": "Monday",
+    "start": "15:00",
+    "end": "16:30",
+    "fee": "50.00"
+  }, {
+    "id": 2,
+    "subject": "Science",
+    "level": "Primary 6",
+    "day": "Thursday",
+    "start": "17:00",
+    "end": "18:00",
+    "fee": "45.00"
+  }, {
+    "id": 3,
+    "subject": "Science",
+    "level": "Secondary 2",
+    "day": "Wednesday",
+    "start": "16:00",
+    "end": "17:30",
+    "fee": "60.00"
+  }, {
+    "id": 4,
+    "subject": "English",
+    "level": "Primary 4",
+    "day": "Saturday",
+    "start": "10:00",
+    "end": "11:00",
+    "fee": "40.00"
+  } ],
+  "enrollments": [
+    { "studentId": 1, "lessonId": 1 },
+    { "studentId": 1, "lessonId": 2 },
+    { "studentId": 2, "lessonId": 3 },
+    { "studentId": 3, "lessonId": 4 }
+  ]
+}
