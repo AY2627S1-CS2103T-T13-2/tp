@@ -159,6 +159,26 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Add feature
+
+_To be written by the owner of `add`._
+
+### Delete feature
+
+_To be written by the owner of `delete`._
+
+### List feature
+
+_To be written by the owner of `list`._
+
+### Mark feature
+
+_To be written by the owner of `mark`._
+
+### Filter feature
+
+_To be written by the owner of `filter`._
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
@@ -552,22 +572,25 @@ testers are expected to do more *exploratory* testing.
 
 1. _{ more test cases … }_
 
-### Deleting a person
+### Adding a student to a lesson
 
-1. Deleting a person while all persons are being shown
+_To be written by the owner of `add`._
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+### Deleting a student or a lesson
 
-   1. Test case: `delete 1`<br>
-      Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
+_To be written by the owner of `delete`._
 
-   1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows error details.
+### Listing students or lessons
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+_To be written by the owner of `list`._
 
-1. _{ more test cases … }_
+### Marking a student as paid
+
+_To be written by the owner of `mark`._
+
+### Showing a student's lessons or a lesson's students
+
+_To be written by the owner of `filter`._
 
 ### Saving data
 
