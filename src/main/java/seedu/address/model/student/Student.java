@@ -66,14 +66,14 @@ public class Student {
     }
 
     /**
-     * Returns true if this student was marked as paid in {@code month}.
+     * Returns true if this student has been marked as paid through {@code month}.
      */
     public boolean isPaid(YearMonth month) {
-        return month.equals(lastPaidMonth);
+        return lastPaidMonth != null && !month.isAfter(lastPaidMonth);
     }
 
     /**
-     * Returns a copy of this student that was marked as paid in {@code month}.
+     * Returns a copy of this student that was marked as paid through {@code month}.
      */
     public Student markPaid(YearMonth month) {
         return new Student(id, name, contact, level, month);

@@ -42,7 +42,7 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_mark() throws Exception {
-        assertTrue(parser.parseCommand("mark 12") instanceof MarkCommand);
+        assertTrue(parser.parseCommand("mark 12 2026-10") instanceof MarkCommand);
     }
 
     @Test

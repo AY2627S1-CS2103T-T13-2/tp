@@ -109,6 +109,11 @@ public class ModelStub implements Model {
     }
 
     @Override
+    public Student markPaid(StudentId studentId, YearMonth month) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
     public Student addStudent(Name name, Contact contact, Level level) {
         throw new AssertionError("This method should not be called.");
     }
