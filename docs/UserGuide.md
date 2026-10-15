@@ -20,11 +20,11 @@ With TuiTracker, you can view student and lesson details, manage enrollments, tr
 1. Ensure that Java `25` or later is installed on your computer.<br>
    **Mac users:** Ensure you have the precise JDK version prescribed [here](https://se-education.org/guides/tutorials/javaInstallationMac.html).
 
-1. Download the latest `addressbook.jar` file from the [TuiTracker releases page](https://github.com/AY2627S1-CS2103T-T13-2/tp/releases).
+1. Download the latest `tuitracker.jar` file from the [TuiTracker releases page](https://github.com/AY2627S1-CS2103T-T13-2/tp/releases).
 
 1. Copy the file to the folder you want to use as the _home folder_ for TuiTracker.
 
-1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
+1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar tuitracker.jar`.<br>
    A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
    ![Ui](images/Ui.png)
 
@@ -107,15 +107,6 @@ Displays either all students or all lessons. Use this command to switch between 
 
 * An unknown view or extra text — the app displays `Invalid view. Use: list [students|lessons]`.
 * More than one view — the app displays `The view can only be specified once.`
-
-### Viewing help: `help`
-
-Shows a message explaining how to access the help page.
-
-![help message](images/helpMessage.png)
-
-Format: `help`
-
 
 ### Adding a student to a lesson: `add`
 
