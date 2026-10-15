@@ -150,9 +150,37 @@ Command | Message
 
 ### Deleting a student or a lesson: `delete`
 
-_To be written by the owner of `delete`. Specification codes: DEL-1 to DEL-6._
+Deletes a student or lesson using its ID. Use this command when you want to remove a record from the app.
 
-Format: `delete student|lesson ID`
+**Format:** `delete student|lesson ID`
+
+**Parameters:**
+
+* `student|lesson` — must be exactly `student` or `lesson` (case-insensitive). Abbreviations and repeating the keyword are not allowed.
+* `ID` — the record's positive whole-number ID. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
+* Leading and trailing spaces are ignored. No other text may follow the ID.
+
+**Examples:**
+
+* `delete student 3` — deletes the student with ID 3.
+* `delete lesson 2` — deletes the lesson with ID 2.
+* `delete STUDENT 0012` — deletes student 12; keyword case and leading zeros are ignored.
+
+**Successful deletion:**
+
+* The result box confirms the deleted record, for example `Deleted student: Alice Tan (ID: 12)`.
+* Deleting a lesson confirms its subject, level, timeslot and ID, for example `Deleted lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 7)`.
+
+**Notes:**
+
+* Deleting a student also removes all of that student's enrollments. Deleting a lesson removes all enrollments tied to that lesson. Other student and lesson records remain.
+* Deleting a record removes it from the displayed list when it is shown.
+* The ID must be a positive whole number. For example, `delete student 0` and `delete student -1` are invalid.
+
+**Errors:**
+
+* Missing or unknown kind, an abbreviation, a repeated kind, a missing or malformed ID, or extra text after the ID — the app displays `Invalid command format. Use: delete student|lesson ID`.
+* No record of the requested kind has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID). An ID belonging only to the other kind does not match. No data is changed on failure.
 
 ### Listing students or lessons: `list`
 
@@ -217,8 +245,8 @@ _Details coming soon ..._
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> e.g., `add s/Daniel Koh c/92223333 slv/Primary 6 l/1` <br> e.g., `add s/3 l/Art llv/Primary 4 d/Tuesday st/10:00 et/11:00 f/40`
-**Delete** | `delete student\|lesson ID` <br> _Examples to be added by the owner of `delete`._
+**Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> _Examples to be added by the owner of `add`._
+**Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
 **Filter** | `filter student\|lesson ID` <br> _Examples to be added by the owner of `filter`._
 **List**   | `list [students\|lessons]` <br> _Examples to be added by the owner of `list`._
 **Mark**   | `mark ID` <br> _Examples to be added by the owner of `mark`._
