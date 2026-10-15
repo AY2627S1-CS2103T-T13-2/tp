@@ -4,9 +4,11 @@
   pageNav: 3
 ---
 
-# AB-3 User Guide
+# TuiTracker User Guide
 
-AddressBook Level 3 (AB3) is a **desktop application for managing contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, AB3 can help you manage contacts faster than traditional GUI applications.
+TuiTracker is a **desktop application for private tutors to manage their students, lessons, and monthly payments in one place**. It combines a Command Line Interface (CLI) with a Graphical User Interface (GUI), allowing tutors who type quickly to handle common administrative tasks efficiently while viewing their records clearly.
+
+With TuiTracker, you can view student and lesson details, manage enrollments, track monthly payments, and remove records that are no longer needed.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -18,9 +20,9 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
 1. Ensure that Java `25` or later is installed on your computer.<br>
    **Mac users:** Ensure you have the precise JDK version prescribed [here](https://se-education.org/guides/tutorials/javaInstallationMac.html).
 
-1. Download the latest `.jar` file from [here](https://github.com/se-edu/addressbook-level3/releases).
+1. Download the latest `addressbook.jar` file from the [TuiTracker releases page](https://github.com/AY2627S1-CS2103T-T13-2/tp/releases).
 
-1. Copy the file to the folder you want to use as the _home folder_ for your AddressBook.
+1. Copy the file to the folder you want to use as the _home folder_ for TuiTracker.
 
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
    A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
@@ -55,7 +57,7 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
   For example, in `delete student ID`, replace `ID` with a value such as `12`.
 
 * Items in square brackets are optional.<br>
-  For example, `list [students|lessons]` can be used as `list students` or as just `list`.
+  For example, `list [students|lessons]` can be used as `list students`, `list lessons` or as just `list`.
 
 * Parameters that start with a prefix, such as `s/` or `l/` in `add`, can be in any order.<br>
   For example, if the command specifies `s/STUDENT l/LESSON`, `l/LESSON s/STUDENT` is also acceptable.
@@ -65,6 +67,46 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
+
+### Listing all students or lessons: `list`
+
+Displays either all students or all lessons. Use this command to switch between the two lists or to clear an active filter.
+
+**Format:** `list [students|lessons]`
+
+**Parameters:**
+
+* `students|lessons` — optionally specifies which list to display. The keyword is case-insensitive.
+* If the parameter is omitted, TuiTracker displays the list of students.
+* Leading and trailing spaces are ignored. Only one view may be specified.
+
+**Examples:**
+
+* `list` — displays all students.
+* `list students` — displays all students.
+* `list lessons` — displays all lessons.
+* `list LESSONS` — displays all lessons; keyword case is ignored.
+
+**Successful listing:**
+
+* The selected list is displayed and any active filter is cleared.
+* The result box reports the number of records, for example `Listed 3 students.` or `Listed 4 lessons.`
+* If the selected list is empty, the result box displays `No students found. Use the add command to create one.` or `No lessons found. Lessons are created through the add command.`
+
+**Displayed information:**
+
+* The student list shows each student's name, ID, contact number, level, payment status for the current month, and enrolled lesson IDs. Students are ordered by ascending ID.
+* The lesson list shows each lesson's subject, ID, level, weekly timeslot, fee per session, and enrolled students. Lessons are ordered by day of the week (Monday first), start time, then ID.
+
+**Notes:**
+
+* `list` and `list students` have the same effect.
+* This command changes only the displayed list and filter. It does not modify any student, lesson, enrollment, or payment data.
+
+**Errors:**
+
+* An unknown view or extra text — the app displays `Invalid view. Use: list [students|lessons]`.
+* More than one view — the app displays `The view can only be specified once.`
 
 ### Viewing help: `help`
 
@@ -182,12 +224,6 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 * Missing or unknown kind, an abbreviation, a repeated kind, a missing or malformed ID, or extra text after the ID — the app displays `Invalid command format. Use: delete student|lesson ID`.
 * No record of the requested kind has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID). An ID belonging only to the other kind does not match. No data is changed on failure.
 
-### Listing students or lessons: `list`
-
-_To be written by the owner of `list`. Specification codes: LST-1 to LST-9._
-
-Format: `list [students|lessons]`
-
 ### Marking a student as paid: `mark`
 
 Marks a student as paid for the current month using the student's ID. Use this command after receiving the student's payment for the current month.
@@ -291,7 +327,7 @@ Action     | Format, Examples
 **Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> _Examples to be added by the owner of `add`._
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
 **Filter** | `filter student\|lesson ID` <br> e.g., `filter student 1`, `filter lesson 2`
-**List**   | `list [students\|lessons]` <br> _Examples to be added by the owner of `list`._
+**List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
 **Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
 **Help**   | `help`
 **Exit**   | `exit`
