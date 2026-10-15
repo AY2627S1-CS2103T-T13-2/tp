@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_LESSON_NOT_FOUND;
 import static seedu.address.logic.Messages.MESSAGE_STUDENT_NOT_FOUND;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_ALREADY_ENROLLED;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_DUPLICATE_LESSON;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_DUPLICATE_STUDENT;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_LESSON_CLASH;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_LEVEL_MISMATCH;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
@@ -18,7 +21,10 @@ import static seedu.address.testutil.TypicalLessons.MATHEMATICS;
 import static seedu.address.testutil.TypicalLessons.getTypicalLessons;
 import static seedu.address.testutil.TypicalStudents.ALICE;
 import static seedu.address.testutil.TypicalStudents.BRYAN;
+import static seedu.address.testutil.TypicalStudents.CHLOE;
+import static seedu.address.testutil.TypicalStudents.DANIEL;
 import static seedu.address.testutil.TypicalStudents.getTypicalStudents;
+import static seedu.address.testutil.TypicalTuiTracker.getTypicalTuiTracker;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
@@ -35,6 +41,7 @@ import seedu.address.logic.commands.AddCommand.StudentRef;
 import seedu.address.model.ListView;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
+import seedu.address.model.TuiTracker;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.common.Level;
 import seedu.address.model.enrollment.Enrollment;
@@ -61,6 +68,14 @@ public class AddCommandTest {
             new Timeslot(DayOfWeek.MONDAY, LocalTime.of(15, 0), LocalTime.of(16, 30));
     private static final LessonRef NEW_LESSON =
             new NewLesson(new Subject("Mathematics"), new Level("Primary 6"), MONDAY_AFTERNOON, new Fee("50.00"));
+
+    /** A student who is not in the typical data: Daniel Koh, Primary 6. */
+    private static final NewStudent DANIEL_DETAILS =
+            new NewStudent(DANIEL.getName(), DANIEL.getContact(), DANIEL.getLevel());
+
+    /** A Primary 6 lesson that is not in the typical data and does not clash with it: History on Friday. */
+    private static final NewLesson HISTORY_DETAILS =
+            new NewLesson(HISTORY.getSubject(), HISTORY.getLevel(), HISTORY.getTimeslot(), HISTORY.getFee());
 
     @Test
     public void constructor_nullArguments_throwsNullPointerException() {
@@ -265,5 +280,306 @@ public class AddCommandTest {
     private static AddCommand enroll(int studentId, int lessonId) {
         return new AddCommand(new ExistingStudent(new StudentId(studentId)),
                 new ExistingLesson(new LessonId(lessonId)));
+    }
+
+    //// creating a new student
+
+    @Test
+    public void execute_newStudentAndExistingLesson_createsAndEnrollsTheStudent() {
+        Model model = typicalModel();
+        Model expectedModel = typicalModel();
+        Student created = expectedModel.addStudent(DANIEL.getName(), DANIEL.getContact(), DANIEL.getLevel());
+        expectedModel.enroll(created.getId(), MATHEMATICS.getId());
+
+        assertCommandSuccess(new AddCommand(DANIEL_DETAILS, new ExistingLesson(MATHEMATICS.getId())), model,
+                "Enrolled Daniel Koh [Student ID: 5] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.",
+                expectedModel);
+        assertEquals(6, model.getTuiTracker().getNextStudentId());
+    }
+
+    @Test
+    public void execute_newStudentWithTheSameNameButAnotherContact_isNotADuplicate() {
+        NewStudent sameNameOtherContact =
+                new NewStudent(ALICE.getName(), new Contact("90000000"), ALICE.getLevel());
+        Model model = typicalModel();
+        Model expectedModel = typicalModel();
+        Student created = expectedModel.addStudent(ALICE.getName(), new Contact("90000000"), ALICE.getLevel());
+        expectedModel.enroll(created.getId(), MATHEMATICS.getId());
+
+        assertCommandSuccess(new AddCommand(sameNameOtherContact, new ExistingLesson(MATHEMATICS.getId())), model,
+                "Enrolled Alice Tan [Student ID: 5] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.",
+                expectedModel);
+    }
+
+    //// creating a new lesson
+
+    @Test
+    public void execute_existingStudentAndNewLesson_createsAndEnrollsTheLesson() {
+        Model model = typicalModel();
+        Model expectedModel = typicalModel();
+        Lesson created = expectedModel.addLesson(HISTORY.getSubject(), HISTORY.getLevel(), HISTORY.getTimeslot(),
+                HISTORY.getFee());
+        expectedModel.enroll(ALICE.getId(), created.getId());
+
+        assertCommandSuccess(new AddCommand(new ExistingStudent(ALICE.getId()), HISTORY_DETAILS), model,
+                "Enrolled Alice Tan [Student ID: 1] in History [Lesson ID: 6]. Payment status: Unpaid.",
+                expectedModel);
+        assertEquals(7, model.getTuiTracker().getNextLessonId());
+    }
+
+    @Test
+    public void execute_paidStudentAndNewLesson_reportsPaid() {
+        NewLesson physics = newLesson("Physics", "Secondary 2", DayOfWeek.FRIDAY, 14, 0, 15, 0);
+        Model model = typicalModel();
+        Model expectedModel = typicalModel();
+        Lesson created = expectedModel.addLesson(physics.subject(), physics.level(), physics.timeslot(),
+                physics.fee());
+        expectedModel.enroll(BRYAN.getId(), created.getId());
+
+        assertCommandSuccess(new AddCommand(new ExistingStudent(BRYAN.getId()), physics), model,
+                "Enrolled Bryan Lim [Student ID: 2] in Physics [Lesson ID: 6]. Payment status: Paid.",
+                expectedModel);
+    }
+
+    //// creating a new student and a new lesson
+
+    @Test
+    public void execute_newStudentAndNewLesson_createsBothAndEnrollsTheStudent() {
+        Model model = typicalModel();
+        Model expectedModel = typicalModel();
+        Student student = expectedModel.addStudent(DANIEL.getName(), DANIEL.getContact(), DANIEL.getLevel());
+        Lesson lesson = expectedModel.addLesson(HISTORY.getSubject(), HISTORY.getLevel(), HISTORY.getTimeslot(),
+                HISTORY.getFee());
+        expectedModel.enroll(student.getId(), lesson.getId());
+
+        assertCommandSuccess(new AddCommand(DANIEL_DETAILS, HISTORY_DETAILS), model,
+                "Enrolled Daniel Koh [Student ID: 5] in History [Lesson ID: 6]. Payment status: Unpaid.",
+                expectedModel);
+    }
+
+    @Test
+    public void execute_newStudentAndNewLesson_numbersThemSeparately() {
+        Model model = new ModelManager(new TuiTracker(), new UserPrefs(), CLOCK);
+        Model expectedModel = new ModelManager(new TuiTracker(), new UserPrefs(), CLOCK);
+        Student student = expectedModel.addStudent(DANIEL.getName(), DANIEL.getContact(), DANIEL.getLevel());
+        Lesson lesson = expectedModel.addLesson(HISTORY.getSubject(), HISTORY.getLevel(), HISTORY.getTimeslot(),
+                HISTORY.getFee());
+        expectedModel.enroll(student.getId(), lesson.getId());
+
+        // both are the first of their kind, so both are ID 1
+        assertCommandSuccess(new AddCommand(DANIEL_DETAILS, HISTORY_DETAILS), model,
+                "Enrolled Daniel Koh [Student ID: 1] in History [Lesson ID: 1]. Payment status: Unpaid.",
+                expectedModel);
+    }
+
+    //// lesson clashes
+
+    @Test
+    public void execute_newLessonThatOverlapsAnotherLesson_throwsCommandException() {
+        // MATHEMATICS is on Monday from 15:00 to 16:30
+        NewLesson overlapping = newLesson("History", "Primary 6", DayOfWeek.MONDAY, 16, 0, 17, 0);
+
+        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), overlapping), typicalModel(),
+                MESSAGE_LESSON_CLASH);
+    }
+
+    @Test
+    public void execute_newLessonThatContainsOrIsInsideAnotherLesson_throwsCommandException() {
+        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()),
+                newLesson("History", "Primary 6", DayOfWeek.MONDAY, 14, 0, 18, 0)), typicalModel(),
+                MESSAGE_LESSON_CLASH);
+        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()),
+                newLesson("History", "Primary 6", DayOfWeek.MONDAY, 15, 30, 16, 0)), typicalModel(),
+                MESSAGE_LESSON_CLASH);
+    }
+
+    @Test
+    public void execute_newLessonThatStartsWhenAnotherEnds_isAllowed() {
+        NewLesson backToBack = newLesson("History", "Primary 6", DayOfWeek.MONDAY, 16, 30, 17, 30);
+        Model model = typicalModel();
+        Model expectedModel = typicalModel();
+        Lesson created = expectedModel.addLesson(backToBack.subject(), backToBack.level(), backToBack.timeslot(),
+                backToBack.fee());
+        expectedModel.enroll(ALICE.getId(), created.getId());
+
+        assertCommandSuccess(new AddCommand(new ExistingStudent(ALICE.getId()), backToBack), model,
+                "Enrolled Alice Tan [Student ID: 1] in History [Lesson ID: 6]. Payment status: Unpaid.",
+                expectedModel);
+    }
+
+    @Test
+    public void execute_newLessonThatEndsWhenAnotherStarts_isAllowed() {
+        NewLesson backToBack = newLesson("History", "Primary 6", DayOfWeek.MONDAY, 14, 0, 15, 0);
+        Model model = typicalModel();
+        Model expectedModel = typicalModel();
+        Lesson created = expectedModel.addLesson(backToBack.subject(), backToBack.level(), backToBack.timeslot(),
+                backToBack.fee());
+        expectedModel.enroll(ALICE.getId(), created.getId());
+
+        assertCommandSuccess(new AddCommand(new ExistingStudent(ALICE.getId()), backToBack), model,
+                "Enrolled Alice Tan [Student ID: 1] in History [Lesson ID: 6]. Payment status: Unpaid.",
+                expectedModel);
+    }
+
+    @Test
+    public void execute_newLessonAtTheSameHoursOnAnotherDay_isAllowed() {
+        NewLesson tuesday = newLesson("History", "Primary 6", DayOfWeek.TUESDAY, 15, 0, 16, 30);
+        Model model = typicalModel();
+        Model expectedModel = typicalModel();
+        Lesson created = expectedModel.addLesson(tuesday.subject(), tuesday.level(), tuesday.timeslot(),
+                tuesday.fee());
+        expectedModel.enroll(ALICE.getId(), created.getId());
+
+        assertCommandSuccess(new AddCommand(new ExistingStudent(ALICE.getId()), tuesday), model,
+                "Enrolled Alice Tan [Student ID: 1] in History [Lesson ID: 6]. Payment status: Unpaid.",
+                expectedModel);
+    }
+
+    @Test
+    public void execute_newLessonClashesWithAnyLesson_notOnlyTheStudentsOwn() {
+        // CHLOE is only in ENGLISH on Saturday, but there is one tutor, so Alice's Monday lesson still blocks it
+        NewLesson primaryFour = newLesson("Art", "Primary 4", DayOfWeek.MONDAY, 15, 30, 16, 0);
+
+        assertCommandFailure(new AddCommand(new ExistingStudent(CHLOE.getId()), primaryFour), typicalModel(),
+                MESSAGE_LESSON_CLASH);
+    }
+
+    //// duplicates
+
+    @Test
+    public void execute_duplicateStudent_throwsCommandException() {
+        // the same name and contact as ALICE, even though the level is different and would match ENGLISH
+        NewStudent duplicate = new NewStudent(ALICE.getName(), ALICE.getContact(), ENGLISH.getLevel());
+
+        assertCommandFailure(new AddCommand(duplicate, new ExistingLesson(ENGLISH.getId())), typicalModel(),
+                String.format(MESSAGE_DUPLICATE_STUDENT, ALICE.getId()));
+    }
+
+    @Test
+    public void execute_duplicateLesson_throwsCommandException() {
+        // the same subject, level and timeslot as MATHEMATICS, with a different fee
+        NewLesson duplicate = new NewLesson(MATHEMATICS.getSubject(), MATHEMATICS.getLevel(),
+                MATHEMATICS.getTimeslot(), new Fee("99.00"));
+
+        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), duplicate), typicalModel(),
+                String.format(MESSAGE_DUPLICATE_LESSON, MATHEMATICS.getId()));
+    }
+
+    @Test
+    public void execute_duplicateLessonWithTheLevelSpelledDifferently_throwsCommandException() {
+        NewLesson duplicate = new NewLesson(MATHEMATICS.getSubject(), new Level("primary    6"),
+                MATHEMATICS.getTimeslot(), MATHEMATICS.getFee());
+
+        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), duplicate), typicalModel(),
+                String.format(MESSAGE_DUPLICATE_LESSON, MATHEMATICS.getId()));
+    }
+
+    @Test
+    public void execute_sameSubjectAndTimeslotButAnotherLevel_isAClashNotADuplicate() {
+        NewStudent primaryFive = new NewStudent(DANIEL.getName(), DANIEL.getContact(), new Level("Primary 5"));
+        NewLesson otherLevel = new NewLesson(MATHEMATICS.getSubject(), new Level("Primary 5"),
+                MATHEMATICS.getTimeslot(), MATHEMATICS.getFee());
+
+        assertCommandFailure(new AddCommand(primaryFive, otherLevel), typicalModel(), MESSAGE_LESSON_CLASH);
+    }
+
+    //// the order of the checks
+
+    @Test
+    public void execute_missingLessonIsReportedBeforeADuplicateStudent() {
+        NewStudent duplicate = new NewStudent(ALICE.getName(), ALICE.getContact(), ALICE.getLevel());
+
+        assertCommandFailure(new AddCommand(duplicate, new ExistingLesson(new LessonId(99))), typicalModel(),
+                String.format(MESSAGE_LESSON_NOT_FOUND, 99));
+    }
+
+    @Test
+    public void execute_missingStudentIsReportedBeforeADuplicateLesson() {
+        NewLesson duplicate = new NewLesson(MATHEMATICS.getSubject(), MATHEMATICS.getLevel(),
+                MATHEMATICS.getTimeslot(), MATHEMATICS.getFee());
+
+        assertCommandFailure(new AddCommand(new ExistingStudent(new StudentId(99)), duplicate), typicalModel(),
+                String.format(MESSAGE_STUDENT_NOT_FOUND, 99));
+    }
+
+    @Test
+    public void execute_duplicateStudentIsReportedBeforeADuplicateLesson() {
+        NewStudent duplicateStudent = new NewStudent(ALICE.getName(), ALICE.getContact(), ALICE.getLevel());
+        NewLesson duplicateLesson = new NewLesson(MATHEMATICS.getSubject(), MATHEMATICS.getLevel(),
+                MATHEMATICS.getTimeslot(), MATHEMATICS.getFee());
+
+        assertCommandFailure(new AddCommand(duplicateStudent, duplicateLesson), typicalModel(),
+                String.format(MESSAGE_DUPLICATE_STUDENT, ALICE.getId()));
+    }
+
+    @Test
+    public void execute_duplicateIsReportedBeforeALevelMismatch() {
+        // a duplicate of ALICE whose level, Primary 4, also does not match MATHEMATICS, which is Primary 6
+        NewStudent duplicate = new NewStudent(ALICE.getName(), ALICE.getContact(), ENGLISH.getLevel());
+
+        assertCommandFailure(new AddCommand(duplicate, new ExistingLesson(MATHEMATICS.getId())), typicalModel(),
+                String.format(MESSAGE_DUPLICATE_STUDENT, ALICE.getId()));
+    }
+
+    @Test
+    public void execute_levelMismatchIsReportedBeforeAClash() {
+        // a Primary 4 lesson at the same time as MATHEMATICS, for a Primary 6 student
+        NewLesson wrongLevelAndClashing = new NewLesson(new Subject("Art"), new Level("Primary 4"),
+                MATHEMATICS.getTimeslot(), new Fee("30"));
+
+        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), wrongLevelAndClashing),
+                typicalModel(), MESSAGE_LEVEL_MISMATCH);
+    }
+
+    //// a failed command creates nothing
+
+    @Test
+    public void execute_newStudentAndClashingNewLesson_createsNeitherAndUsesNoId() {
+        // assertCommandFailure compares the whole data, including the ID counters
+        NewLesson clashing = newLesson("History", "Primary 6", DayOfWeek.MONDAY, 16, 0, 17, 0);
+
+        assertCommandFailure(new AddCommand(DANIEL_DETAILS, clashing), typicalModel(), MESSAGE_LESSON_CLASH);
+    }
+
+    @Test
+    public void execute_newStudentAndNewLessonOfDifferentLevels_createsNeitherAndUsesNoId() {
+        NewLesson primaryFour = newLesson("Art", "Primary 4", DayOfWeek.TUESDAY, 10, 0, 11, 0);
+
+        assertCommandFailure(new AddCommand(DANIEL_DETAILS, primaryFour), typicalModel(), MESSAGE_LEVEL_MISMATCH);
+    }
+
+    @Test
+    public void execute_newStudentAndMissingLesson_createsNothing() {
+        assertCommandFailure(new AddCommand(DANIEL_DETAILS, new ExistingLesson(new LessonId(99))), typicalModel(),
+                String.format(MESSAGE_LESSON_NOT_FOUND, 99));
+    }
+
+    @Test
+    public void execute_newStudentAndExistingLessonOfAnotherLevel_createsNoStudent() {
+        // a Primary 4 student cannot join MATHEMATICS, which is Primary 6
+        NewStudent primaryFour = new NewStudent(DANIEL.getName(), DANIEL.getContact(), new Level("Primary 4"));
+
+        assertCommandFailure(new AddCommand(primaryFour, new ExistingLesson(MATHEMATICS.getId())), typicalModel(),
+                MESSAGE_LEVEL_MISMATCH);
+    }
+
+    @Test
+    public void execute_newLessonAndMismatchedExistingStudent_createsNoLesson() {
+        // ALICE is Primary 6; the new lesson is Primary 4
+        NewLesson primaryFour = newLesson("Art", "Primary 4", DayOfWeek.TUESDAY, 10, 0, 11, 0);
+
+        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), primaryFour), typicalModel(),
+                MESSAGE_LEVEL_MISMATCH);
+    }
+
+    private static Model typicalModel() {
+        return new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+    }
+
+    private static NewLesson newLesson(String subject, String level, DayOfWeek day, int startHour, int startMinute,
+            int endHour, int endMinute) {
+        return new NewLesson(new Subject(subject), new Level(level),
+                new Timeslot(day, LocalTime.of(startHour, startMinute), LocalTime.of(endHour, endMinute)),
+                new Fee("40.00"));
     }
 }
