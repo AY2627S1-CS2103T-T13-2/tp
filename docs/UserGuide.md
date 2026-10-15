@@ -83,9 +83,19 @@ Format: `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL 
 
 ### Deleting a student or a lesson: `delete`
 
-_To be written by the owner of `delete`. Specification codes: DEL-1 to DEL-6._
+Deletes a student or lesson using its ID. Deleting a student also removes the student's enrollments; deleting a lesson also removes its enrollments. The other records remain in the app.
 
 Format: `delete student|lesson ID`
+
+* `student|lesson` specifies whether the ID belongs to a student or a lesson. The keyword is case-insensitive.
+* `ID` must be a positive whole number. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
+
+Examples:
+
+* `delete student 3` : Deletes the student with ID 3 and the student's enrollments.
+* `delete lesson 2` : Deletes the lesson with ID 2 and its enrollments.
+
+If no record of the specified type has that ID, the command reports that the student or lesson was not found and does not delete anything. For example, an ID belonging to a lesson cannot be used with `delete student`.
 
 ### Listing students or lessons: `list`
 
@@ -151,7 +161,7 @@ _Details coming soon ..._
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> _Examples to be added by the owner of `add`._
-**Delete** | `delete student\|lesson ID` <br> _Examples to be added by the owner of `delete`._
+**Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
 **Filter** | `filter student\|lesson ID` <br> _Examples to be added by the owner of `filter`._
 **List**   | `list [students\|lessons]` <br> _Examples to be added by the owner of `list`._
 **Mark**   | `mark ID` <br> _Examples to be added by the owner of `mark`._
