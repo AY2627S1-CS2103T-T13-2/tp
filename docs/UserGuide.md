@@ -196,9 +196,21 @@ Format: `mark ID`
 
 ### Showing a student's lessons or a lesson's students: `filter`
 
-_To be written by the owner of `filter`. Specification codes: FLT-1 to FLT-9 (a draft that is not yet agreed)._
+Shows only the lessons that one student is enrolled in, or only the students enrolled in one lesson.
 
 Format: `filter student|lesson ID`
+
+* Shows a student's lessons: `filter student ID`.
+* Shows a lesson's students: `filter lesson ID`.
+* The `ID` refers to the student ID or lesson ID shown in the displayed list, not its position in the list.
+* The specified `ID` must belong to an existing student or lesson.
+* Filtering replaces any earlier filter; only one filter can be active at a time.
+* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson switches it to **Students**.
+* To clear the filter and show every student and lesson again, use `list`.
+
+Examples:
+* `filter student 1` shows only the lessons that the student with ID `1` is enrolled in.
+* `filter lesson 2` shows only the students enrolled in the lesson with ID `2`.
 
 ### Exiting the program: `exit`
 
@@ -247,7 +259,7 @@ Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> _Examples to be added by the owner of `add`._
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
-**Filter** | `filter student\|lesson ID` <br> _Examples to be added by the owner of `filter`._
+**Filter** | `filter student\|lesson ID` <br> e.g., `filter student 1`, `filter lesson 2`
 **List**   | `list [students\|lessons]` <br> _Examples to be added by the owner of `list`._
 **Mark**   | `mark ID` <br> _Examples to be added by the owner of `mark`._
 **Help**   | `help`
