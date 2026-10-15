@@ -190,9 +190,40 @@ Format: `list [students|lessons]`
 
 ### Marking a student as paid: `mark`
 
-_To be written by the owner of `mark`. Specification codes: MRK-1 to MRK-4._
+Marks a student as paid for the current month using the student's ID. Use this command after receiving the student's payment for the current month.
 
-Format: `mark ID`
+**Format:** `mark ID`
+
+**Parameters:**
+
+* `ID` — the student's positive whole-number ID. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
+* Leading and trailing spaces are ignored. No other text may follow the ID.
+
+**Examples:**
+
+* `mark 1` — marks the student with ID 1 as paid for the current month.
+* `mark 0012` — marks student 12 as paid; leading zeros are ignored.
+
+**Successful marking:**
+
+* The result box confirms the student's name, for example `Marked Alice Tan as paid for the current month.`
+* The student's payment status for the current month is updated to paid.
+
+**Notes:**
+
+* The command records payment only for the current month.
+* A student who is already marked as paid for the current month cannot be marked again.
+* Student IDs and lesson IDs are separate. The ID must belong to a student.
+* The ID must be a positive whole number. For example, `mark 0` and `mark -1` are invalid.
+
+**Errors:**
+
+* A missing ID or extra text after the ID — the app displays `Invalid command format. Use: mark ID`.
+* A malformed or non-positive ID — the app displays `ID must be a positive whole number.`
+* No student has that ID — the app displays `No student found with ID 999.` (using the requested ID). An ID belonging only to a lesson does not match.
+* The student is already marked as paid for the current month — the app displays `Alice Tan is already marked as paid for the current month.` (using the student's name).
+
+No data is changed on failure.
 
 ### Showing a student's lessons or a lesson's students: `filter`
 
@@ -249,6 +280,6 @@ Action     | Format, Examples
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
 **Filter** | `filter student\|lesson ID` <br> _Examples to be added by the owner of `filter`._
 **List**   | `list [students\|lessons]` <br> _Examples to be added by the owner of `list`._
-**Mark**   | `mark ID` <br> _Examples to be added by the owner of `mark`._
+**Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
 **Help**   | `help`
 **Exit**   | `exit`
