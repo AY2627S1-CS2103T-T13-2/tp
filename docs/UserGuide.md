@@ -77,15 +77,110 @@ Format: `help`
 
 ### Adding a student to a lesson: `add`
 
-_To be written by the owner of `add`. Specification codes: ADD-1 to ADD-15._
+Enrolls a student in a lesson. The student and the lesson can each be **new** (the app creates them) or **existing** (you refer to them by their ID).
 
 Format: `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]`
 
+<box type="tip" seamless>
+
+**Tip:** To find an ID, use `list students` or `list lessons` first.
+</box>
+
+#### How `s/` and `l/` work
+
+* `s/` is the student. A **whole number**, such as `3`, means the existing student with that ID. Anything else, such as `Daniel Koh`, is the **name of a new student**.
+* `l/` is the lesson. A **whole number**, such as `1`, means the existing lesson with that ID. Anything else, such as `Mathematics`, is the **subject of a new lesson**.
+* A name or a subject must contain at least one letter, so it can never be mistaken for an ID.
+
+Which other parameters you give depends on what is new. You can give the parameters in any order.
+
+Student | Lesson | What you give
+--------|--------|--------------
+existing | existing | `s/ID l/ID`
+new | existing | `s/NAME c/CONTACT slv/STUDENT_LEVEL l/ID`
+existing | new | `s/ID l/SUBJECT llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE`
+new | new | all of the above
+
+#### Parameters
+
+Parameter | Meaning | Needed when | Rules
+----------|---------|-------------|------
+`s/` | The student: an ID, or the name of a new student | always | A name has at most 100 characters: letters, numbers, spaces, apostrophes and hyphens, with at least one letter.
+`l/` | The lesson: an ID, or the subject of a new lesson | always | A subject has at most 50 characters: letters, numbers, spaces and hyphens, with at least one letter.
+`c/` | The student's contact number | the student is new | Digits only, from 3 to 15 digits.
+`slv/` | The student's level, such as `Primary 6` | the student is new | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
+`llv/` | The lesson's level, such as `Primary 6` | the lesson is new | The same as `slv/`.
+`d/` | The day of the week | the lesson is new | `Monday` to `Sunday`, in any letter case.
+`st/` | The start time | the lesson is new | In the 24-hour format `HH:mm`, such as `09:00`. A time such as `9:00` is not accepted.
+`et/` | The end time | the lesson is new | In the same format, and later than the start time.
+`f/` | The fee for one session | the lesson is new | More than zero, with at most two decimal places, such as `50` or `50.00`.
+
+Using a parameter that does not belong, such as `c/` with an existing student, is an error.
+
+#### Examples
+
+Each one is followed by the result you should see.
+
+1. `add s/Daniel Koh c/92223333 slv/Primary 6 l/1`: Enrolled Daniel Koh [Student ID: 4] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.
+1. `add s/3 l/Art llv/Primary 4 d/Tuesday st/10:00 et/11:00 f/40`: Enrolled Chloe Ng [Student ID: 3] in Art [Lesson ID: 5]. Payment status: Unpaid.
+1. `add s/Eve Ong c/90001111 slv/Primary 4 l/Drama llv/Primary 4 d/Wednesday st/10:00 et/11:00 f/35`: Enrolled Eve Ong [Student ID: 5] in Drama [Lesson ID: 6]. Payment status: Unpaid.
+1. `add s/4 l/2`: Enrolled Daniel Koh [Student ID: 4] in Science [Lesson ID: 2]. Payment status: Unpaid.
+1. `add s/2 l/Physics llv/Secondary 2 d/Friday st/14:00 et/15:00 f/55`: Enrolled Bryan Lim [Student ID: 2] in Physics [Lesson ID: 7]. Payment status: Paid.
+
+#### Possible sources of errors
+
+Each of these starts from the sample data. The command is shown first, then the message you see.
+
+Command | Message
+--------|--------
+`add s/1 l/1` | The student is already enrolled in this lesson.
+`add s/1 l/4` | Student level does not match lesson level.
+`add s/1 l/99` | No lesson found with ID 99.
+`add s/99 l/1` | No student found with ID 99.
+`add s/Alice Tan c/91234567 slv/Primary 6 l/1` | A student with the same name and contact already exists (Student ID: 1). Use the existing student ID.
+`add s/1 l/Mathematics llv/Primary 6 d/Monday st/15:00 et/16:30 f/60` | An identical lesson already exists (Lesson ID: 1). Use the existing lesson ID.
+`add s/1 l/History llv/Primary 6 d/Monday st/16:00 et/17:00 f/35` | Lesson clashes with an existing lesson.
+`add s/Daniel Koh slv/Primary 6 l/1` | Missing required parameter: c/.
+`add s/1 l/1 c/91234567` | c/ and slv/ can only be used when adding a new student.
+`add s/1 l/1 d/Monday` | llv/, d/, st/, et/ and f/ can only be used when adding a new lesson.
+`add s/1 s/2 l/1` | A parameter can only be specified once.
+`add s/Daniel Koh c/12 slv/Primary 6 l/1` | Invalid contact. Contact must contain between 3 and 15 digits.
+`add s/1 l/History llv/Primary 6 d/Monday st/9:00 et/10:00 f/35` | Invalid start time. Use the 24-hour format HH:mm.
+`add` | Invalid command format. Use: add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
+
 ### Deleting a student or a lesson: `delete`
 
-_To be written by the owner of `delete`. Specification codes: DEL-1 to DEL-6._
+Deletes a student or lesson using its ID. Use this command when you want to remove a record from the app.
 
-Format: `delete student|lesson ID`
+**Format:** `delete student|lesson ID`
+
+**Parameters:**
+
+* `student|lesson` — must be exactly `student` or `lesson` (case-insensitive). Abbreviations and repeating the keyword are not allowed.
+* `ID` — the record's positive whole-number ID. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
+* Leading and trailing spaces are ignored. No other text may follow the ID.
+
+**Examples:**
+
+* `delete student 3` — deletes the student with ID 3.
+* `delete lesson 2` — deletes the lesson with ID 2.
+* `delete STUDENT 0012` — deletes student 12; keyword case and leading zeros are ignored.
+
+**Successful deletion:**
+
+* The result box confirms the deleted record, for example `Deleted student: Alice Tan (ID: 12)`.
+* Deleting a lesson confirms its subject, level, timeslot and ID, for example `Deleted lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 7)`.
+
+**Notes:**
+
+* Deleting a student also removes all of that student's enrollments. Deleting a lesson removes all enrollments tied to that lesson. Other student and lesson records remain.
+* Deleting a record removes it from the displayed list when it is shown.
+* The ID must be a positive whole number. For example, `delete student 0` and `delete student -1` are invalid.
+
+**Errors:**
+
+* Missing or unknown kind, an abbreviation, a repeated kind, a missing or malformed ID, or extra text after the ID — the app displays `Invalid command format. Use: delete student|lesson ID`.
+* No record of the requested kind has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID). An ID belonging only to the other kind does not match. No data is changed on failure.
 
 ### Listing students or lessons: `list`
 
@@ -163,7 +258,7 @@ _Details coming soon ..._
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> _Examples to be added by the owner of `add`._
-**Delete** | `delete student\|lesson ID` <br> _Examples to be added by the owner of `delete`._
+**Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
 **Filter** | `filter student\|lesson ID` <br> e.g., `filter student 1`, `filter lesson 2`
 **List**   | `list [students\|lessons]` <br> _Examples to be added by the owner of `list`._
 **Mark**   | `mark ID` <br> _Examples to be added by the owner of `mark`._
