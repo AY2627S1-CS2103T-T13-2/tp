@@ -2,7 +2,9 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
+import static seedu.address.logic.Messages.MESSAGE_LESSON_NOT_FOUND;
 import static seedu.address.logic.Messages.MESSAGE_NOT_IMPLEMENTED;
+import static seedu.address.logic.Messages.MESSAGE_STUDENT_NOT_FOUND;
 
 import java.util.Objects;
 
@@ -11,11 +13,13 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.common.Level;
 import seedu.address.model.lesson.Fee;
+import seedu.address.model.lesson.Lesson;
 import seedu.address.model.lesson.LessonId;
 import seedu.address.model.lesson.Subject;
 import seedu.address.model.lesson.Timeslot;
 import seedu.address.model.student.Contact;
 import seedu.address.model.student.Name;
+import seedu.address.model.student.Student;
 import seedu.address.model.student.StudentId;
 
 /**
@@ -32,6 +36,14 @@ public class AddCommand extends Command {
     public static final String MESSAGE_USAGE = COMMAND_WORD + " s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] "
             + "[llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]";
 
+    public static final String MESSAGE_SUCCESS =
+            "Enrolled %1$s [Student ID: %2$s] in %3$s [Lesson ID: %4$s]. Payment status: %5$s.";
+    public static final String MESSAGE_ALREADY_ENROLLED = "The student is already enrolled in this lesson.";
+    public static final String MESSAGE_LEVEL_MISMATCH = "Student level does not match lesson level.";
+
+    private static final String PAID = "Paid";
+    private static final String UNPAID = "Unpaid";
+
     private final StudentRef student;
     private final LessonRef lesson;
 
@@ -44,9 +56,43 @@ public class AddCommand extends Command {
         this.lesson = lesson;
     }
 
+    /**
+     * Enrolls the student in the lesson. Every check runs before anything is changed, so a command that fails
+     * creates nothing. The first problem found is the one reported, in this order:
+     * <ol>
+     *   <li>the student exists, then the lesson exists</li>
+     *   <li>the student is not already enrolled in the lesson</li>
+     *   <li>the student's level is the same as the lesson's level</li>
+     * </ol>
+     */
     @Override
     public CommandResult execute(Model model) throws CommandException {
-        throw new CommandException(MESSAGE_NOT_IMPLEMENTED);
+        requireNonNull(model);
+
+        // Creating a new student or a new lesson comes with the next step of the implementation.
+        if (!(student instanceof ExistingStudent existingStudent)
+                || !(lesson instanceof ExistingLesson existingLesson)) {
+            throw new CommandException(MESSAGE_NOT_IMPLEMENTED);
+        }
+
+        Student studentToEnroll = model.findStudent(existingStudent.id())
+                .orElseThrow(() -> new CommandException(
+                        String.format(MESSAGE_STUDENT_NOT_FOUND, existingStudent.id())));
+        Lesson lessonToJoin = model.findLesson(existingLesson.id())
+                .orElseThrow(() -> new CommandException(
+                        String.format(MESSAGE_LESSON_NOT_FOUND, existingLesson.id())));
+
+        if (model.isEnrolled(studentToEnroll.getId(), lessonToJoin.getId())) {
+            throw new CommandException(MESSAGE_ALREADY_ENROLLED);
+        }
+        if (!studentToEnroll.getLevel().equals(lessonToJoin.getLevel())) {
+            throw new CommandException(MESSAGE_LEVEL_MISMATCH);
+        }
+
+        model.enroll(studentToEnroll.getId(), lessonToJoin.getId());
+        return new CommandResult(String.format(MESSAGE_SUCCESS, studentToEnroll.getName(), studentToEnroll.getId(),
+                lessonToJoin.getSubject(), lessonToJoin.getId(),
+                model.isPaid(studentToEnroll.getId()) ? PAID : UNPAID));
     }
 
     @Override
