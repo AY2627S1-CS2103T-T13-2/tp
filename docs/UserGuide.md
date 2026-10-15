@@ -83,19 +83,37 @@ Format: `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL 
 
 ### Deleting a student or a lesson: `delete`
 
-Deletes a student or lesson using its ID. Deleting a student also removes the student's enrollments; deleting a lesson also removes its enrollments. The other records remain in the app.
+Deletes a student or lesson using its ID. Use this command when you want to remove a record from the app.
 
-Format: `delete student|lesson ID`
+**Format:** `delete student|lesson ID`
 
-* `student|lesson` specifies whether the ID belongs to a student or a lesson. The keyword is case-insensitive.
-* `ID` must be a positive whole number. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
+**Parameters:**
 
-Examples:
+* `student|lesson` — must be exactly `student` or `lesson` (case-insensitive). Abbreviations and repeating the keyword are not allowed.
+* `ID` — the record's positive whole-number ID. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
+* Leading and trailing spaces are ignored. No other text may follow the ID.
 
-* `delete student 3` : Deletes the student with ID 3 and the student's enrollments.
-* `delete lesson 2` : Deletes the lesson with ID 2 and its enrollments.
+**Examples:**
 
-If no record of the specified type has that ID, the command reports that the student or lesson was not found and does not delete anything. For example, an ID belonging to a lesson cannot be used with `delete student`.
+* `delete student 3` — deletes the student with ID 3.
+* `delete lesson 2` — deletes the lesson with ID 2.
+* `delete STUDENT 0012` — deletes student 12; keyword case and leading zeros are ignored.
+
+**Successful deletion:**
+
+* The result box confirms the deleted record, for example `Deleted student: Alice Tan (ID: 12)`.
+* Deleting a lesson confirms its subject, level, timeslot and ID, for example `Deleted lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 7)`.
+
+**Notes:**
+
+* Deleting a student also removes all of that student's enrollments. Deleting a lesson removes all enrollments tied to that lesson. Other student and lesson records remain.
+* Deleting a record removes it from the displayed list when it is shown.
+* The ID must be a positive whole number. For example, `delete student 0` and `delete student -1` are invalid.
+
+**Errors:**
+
+* Missing or unknown kind, an abbreviation, a repeated kind, a missing or malformed ID, or extra text after the ID — the app displays `Invalid command format. Use: delete student|lesson ID`.
+* No record of the requested kind has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID). An ID belonging only to the other kind does not match. No data is changed on failure.
 
 ### Listing students or lessons: `list`
 
