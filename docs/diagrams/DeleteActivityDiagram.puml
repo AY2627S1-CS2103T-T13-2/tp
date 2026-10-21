@@ -1,0 +1,30 @@
+@startuml
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+
+start
+:User enters `delete KIND ID`;
+:Trim leading and trailing spaces;
+if () then ([valid format and positive ID])
+    :Look up the ID for the requested kind;
+    if () then ([matching record exists])
+        if () then ([KIND is student])
+            :Delete the student;
+            :Remove all enrollments for the student;
+            :Prepare student deletion confirmation;
+        else ([KIND is lesson])
+            :Delete the lesson;
+            :Remove all enrollments for the lesson;
+            :Prepare lesson deletion confirmation;
+        endif
+        :Save updated data;
+        :Refresh displayed lists;
+        :Show confirmation in result box;
+    else ([no matching record])
+        :Show kind-specific not-found error;
+    endif
+else ([invalid format or ID])
+    :Show `Invalid command format. Use: delete student|lesson ID`;
+endif
+stop
+@enduml
