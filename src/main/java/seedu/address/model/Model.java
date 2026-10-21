@@ -138,13 +138,13 @@ public interface Model {
 
     /**
      * Deletes the student and all of the student's enrollments, and returns the deleted student.
-     * The student must exist. If the list is being filtered by this student, the filter is cleared.
+     * The student must exist. Any active filter stays in place.
      */
     Student deleteStudent(StudentId studentId);
 
     /**
      * Deletes the lesson and all enrollments in it, and returns the deleted lesson.
-     * The lesson must exist. If the list is being filtered by this lesson, the filter is cleared.
+     * The lesson must exist. Any active filter stays in place.
      */
     Lesson deleteLesson(LessonId lessonId);
 

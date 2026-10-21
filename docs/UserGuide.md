@@ -190,7 +190,7 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 **Parameters:**
 
 * `student|lesson` — must be exactly `student` or `lesson` (case-insensitive). Abbreviations and repeating the keyword are not allowed.
-* `ID` — the record's positive whole-number ID. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
+* `ID` — the record's positive whole-number ID, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
 * Leading and trailing spaces are ignored. No other text may follow the ID.
 
 **Examples:**
@@ -207,7 +207,7 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 **Notes:**
 
 * Deleting a student also removes all of that student's enrollments. Deleting a lesson removes all enrollments tied to that lesson. Other student and lesson records remain.
-* Deleting a record removes it from the displayed list when it is shown.
+* Deleting a record removes it from the displayed list when it is shown. An active filter stays in place; if it refers to the deleted record, its filtered list becomes empty until you change or clear the filter.
 * The ID must be a positive whole number. For example, `delete student 0` and `delete student -1` are invalid.
 
 **Errors:**

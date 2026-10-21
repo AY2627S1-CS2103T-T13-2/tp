@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalClock.CLOCK;
 import static seedu.address.testutil.TypicalLessons.MATHEMATICS;
 import static seedu.address.testutil.TypicalLessons.getTypicalLessons;
@@ -24,6 +25,17 @@ import seedu.address.testutil.TuiTrackerBuilder;
 class DeleteCommandTest {
 
     private final Model model = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+
+    @Test
+    void constructor_nullId_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new DeleteCommand((StudentId) null));
+        assertThrows(NullPointerException.class, () -> new DeleteCommand((LessonId) null));
+    }
+
+    @Test
+    void execute_nullModel_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new DeleteCommand(ALICE.getId()).execute(null));
+    }
 
     @Test
     void execute_deleteStudent_removesStudentAndEnrollments() throws Exception {
@@ -64,6 +76,7 @@ class DeleteCommandTest {
         assertEquals("No lesson found with ID 999.", lessonError.getMessage());
         assertTrue(model.findStudent(ALICE.getId()).isPresent());
         assertTrue(model.findLesson(MATHEMATICS.getId()).isPresent());
+        assertTrue(model.isEnrolled(ALICE.getId(), MATHEMATICS.getId()));
     }
 
     @Test

@@ -3,6 +3,7 @@ package seedu.address.logic;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -71,10 +72,12 @@ public class LogicManager implements Logic {
         try {
             storage.saveTuiTracker(model.getTuiTracker());
         } catch (AccessDeniedException e) {
+            logger.log(Level.WARNING, "Could not save data; reverting command changes", e);
             model.setTuiTracker(before);
             throw new CommandException(command.getSaveFailureMessage(
                     String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage())), e);
         } catch (IOException ioe) {
+            logger.log(Level.WARNING, "Could not save data; reverting command changes", ioe);
             model.setTuiTracker(before);
             throw new CommandException(command.getSaveFailureMessage(
                     String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage())), ioe);
