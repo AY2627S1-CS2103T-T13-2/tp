@@ -161,7 +161,68 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Add feature
 
-_To be written by the owner of `add`._
+The `add` command enrolls a student in a lesson, and creates the student, the lesson, or both if they are new. It is the only command that creates students and lessons. It has four forms (each of the student and the lesson is new or existing) and many ways to fail, so its work is split into two steps: the parser works out **what the user asked for**, and the command checks that request and carries it out.
+
+#### Parsing the arguments
+
+`AddCommandParser` does not build a `Student` or a `Lesson`. It builds an `AddCommand` that holds a description of each side:
+
+* `AddCommand.StudentRef` is either an `ExistingStudent` (an ID) or a `NewStudent` (a name, a contact and a level).
+* `AddCommand.LessonRef` is either an `ExistingLesson` (an ID) or a `NewLesson` (a subject, a level, a timeslot and a fee).
+
+These are `sealed` interfaces implemented by records, so the compiler checks that every case is handled and `equals` comes for free, which the parser tests rely on.
+
+The parser works in this order, and reports the first problem it finds:
+
+1. The command is well formed: no text before the first parameter, and at least one parameter.
+2. No parameter is given more than once.
+3. Both `s/` and `l/` are given. Whether each is a whole number (an existing record) or not (a new one) decides everything after this.
+4. No parameter is given that does not belong to the form. For example, `c/` is not allowed with an existing student.
+5. No required parameter is missing, for example `c/` and `slv/` for a new student.
+6. Every value is valid, student first and then lesson, using the shared `ParserUtil` methods, which carry the exact error messages.
+
+#### Executing the command
+
+`AddCommand#execute(Model)` checks the whole request **before it creates or changes anything**, in this order, and reports the first problem it finds:
+
+1. The student exists, then the lesson exists (only for an existing student or lesson).
+2. A new student is not a duplicate, a new lesson is not a duplicate, and the student is not already enrolled in the lesson.
+3. The student's level is the same as the lesson's level.
+4. A new lesson does not clash with an existing lesson.
+
+Only then does it create what is new (`Model#addStudent`, `Model#addLesson`) and call `Model#enroll`. The IDs in the result message come from the objects that the `Model` returns.
+
+The sequence diagram below shows `execute("add s/Daniel Koh c/92223333 slv/Primary 6 l/1")`, a new student joining an existing lesson. The checks that do not apply to this form (the clash check, which is only for a new lesson, and the comparison of levels, which is done inside `AddCommand`) are left out to keep the diagram readable.
+
+<puml src="diagrams/AddSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `add` Command" />
+
+#### Design considerations
+
+**Aspect: what the parser hands to the command**
+
+* **Alternative 1 (current choice):** a description of each side, either an ID or the details of something new.
+  * Pros: Nothing exists until every check has passed. The `Model` generates IDs when it creates a record, so the parser could not build a complete `Student` anyway.
+  * Cons: The command needs a little logic to handle each of the two cases for each side.
+* **Alternative 2:** the parser builds `Student` and `Lesson` objects.
+  * Pros: `AddCommand` would be simpler.
+  * Cons: A `Student` needs an ID, which only the `Model` can give. The parser would need placeholder IDs, and a failed command could still use up a real one.
+
+**Aspect: when new records are created**
+
+* **Alternative 1 (current choice):** run every check first, then create.
+  * Pros: A command that fails creates nothing and uses no ID, so the ID counters have no gaps from failed commands.
+  * Cons: The checks and the creation are separate code that must be kept in step.
+* **Alternative 2:** create as the checks go, and undo if one fails.
+  * Pros: Each check could sit next to the code that depends on it.
+  * Cons: Undoing must also put the ID counters back. `LogicManager` only undoes a command when saving fails, so this would need a second mechanism.
+
+**Aspect: the order of the checks**
+
+The order is deliberate. Duplicates are checked **before** clashes because an identical lesson always overlaps the original: if the clash were checked first, the more helpful message "an identical lesson already exists" could never be shown. Existence is checked first because the other checks need the records. Levels are checked before clashes so that the user hears about a wrong level before a scheduling problem.
+
+#### Testing
+
+`AddCommandParserTest` has one test for each way the parser can fail, and `AddCommandTest` covers each form, each rule and each pair of checks whose order matters.
 
 ### Delete feature
 
