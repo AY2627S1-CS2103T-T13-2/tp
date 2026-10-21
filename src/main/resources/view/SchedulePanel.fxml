@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      spacing="8" styleClass="schedule-panel">
+  <padding>
+    <Insets top="10" right="10" bottom="10" left="10" />
+  </padding>
+  <Label text="Weekly schedule" styleClass="schedule-title" />
+  <Label text="Recurring lessons, Monday to Sunday" styleClass="schedule-subtitle" />
+  <Label fx:id="warningLabel" styleClass="schedule-warning" wrapText="true" />
+  <ScrollPane fitToHeight="true" hbarPolicy="AS_NEEDED" vbarPolicy="AS_NEEDED"
+              styleClass="schedule-scroll" VBox.vgrow="ALWAYS">
+    <content>
+      <HBox fx:id="weekColumns" spacing="8" />
+    </content>
+  </ScrollPane>
+</VBox>

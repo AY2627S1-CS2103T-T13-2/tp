@@ -138,6 +138,14 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void getAllLessons_ignoresActiveFilterForSchedule() {
+        model.filterLessonsByStudent(ALICE.getId());
+
+        assertEquals(2, logic.getLessonList().size());
+        assertEquals(4, logic.getAllLessons().size());
+    }
+
+    @Test
     public void listViewProperty_followsTheModel() {
         assertEquals(ListView.STUDENTS, logic.listViewProperty().get());
 
