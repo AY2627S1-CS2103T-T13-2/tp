@@ -64,6 +64,24 @@
     -fx-text-fill: #f5f7fa;
 }
 
+.schedule-day-scroll,
+.schedule-day-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.schedule-timeline {
+    -fx-background-color: #343b42;
+}
+
+.schedule-hour-line {
+    -fx-background-color: #58636d;
+}
+
+.schedule-hour-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #b7c1ca;
+}
+
 .schedule-empty {
     -fx-font-style: italic;
     -fx-text-fill: #b7c1ca;
@@ -72,6 +90,14 @@
 .schedule-lesson {
     -fx-background-color: #314e60;
     -fx-background-radius: 5px;
+    -fx-padding: 0;
+}
+
+.schedule-lesson .viewport {
+    -fx-background-color: #314e60;
+}
+
+.schedule-lesson-content {
     -fx-padding: 9px;
 }
 

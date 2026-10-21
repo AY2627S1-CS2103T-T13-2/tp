@@ -3,6 +3,7 @@ package seedu.address.ui;
 import static java.util.Objects.requireNonNull;
 
 import java.time.DayOfWeek;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -16,6 +17,10 @@ import seedu.address.model.lesson.LessonId;
 
 /** Groups recurring lessons by weekday and identifies overlaps without hiding either lesson. */
 final class ScheduleLayout {
+
+    /** A lesson's horizontal track within its day. */
+    record PlacedLesson(Lesson lesson, int lane) {
+    }
 
     private static final Comparator<Lesson> LESSON_ORDER = Comparator
             .comparing((Lesson lesson) -> lesson.getTimeslot().getStart())
@@ -55,5 +60,32 @@ final class ScheduleLayout {
             }
         }
         return overlapping;
+    }
+
+    /**
+     * Assigns simultaneous lessons different lanes so their cards remain visible.
+     * A lane becomes available as soon as its previous lesson ends.
+     */
+    static List<PlacedLesson> placeInLanes(List<Lesson> lessons) {
+        requireNonNull(lessons);
+        List<Lesson> ordered = new ArrayList<>(lessons);
+        ordered.sort(LESSON_ORDER);
+
+        List<LocalTime> laneEndTimes = new ArrayList<>();
+        List<PlacedLesson> placements = new ArrayList<>();
+        for (Lesson lesson : ordered) {
+            LocalTime start = lesson.getTimeslot().getStart();
+            int lane = 0;
+            while (lane < laneEndTimes.size() && start.isBefore(laneEndTimes.get(lane))) {
+                lane++;
+            }
+            if (lane == laneEndTimes.size()) {
+                laneEndTimes.add(lesson.getTimeslot().getEnd());
+            } else {
+                laneEndTimes.set(lane, lesson.getTimeslot().getEnd());
+            }
+            placements.add(new PlacedLesson(lesson, lane));
+        }
+        return placements;
     }
 }
