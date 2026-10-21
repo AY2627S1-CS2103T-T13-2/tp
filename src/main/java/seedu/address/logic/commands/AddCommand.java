@@ -7,7 +7,9 @@ import static seedu.address.logic.Messages.MESSAGE_STUDENT_NOT_FOUND;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
@@ -49,6 +51,8 @@ public class AddCommand extends Command {
     private static final String PAID = "Paid";
     private static final String UNPAID = "Unpaid";
 
+    private static final Logger logger = LogsCenter.getLogger(AddCommand.class);
+
     private final StudentRef student;
     private final LessonRef lesson;
 
@@ -78,9 +82,25 @@ public class AddCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+        logger.fine("Executing add command: " + describeReferences());
+        try {
+            return enroll(model);
+        } catch (CommandException e) {
+            // A rejected command is the user's mistake and not a fault, so it is logged at info and not warning.
+            // The messages only ever hold IDs, never names or contact numbers.
+            logger.info("Rejected add command: " + e.getMessage());
+            throw e;
+        }
+    }
 
+    private CommandResult enroll(Model model) throws CommandException {
         Optional<Student> existingStudent = findExistingStudent(model);
         Optional<Lesson> existingLesson = findExistingLesson(model);
+        // A student or lesson is resolved exactly when it was referred to by ID; the steps below rely on this.
+        assert (student instanceof ExistingStudent) == existingStudent.isPresent()
+                : "An existing student must be found if, and only if, the student was given by ID";
+        assert (lesson instanceof ExistingLesson) == existingLesson.isPresent()
+                : "An existing lesson must be found if, and only if, the lesson was given by ID";
 
         checkForDuplicates(model, existingStudent, existingLesson);
 
@@ -101,9 +121,23 @@ public class AddCommand extends Command {
                 : existingLesson.orElseThrow();
 
         model.enroll(studentToEnroll.getId(), lessonToJoin.getId());
+        assert model.isEnrolled(studentToEnroll.getId(), lessonToJoin.getId())
+                : "Student " + studentToEnroll.getId() + " should be enrolled in lesson " + lessonToJoin.getId();
+        logger.info("Enrolled student " + studentToEnroll.getId() + " in lesson " + lessonToJoin.getId());
         return new CommandResult(String.format(MESSAGE_SUCCESS, studentToEnroll.getName(), studentToEnroll.getId(),
                 lessonToJoin.getSubject(), lessonToJoin.getId(),
                 model.isPaid(studentToEnroll.getId()) ? PAID : UNPAID));
+    }
+
+    /**
+     * Returns a description of what the command refers to, for the log. It has IDs only, never names or contacts.
+     */
+    private String describeReferences() {
+        String studentDescription = student instanceof ExistingStudent existing ? "student " + existing.id()
+                : "new student";
+        String lessonDescription = lesson instanceof ExistingLesson existing ? "lesson " + existing.id()
+                : "new lesson";
+        return studentDescription + ", " + lessonDescription;
     }
 
     /**

@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_CONTACT;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_DAY;
@@ -15,9 +16,12 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.AddCommand.ExistingLesson;
 import seedu.address.logic.commands.AddCommand.ExistingStudent;
@@ -55,6 +59,8 @@ public class AddCommandParser implements Parser<AddCommand> {
     public static final String MESSAGE_LESSON_PARAMETERS_NOT_ALLOWED =
             "llv/, d/, st/, et/ and f/ can only be used when adding a new lesson.";
 
+    private static final Logger logger = LogsCenter.getLogger(AddCommandParser.class);
+
     private static final Prefix[] ALL_PREFIXES = {PREFIX_STUDENT, PREFIX_LESSON, PREFIX_CONTACT,
         PREFIX_STUDENT_LEVEL, PREFIX_LESSON_LEVEL, PREFIX_DAY, PREFIX_START_TIME, PREFIX_END_TIME, PREFIX_FEE};
 
@@ -72,6 +78,17 @@ public class AddCommandParser implements Parser<AddCommand> {
      * @throws ParseException if the user input does not conform to the expected format
      */
     public AddCommand parse(String args) throws ParseException {
+        requireNonNull(args);
+        try {
+            return parseArguments(args);
+        } catch (ParseException e) {
+            // Only the error message is logged, never the input, because the input holds names and contact numbers.
+            logger.fine("Rejected add command: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    private AddCommand parseArguments(String args) throws ParseException {
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, ALL_PREFIXES);
 
         boolean hasNoParameters = Stream.of(ALL_PREFIXES).noneMatch(prefix -> argMultimap.getValue(prefix).isPresent());
@@ -86,10 +103,12 @@ public class AddCommandParser implements Parser<AddCommand> {
         if (!missing.isEmpty()) {
             throw missingParameter(missing);
         }
-        String studentValue = argMultimap.getValue(PREFIX_STUDENT).get();
-        String lessonValue = argMultimap.getValue(PREFIX_LESSON).get();
+        String studentValue = requiredValue(argMultimap, PREFIX_STUDENT);
+        String lessonValue = requiredValue(argMultimap, PREFIX_LESSON);
         boolean isNewStudent = !ParserUtil.isId(studentValue);
         boolean isNewLesson = !ParserUtil.isId(lessonValue);
+        logger.fine("Parsing add command: " + (isNewStudent ? "new" : "existing") + " student, "
+                + (isNewLesson ? "new" : "existing") + " lesson");
 
         if (!isNewStudent && anyGiven(argMultimap, NEW_STUDENT_PREFIXES)) {
             throw new ParseException(MESSAGE_STUDENT_PARAMETERS_NOT_ALLOWED);
@@ -120,9 +139,9 @@ public class AddCommandParser implements Parser<AddCommand> {
 
     private static StudentRef parseNewStudent(ArgumentMultimap argMultimap) throws ParseException {
         return new NewStudent(
-                ParserUtil.parseName(argMultimap.getValue(PREFIX_STUDENT).get()),
-                ParserUtil.parseContact(argMultimap.getValue(PREFIX_CONTACT).get()),
-                ParserUtil.parseStudentLevel(argMultimap.getValue(PREFIX_STUDENT_LEVEL).get()));
+                ParserUtil.parseName(requiredValue(argMultimap, PREFIX_STUDENT)),
+                ParserUtil.parseContact(requiredValue(argMultimap, PREFIX_CONTACT)),
+                ParserUtil.parseStudentLevel(requiredValue(argMultimap, PREFIX_STUDENT_LEVEL)));
     }
 
     private static LessonRef parseExistingLesson(String value) throws ParseException {
@@ -130,13 +149,25 @@ public class AddCommandParser implements Parser<AddCommand> {
     }
 
     private static LessonRef parseNewLesson(ArgumentMultimap argMultimap) throws ParseException {
-        Subject subject = ParserUtil.parseSubject(argMultimap.getValue(PREFIX_LESSON).get());
-        Level level = ParserUtil.parseLessonLevel(argMultimap.getValue(PREFIX_LESSON_LEVEL).get());
-        DayOfWeek day = ParserUtil.parseDay(argMultimap.getValue(PREFIX_DAY).get());
-        LocalTime start = ParserUtil.parseStartTime(argMultimap.getValue(PREFIX_START_TIME).get());
-        LocalTime end = ParserUtil.parseEndTime(argMultimap.getValue(PREFIX_END_TIME).get(), start);
-        Fee fee = ParserUtil.parseFee(argMultimap.getValue(PREFIX_FEE).get());
+        Subject subject = ParserUtil.parseSubject(requiredValue(argMultimap, PREFIX_LESSON));
+        Level level = ParserUtil.parseLessonLevel(requiredValue(argMultimap, PREFIX_LESSON_LEVEL));
+        DayOfWeek day = ParserUtil.parseDay(requiredValue(argMultimap, PREFIX_DAY));
+        LocalTime start = ParserUtil.parseStartTime(requiredValue(argMultimap, PREFIX_START_TIME));
+        LocalTime end = ParserUtil.parseEndTime(requiredValue(argMultimap, PREFIX_END_TIME), start);
+        assert Timeslot.isValidTimeslot(start, end) : "parseEndTime must reject an end time that is not after start";
+        Fee fee = ParserUtil.parseFee(requiredValue(argMultimap, PREFIX_FEE));
         return new NewLesson(subject, level, new Timeslot(day, start, end), fee);
+    }
+
+    /**
+     * Returns the value of {@code prefix}, which must have been given.
+     * The missing-parameter checks in {@link #parseArguments(String)} run first, so a missing value here is a bug
+     * in this class and not a mistake by the user.
+     */
+    private static String requiredValue(ArgumentMultimap argMultimap, Prefix prefix) {
+        Optional<String> value = argMultimap.getValue(prefix);
+        assert value.isPresent() : "Required parameter " + prefix + " should have been checked before it is read";
+        return value.get();
     }
 
     /**
