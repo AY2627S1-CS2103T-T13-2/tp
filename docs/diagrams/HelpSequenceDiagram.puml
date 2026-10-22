@@ -1,0 +1,66 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box UI UI_COLOR_T1
+participant ":MainWindow" as MainWindow UI_COLOR
+participant ":HelpWindow" as HelpWindow UI_COLOR
+end box
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant "h:HelpCommand" as HelpCommand LOGIC_COLOR
+participant "r:CommandResult" as CommandResult LOGIC_COLOR
+end box
+
+[-> MainWindow : executeCommand("help")
+activate MainWindow
+
+MainWindow -> LogicManager : execute("help")
+activate LogicManager
+
+LogicManager -> AddressBookParser : parseCommand("help")
+activate AddressBookParser
+
+create HelpCommand
+AddressBookParser -> HelpCommand : HelpCommand()
+activate HelpCommand
+HelpCommand --> AddressBookParser : h
+deactivate HelpCommand
+
+AddressBookParser --> LogicManager : h
+deactivate AddressBookParser
+
+LogicManager -> HelpCommand : execute(model)
+activate HelpCommand
+
+create CommandResult
+HelpCommand -> CommandResult : CommandResult(message, true, false)
+activate CommandResult
+CommandResult --> HelpCommand : r
+deactivate CommandResult
+
+HelpCommand --> LogicManager : r
+deactivate HelpCommand
+LogicManager --> MainWindow : r
+deactivate LogicManager
+
+MainWindow -> CommandResult : isShowHelp()
+activate CommandResult
+CommandResult --> MainWindow : true
+deactivate CommandResult
+
+MainWindow -> HelpWindow : isShowing()
+activate HelpWindow
+HelpWindow --> MainWindow : false
+deactivate HelpWindow
+
+MainWindow -> HelpWindow : show()
+activate HelpWindow
+HelpWindow --> MainWindow
+deactivate HelpWindow
+
+[<-- MainWindow : r
+deactivate MainWindow
+@enduml
