@@ -177,26 +177,26 @@ _To be written by the owner of `mark`._
 
 ### Filter feature
 
-The `filter` command narrows the displayed list down to one student's lessons or one lesson's students. Unlike `add`, it never creates or changes data — it only changes what `Model` currently shows, so its implementation is much smaller.
+The `filter` command narrows the displayed list down to one student's lessons, one lesson's students, or the lessons on one day of the week. Unlike `add`, it never creates or changes data — it only changes what `Model` currently shows, so its implementation is much smaller.
 
 #### Parsing the arguments
 
-`FilterCommandParser` expects exactly two tokens: a keyword (`student` or `lesson`) and an ID.
+`FilterCommandParser` expects exactly two tokens: a keyword (`student`, `lesson` or `day`) and a value.
 
 1. The arguments split into exactly two whitespace-separated tokens; any other shape is rejected with `FilterCommand.MESSAGE_USAGE`.
-2. The first token must be exactly `student` or `lesson`; any other keyword is rejected the same way.
-3. The second token is parsed as a `StudentId` or `LessonId` using the shared `ParserUtil` methods, which carry the exact error messages.
+2. The first token must be exactly `student`, `lesson` or `day`; any other keyword is rejected the same way.
+3. The second token is parsed using the shared `ParserUtil` methods, which carry the exact error messages: `parseStudentId`/`parseLessonId` for the first two forms, `parseDay` (letter case ignored) for `day`.
 
-The parser builds the matching `FilterCommand` directly — `FilterCommand(StudentId)` or `FilterCommand(LessonId)` — there is no intermediate "reference" object like `AddCommand.StudentRef`/`LessonRef`, because a filter only ever needs an ID, never new details.
+The parser builds the matching `FilterCommand` directly — `FilterCommand(StudentId)`, `FilterCommand(LessonId)` or `FilterCommand(DayOfWeek)` — there is no intermediate "reference" object like `AddCommand.StudentRef`/`LessonRef`, because a filter only ever needs an ID or a day, never new details.
 
 #### Executing the command
 
-`FilterCommand#execute(Model)` does two things, in order:
+`FilterCommand#execute(Model)` branches on which of its three fields is set (`studentId`, `lessonId` or `day` — exactly one is non-null):
 
-1. Confirms the ID refers to an existing student or lesson, otherwise throws a `CommandException` (`MESSAGE_STUDENT_NOT_FOUND` / `MESSAGE_LESSON_NOT_FOUND`).
-2. Delegates to `Model#filterLessonsByStudent(StudentId)` or `Model#filterStudentsByLesson(LessonId)`, then calls `Model#setListView(ListView)` so the UI switches to the list that was just filtered.
+1. For `studentId`/`lessonId`, it first confirms the ID refers to an existing student or lesson, otherwise throws a `CommandException` (`MESSAGE_STUDENT_NOT_FOUND` / `MESSAGE_LESSON_NOT_FOUND`). A `DayOfWeek` needs no such check — unlike an ID, every value the parser can produce already refers to something real, so there is nothing to look up or fail to find.
+2. It then delegates to `Model#filterLessonsByStudent(StudentId)`, `Model#filterStudentsByLesson(LessonId)` or `Model#filterLessonsByDay(DayOfWeek)`, and calls `Model#setListView(ListView)` so the UI switches to the list that was just filtered — `LESSONS` for both the student and the day filter, `STUDENTS` for the lesson filter.
 
-Inside `ModelManager`, at most one of `filteredByStudent` / `filteredByLesson` is ever set — setting one clears the other, which is what makes the two filters mutually exclusive. The actual filtering is done by `refreshFilters()`, which rebuilds the `Predicate` for both `FilteredList`s from scratch and re-applies it. This method is also called after every mutating operation (`addStudent`, `addLesson`, `enroll`, `deleteStudent`, `deleteLesson`), which is why an active filter stays correct even as enrollments change after it was set — the predicate re-checks `Model#isEnrolled` live rather than capturing a snapshot.
+Inside `ModelManager`, at most one of `filteredByStudent` / `filteredByLesson` / `filteredByDay` is ever set — setting one clears the other two, which is what makes all three filters mutually exclusive. The actual filtering is done by `refreshFilters()`, which rebuilds the `Predicate` for both `FilteredList`s from scratch and re-applies it. The day filter only narrows the lesson list (`lesson.getTimeslot().getDay() == dayFilter`) — there is no sensible equivalent predicate for students, since a student has no day of their own, only through the lessons they're enrolled in, so the student list is left unfiltered when filtering by day. `refreshFilters()` is also called after every mutating operation (`addStudent`, `addLesson`, `enroll`, `deleteStudent`, `deleteLesson`), which is why an active filter stays correct even as enrollments change after it was set — the predicate re-checks `Model#isEnrolled` live rather than capturing a snapshot.
 
 The sequence diagram below shows `execute("filter student 1")`.
 
@@ -206,12 +206,21 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 **Aspect: how the active filter is stored**
 
-* **Alternative 1 (current choice):** two nullable fields in `ModelManager` (`filteredByStudent`, `filteredByLesson`), each clearing the other when set.
-  * Pros: Simple; `resetFilters()` and the delete commands just null both fields out.
-  * Cons: The "at most one is set" invariant is enforced by convention (every setter must remember to clear the other), not by the type system.
-* **Alternative 2:** a small sealed type, similar to `AddCommand.StudentRef`/`LessonRef`, representing "no filter / filtered by student / filtered by lesson".
-  * Pros: The compiler guarantees exactly one state at a time.
+* **Alternative 1 (current choice):** three nullable fields in `ModelManager` (`filteredByStudent`, `filteredByLesson`, `filteredByDay`), each clearing the other two when set.
+  * Pros: Simple; `resetFilters()` and the delete commands just null all three fields out.
+  * Cons: The "at most one is set" invariant is enforced by convention (every setter must remember to clear the other two), not by the type system. Adding a filter kind multiplies this by one more field each time.
+* **Alternative 2:** a small sealed type, similar to `AddCommand.StudentRef`/`LessonRef`, representing "no filter / filtered by student / filtered by lesson / filtered by day".
+  * Pros: The compiler guarantees exactly one state at a time, and scales to more filter kinds without more fields.
   * Cons: More machinery for a feature this small; `ModelManager` would need to unwrap the sealed type everywhere `refreshFilters()` uses it.
+
+**Aspect: whether filtering by day should also narrow the student list**
+
+* **Alternative 1 (current choice):** filtering by day only narrows the lesson list; the student list is left as-is.
+  * Pros: Matches what "day" actually describes — a property of a lesson's timeslot, not of a student. No ambiguity about which students would qualify.
+  * Cons: Running `filter day MONDAY` then switching to the Students view (e.g. via `list`) shows every student, not just those with a lesson on Monday, which may surprise a user expecting symmetry with `filter student`/`filter lesson`.
+* **Alternative 2:** also narrow the student list to students enrolled in at least one lesson on that day.
+  * Pros: Keeps both lists consistent with the same day filter.
+  * Cons: Requires scanning every student's enrollments against the day filter, adding a second predicate shape (`anyMatch` over enrollments) alongside the simple per-lesson check; was judged unnecessary complexity for the MVP.
 
 **Aspect: when the filter predicate is recomputed**
 
@@ -224,11 +233,11 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 **Aspect: clearing the filter when its target is deleted**
 
-`deleteStudent`/`deleteLesson` check whether the ID being deleted is the one currently filtered on, and clear the filter if so, before calling `refreshFilters()`. This was a deliberate choice over leaving the filter as-is: an active filter pointing at a now-deleted ID would otherwise just show an empty list with no indication why, which would confuse the user more than falling back to the full list.
+`deleteStudent`/`deleteLesson` check whether the ID being deleted is the one currently filtered on, and clear the filter if so, before calling `refreshFilters()`. This was a deliberate choice over leaving the filter as-is: an active filter pointing at a now-deleted ID would otherwise just show an empty list with no indication why, which would confuse the user more than falling back to the full list. The day filter needs no such check, since a day is never deleted.
 
 #### Testing
 
-`FilterCommandParserTest` covers the valid `student`/`lesson` forms, malformed argument counts, an unknown keyword, and an invalid ID. `FilterCommandTest` covers both successful filters (checking the resulting model and list view), both not-found cases, and `equals()`.
+`FilterCommandParserTest` covers the valid `student`/`lesson`/`day` forms, malformed argument counts, an unknown keyword, an invalid ID and an invalid day name. `FilterCommandTest` covers all three successful filters (checking the resulting model and list view), both not-found cases, and `equals()`.
 
 ### \[Proposed\] Undo/redo feature
 
