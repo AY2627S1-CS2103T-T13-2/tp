@@ -1,6 +1,7 @@
 package seedu.address.model;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.commons.util.AppUtil.checkArgument;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.time.Clock;
@@ -54,10 +55,15 @@ public class ModelManager implements Model {
     private final FilteredList<Lesson> filteredLessons;
     private final ObjectProperty<ListView> listView = new SimpleObjectProperty<>(ListView.STUDENTS);
 
-    /** At most one of these is set: the filter that is currently active. */
+    /**
+     * The filter that is currently active, if any. Only one kind is set at a time: the student, the lesson,
+     * the day, or the subject and level (either or both of which may be set).
+     */
     private StudentId filteredByStudent;
     private LessonId filteredByLesson;
     private DayOfWeek filteredByDay;
+    private Subject filteredBySubject;
+    private Level filteredByLevel;
 
     /**
      * Initializes a ModelManager with the given tuiTracker, userPrefs and clock.
@@ -233,36 +239,48 @@ public class ModelManager implements Model {
     @Override
     public void filterLessonsByStudent(StudentId studentId) {
         requireNonNull(studentId);
+        clearFilterFields();
         filteredByStudent = studentId;
-        filteredByLesson = null;
-        filteredByDay = null;
         refreshFilters();
     }
 
     @Override
     public void filterStudentsByLesson(LessonId lessonId) {
         requireNonNull(lessonId);
+        clearFilterFields();
         filteredByLesson = lessonId;
-        filteredByStudent = null;
-        filteredByDay = null;
         refreshFilters();
     }
 
     @Override
     public void filterLessonsByDay(DayOfWeek day) {
         requireNonNull(day);
+        clearFilterFields();
         filteredByDay = day;
-        filteredByStudent = null;
-        filteredByLesson = null;
+        refreshFilters();
+    }
+
+    @Override
+    public void filterLessonsBySubjectAndLevel(Subject subject, Level level) {
+        checkArgument(subject != null || level != null, "At least one of subject and level must be given.");
+        clearFilterFields();
+        filteredBySubject = subject;
+        filteredByLevel = level;
         refreshFilters();
     }
 
     @Override
     public void resetFilters() {
+        clearFilterFields();
+        refreshFilters();
+    }
+
+    private void clearFilterFields() {
         filteredByStudent = null;
         filteredByLesson = null;
         filteredByDay = null;
-        refreshFilters();
+        filteredBySubject = null;
+        filteredByLevel = null;
     }
 
     /**
@@ -273,6 +291,8 @@ public class ModelManager implements Model {
         final LessonId lessonFilter = filteredByLesson;
         final StudentId studentFilter = filteredByStudent;
         final DayOfWeek dayFilter = filteredByDay;
+        final Subject subjectFilter = filteredBySubject;
+        final Level levelFilter = filteredByLevel;
 
         Predicate<Student> studentPredicate = lessonFilter == null
                 ? student -> true
@@ -282,6 +302,10 @@ public class ModelManager implements Model {
             lessonPredicate = lesson -> tuiTracker.isEnrolled(studentFilter, lesson.getId());
         } else if (dayFilter != null) {
             lessonPredicate = lesson -> lesson.getTimeslot().getDay() == dayFilter;
+        } else if (subjectFilter != null || levelFilter != null) {
+            lessonPredicate = lesson -> (subjectFilter == null
+                    || lesson.getSubject().value.equalsIgnoreCase(subjectFilter.value))
+                    && (levelFilter == null || lesson.getLevel().equals(levelFilter));
         } else {
             lessonPredicate = lesson -> true;
         }
