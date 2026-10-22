@@ -14,6 +14,7 @@ import seedu.address.logic.commands.FilterCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.MarkCommand;
+import seedu.address.logic.commands.ScheduleCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
@@ -43,6 +44,11 @@ public class AddressBookParserTest {
     @Test
     public void parseCommand_mark() throws Exception {
         assertTrue(parser.parseCommand("mark 12") instanceof MarkCommand);
+    }
+
+    @Test
+    public void parseCommand_schedule() throws Exception {
+        assertTrue(parser.parseCommand("schedule") instanceof ScheduleCommand);
     }
 
     @Test

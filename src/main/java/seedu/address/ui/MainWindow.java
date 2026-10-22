@@ -36,6 +36,7 @@ public class MainWindow extends UiPart<Stage> {
     // Independent Ui parts residing in this Ui container
     private StudentListPanel studentListPanel;
     private LessonListPanel lessonListPanel;
+    private SchedulePanel schedulePanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
 
@@ -118,7 +119,9 @@ public class MainWindow extends UiPart<Stage> {
     void fillInnerParts() {
         studentListPanel = new StudentListPanel(logic.getStudentList(), logic);
         lessonListPanel = new LessonListPanel(logic.getLessonList(), logic);
-        listPanelPlaceholder.getChildren().addAll(studentListPanel.getRoot(), lessonListPanel.getRoot());
+        schedulePanel = new SchedulePanel(logic);
+        listPanelPlaceholder.getChildren().addAll(studentListPanel.getRoot(), lessonListPanel.getRoot(),
+                schedulePanel.getRoot());
         showList(logic.listViewProperty().get());
         logic.listViewProperty().addListener((observable, oldView, newView) -> showList(newView));
 
@@ -173,14 +176,18 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
-     * Shows the panel for {@code listView} and hides the other.
+     * Shows the selected student, lesson, or schedule panel.
      */
     private void showList(ListView listView) {
         boolean showStudents = listView == ListView.STUDENTS;
+        boolean showLessons = listView == ListView.LESSONS;
+        boolean showSchedule = listView == ListView.SCHEDULE;
         studentListPanel.getRoot().setVisible(showStudents);
         studentListPanel.getRoot().setManaged(showStudents);
-        lessonListPanel.getRoot().setVisible(!showStudents);
-        lessonListPanel.getRoot().setManaged(!showStudents);
+        lessonListPanel.getRoot().setVisible(showLessons);
+        lessonListPanel.getRoot().setManaged(showLessons);
+        schedulePanel.getRoot().setVisible(showSchedule);
+        schedulePanel.getRoot().setManaged(showSchedule);
     }
 
     public StudentListPanel getStudentListPanel() {
@@ -202,6 +209,9 @@ public class MainWindow extends UiPart<Stage> {
             logger.info("Result: " + commandResult.getFeedbackToUser());
             studentListPanel.refresh();
             lessonListPanel.refresh();
+            if (logic.listViewProperty().get() == ListView.SCHEDULE) {
+                schedulePanel.refresh();
+            }
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
 
             if (commandResult.isShowHelp()) {
