@@ -7,6 +7,7 @@ import static seedu.address.logic.parser.AddCommandParser.MESSAGE_MISSING_PARAME
 import static seedu.address.logic.parser.AddCommandParser.MESSAGE_STUDENT_PARAMETERS_NOT_ALLOWED;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
+import static seedu.address.testutil.Assert.assertThrows;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
@@ -48,6 +49,11 @@ public class AddCommandParserTest {
             new Timeslot(DayOfWeek.MONDAY, LocalTime.of(15, 0), LocalTime.of(16, 30)), new Fee("50.00"));
 
     private final AddCommandParser parser = new AddCommandParser();
+
+    @Test
+    public void parse_nullArguments_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> parser.parse(null));
+    }
 
     //// the four forms
 
