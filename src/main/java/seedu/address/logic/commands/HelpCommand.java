@@ -9,8 +9,17 @@ public class HelpCommand extends Command {
 
     public static final String COMMAND_WORD = "help";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Shows program usage instructions.\n"
-            + "Example: " + COMMAND_WORD;
+    public static final String MESSAGE_USAGE = String.join("\n",
+            "Available commands:",
+            AddCommand.MESSAGE_USAGE,
+            EditCommand.MESSAGE_USAGE,
+            DeleteCommand.MESSAGE_USAGE,
+            ListCommand.MESSAGE_USAGE,
+            MarkCommand.MESSAGE_USAGE,
+            ScheduleCommand.MESSAGE_USAGE,
+            FilterCommand.MESSAGE_USAGE,
+            COMMAND_WORD,
+            ExitCommand.COMMAND_WORD);
 
     public static final String SHOWING_HELP_MESSAGE = "Opened help window.";
 

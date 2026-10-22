@@ -1,0 +1,75 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant ":MarkCommandParser" as MarkCommandParser LOGIC_COLOR
+participant "m:MarkCommand" as MarkCommand LOGIC_COLOR
+participant "r:CommandResult" as CommandResult LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "model:Model" as Model MODEL_COLOR
+end box
+
+[-> LogicManager : execute("mark 1")
+activate LogicManager
+
+LogicManager -> AddressBookParser : parseCommand("mark 1")
+activate AddressBookParser
+
+create MarkCommandParser
+AddressBookParser -> MarkCommandParser
+activate MarkCommandParser
+MarkCommandParser --> AddressBookParser
+deactivate MarkCommandParser
+
+AddressBookParser -> MarkCommandParser : parse(" 1")
+activate MarkCommandParser
+
+create MarkCommand
+MarkCommandParser -> MarkCommand : MarkCommand(StudentId(1))
+activate MarkCommand
+MarkCommand --> MarkCommandParser
+deactivate MarkCommand
+
+MarkCommandParser --> AddressBookParser : m
+deactivate MarkCommandParser
+MarkCommandParser -[hidden]-> AddressBookParser
+destroy MarkCommandParser
+
+AddressBookParser --> LogicManager : m
+deactivate AddressBookParser
+
+LogicManager -> MarkCommand : execute(model)
+activate MarkCommand
+
+MarkCommand -> Model : findStudent(StudentId(1))
+activate Model
+Model --> MarkCommand : student
+deactivate Model
+
+MarkCommand -> Model : isPaid(StudentId(1))
+activate Model
+Model --> MarkCommand : false
+deactivate Model
+
+MarkCommand -> Model : markPaid(StudentId(1))
+activate Model
+Model --> MarkCommand : updatedStudent
+deactivate Model
+
+create CommandResult
+MarkCommand -> CommandResult : CommandResult(successMessage)
+activate CommandResult
+CommandResult --> MarkCommand : r
+deactivate CommandResult
+
+MarkCommand --> LogicManager : r
+deactivate MarkCommand
+
+[<-- LogicManager : r
+deactivate LogicManager
+@enduml

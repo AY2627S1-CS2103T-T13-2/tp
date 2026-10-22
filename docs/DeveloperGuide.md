@@ -258,7 +258,26 @@ The sequence diagram below shows `execute("list lessons")` when four lessons exi
 
 ### Mark feature
 
-_To be written by the owner of `mark`._
+The `mark` command records that a student has paid for the current calendar month. `MarkCommandParser` accepts one
+positive student ID and constructs a `MarkCommand`. During execution, the command first looks up the student, then
+checks that the student is not already marked as paid before asking `Model` to update the payment status. The command
+returns a successful `CommandResult` containing the student's name. Invalid IDs, missing students and students who
+are already paid take the corresponding error paths and do not change the model.
+
+The sequence diagram below shows the successful execution of `execute("mark 1")` for an existing unpaid student.
+
+<puml src="diagrams/MarkSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `mark` Command" />
+
+### Help feature
+
+The `help` command takes no required arguments. `AddressBookParser` constructs a `HelpCommand` directly because no
+command-specific parsing is needed. `HelpCommand#execute(Model)` returns a `CommandResult` whose `showHelp` flag is
+set. After `LogicManager` returns that result, `MainWindow` opens the `HelpWindow`, which displays the format of every
+available command and a link to the full User Guide.
+
+The sequence diagram below shows the help window being opened by `executeCommand("help")`.
+
+<puml src="diagrams/HelpSequenceDiagram.puml" alt="Interactions Across the UI and Logic Components for the `help` Command" />
 
 ### Filter feature
 
