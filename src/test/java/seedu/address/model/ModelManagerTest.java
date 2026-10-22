@@ -278,21 +278,25 @@ public class ModelManagerTest {
     }
 
     @Test
-    public void deleteStudent_whoseLessonsAreShown_clearsTheFilter() {
+    public void deleteStudent_whoseLessonsAreShown_keepsTheFilter() {
         modelManager.filterLessonsByStudent(ALICE.getId());
+        modelManager.setListView(ListView.LESSONS);
 
         modelManager.deleteStudent(ALICE.getId());
 
-        assertEquals(4, modelManager.getLessonList().size());
+        assertEquals(Collections.emptyList(), modelManager.getLessonList());
+        assertEquals(ListView.LESSONS, modelManager.getListView());
     }
 
     @Test
-    public void deleteLesson_whoseStudentsAreShown_clearsTheFilter() {
+    public void deleteLesson_whoseStudentsAreShown_keepsTheFilter() {
         modelManager.filterStudentsByLesson(MATHEMATICS.getId());
+        modelManager.setListView(ListView.STUDENTS);
 
         modelManager.deleteLesson(MATHEMATICS.getId());
 
-        assertEquals(3, modelManager.getStudentList().size());
+        assertEquals(Collections.emptyList(), modelManager.getStudentList());
+        assertEquals(ListView.STUDENTS, modelManager.getListView());
     }
 
     @Test

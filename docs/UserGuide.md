@@ -263,7 +263,7 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 **Parameters:**
 
 * `student|lesson` — must be exactly `student` or `lesson` (case-insensitive). Abbreviations and repeating the keyword are not allowed.
-* `ID` — the record's positive whole-number ID. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
+* `ID` — the record's positive whole-number ID, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
 * Leading and trailing spaces are ignored. No other text may follow the ID.
 
 **Examples:**
@@ -280,7 +280,7 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 **Notes:**
 
 * Deleting a student also removes all of that student's enrollments. Deleting a lesson removes all enrollments tied to that lesson. Other student and lesson records remain.
-* Deleting a record removes it from the displayed list when it is shown.
+* Deleting a record removes it from the displayed list when it is shown. An active filter stays in place; if it refers to the deleted record, its filtered list becomes empty until you change or clear the filter.
 * The ID must be a positive whole number. For example, `delete student 0` and `delete student -1` are invalid.
 
 **Errors:**
@@ -296,7 +296,7 @@ Marks a student as paid for the current month using the student's ID. Use this c
 
 **Parameters:**
 
-* `ID` — the student's positive whole-number ID. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
+* `ID` — the student's positive whole-number ID, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
 * Leading and trailing spaces are ignored. No other text may follow the ID.
 
 **Examples:**
@@ -319,7 +319,7 @@ Marks a student as paid for the current month using the student's ID. Use this c
 **Errors:**
 
 * A missing ID or extra text after the ID — the app displays `Invalid command format. Use: mark ID`.
-* A malformed or non-positive ID — the app displays `ID must be a positive whole number.`
+* A malformed, non-positive, or oversized ID — the app displays `ID must be a positive whole number.`
 * No student has that ID — the app displays `No student found with ID 999.` (using the requested ID). An ID belonging only to a lesson does not match.
 * The student is already marked as paid for the current month — the app displays `Alice Tan is already marked as paid for the current month.` (using the student's name).
 

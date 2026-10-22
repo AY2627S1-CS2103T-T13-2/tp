@@ -214,20 +214,16 @@ public class ModelManager implements Model {
 
     @Override
     public Student deleteStudent(StudentId studentId) {
+        requireNonNull(studentId);
         Student deleted = tuiTracker.deleteStudent(studentId);
-        if (studentId.equals(filteredByStudent)) {
-            filteredByStudent = null;
-        }
         refreshFilters();
         return deleted;
     }
 
     @Override
     public Lesson deleteLesson(LessonId lessonId) {
+        requireNonNull(lessonId);
         Lesson deleted = tuiTracker.deleteLesson(lessonId);
-        if (lessonId.equals(filteredByLesson)) {
-            filteredByLesson = null;
-        }
         refreshFilters();
         return deleted;
     }

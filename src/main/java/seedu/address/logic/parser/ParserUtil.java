@@ -28,8 +28,8 @@ public class ParserUtil {
     private static final String DIGITS_ONLY = "\\d+";
 
     /**
-     * Returns true if {@code test} is an ID: digits only, no sign or decimal point, and not zero.
-     * Leading zeros are allowed, so "007" is an ID.
+     * Returns true if {@code test} has the syntax of an ID: digits only, no sign or decimal point, and not zero.
+     * Leading zeros are allowed, so "007" is an ID. This does not check whether the value fits in an {@code int}.
      */
     public static boolean isId(String test) {
         requireNonNull(test);
@@ -38,20 +38,18 @@ public class ParserUtil {
     }
 
     /**
-     * Parses {@code id} into a {@code StudentId}. Leading zeros are ignored. A number too large to be an ID is
-     * returned as the largest possible ID, which no student has.
+     * Parses {@code id} into a {@code StudentId}. Leading zeros are ignored.
      *
-     * @throws ParseException if {@code id} is not a positive whole number.
+     * @throws ParseException if {@code id} is not a positive whole number representable as an {@code int}.
      */
     public static StudentId parseStudentId(String id) throws ParseException {
         return new StudentId(parseIdNumber(id));
     }
 
     /**
-     * Parses {@code id} into a {@code LessonId}. Leading zeros are ignored. A number too large to be an ID is
-     * returned as the largest possible ID, which no lesson has.
+     * Parses {@code id} into a {@code LessonId}. Leading zeros are ignored.
      *
-     * @throws ParseException if {@code id} is not a positive whole number.
+     * @throws ParseException if {@code id} is not a positive whole number representable as an {@code int}.
      */
     public static LessonId parseLessonId(String id) throws ParseException {
         return new LessonId(parseIdNumber(id));
@@ -63,7 +61,10 @@ public class ParserUtil {
             throw new ParseException(MESSAGE_INVALID_ID);
         }
         BigInteger number = new BigInteger(id.trim());
-        return number.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0 ? Integer.MAX_VALUE : number.intValue();
+        if (number.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) {
+            throw new ParseException(MESSAGE_INVALID_ID);
+        }
+        return number.intValue();
     }
 
     /**
