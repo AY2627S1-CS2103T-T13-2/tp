@@ -8,7 +8,7 @@
 
 TuiTracker is a **desktop application for private tutors to manage their students, lessons, and monthly payments in one place**. It combines a Command Line Interface (CLI) with a Graphical User Interface (GUI), allowing tutors who type quickly to handle common administrative tasks efficiently while viewing their records clearly.
 
-With TuiTracker, you can view student and lesson details, manage enrollments, track monthly payments, and remove records that are no longer needed.
+With TuiTracker, you can view and update student and lesson details, manage enrollments, track monthly payments, and remove records that are no longer needed.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -36,6 +36,8 @@ With TuiTracker, you can view student and lesson details, manage enrollments, tr
    * `list lessons` : Lists all lessons.
 
    * `add s/Alice Tan c/91234567 slv/Primary 6 l/Mathematics llv/Primary 6 d/Monday st/15:00 et/16:30 f/50.00` : Adds a student named `Alice Tan` to a new Mathematics lesson.
+
+   * `edit student 1 c/90001111` : Updates the contact number of the student with ID 1.
 
    * `mark 1` : Marks the student with ID 1 as paid for the current month.
 
@@ -180,6 +182,77 @@ Command | Message
 `add s/Daniel Koh c/12 slv/Primary 6 l/1` | Invalid contact. Contact must contain between 3 and 15 digits.
 `add s/1 l/History llv/Primary 6 d/Monday st/9:00 et/10:00 f/35` | Invalid start time. Use the 24-hour format HH:mm.
 `add` | Invalid command format. Use: add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
+
+### Editing a student or lesson: `edit`
+
+Updates one or more details of an existing student or lesson. Details that are not included in the command remain unchanged.
+
+Format:
+
+* `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]`
+* `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]`
+
+<box type="tip" seamless>
+
+**Tip:** To find an ID, use `list students` or `list lessons` first.
+</box>
+
+#### Parameters
+
+Parameter | Meaning | Used when | Rules
+----------|---------|-----------|------
+`student\|lesson` | The type of record to edit | always | Must be exactly `student` or `lesson`. Letter case is ignored.
+`ID` | The existing record's ID | always | A positive whole number. Leading zeros are allowed and ignored, so `0012` refers to ID `12`.
+`s/` | The student's name | editing a student | At most 100 characters: letters, numbers, spaces, apostrophes and hyphens, with at least one letter.
+`c/` | The student's contact number | editing a student | Digits only, from 3 to 15 digits.
+`slv/` | The student's level, such as `Primary 6` | editing a student | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
+`l/` | The lesson's subject | editing a lesson | At most 50 characters: letters, numbers, spaces and hyphens, with at least one letter.
+`llv/` | The lesson's level, such as `Primary 6` | editing a lesson | The same rules as `slv/`.
+`d/` | The day of the week | editing a lesson | `Monday` to `Sunday`, in any letter case.
+`st/` | The start time | editing a lesson | In the 24-hour format `HH:mm`, such as `09:00`.
+`et/` | The end time | editing a lesson | In the same format, and later than the final start time.
+`f/` | The fee for one session | editing a lesson | More than zero, with at most two decimal places, such as `50` or `50.00`.
+
+Give at least one editable field after the ID. You can give the field parameters in any order, but each parameter can appear only once. For a lesson, you may give `st/`, `et/`, or both. If you give only one, the other keeps its existing value. The resulting end time must still be later than the start time.
+
+#### Examples
+
+Each one starts from the sample data and is followed by the result you should see.
+
+1. `edit student 1 c/90001111`: Edited student: Alice Tan (ID: 1).
+1. `edit student 1 s/Alice Lee slv/Primary 6`: Edited student: Alice Lee (ID: 1).
+1. `edit lesson 1 f/55`: Edited lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 1).
+1. `edit lesson 1 d/Friday st/14:00 et/15:30`: Edited lesson: Mathematics | Primary 6 | Friday 14:00-15:30 (ID: 1).
+1. `edit student 1 s/Alice Tan`: No changes were made.
+
+#### Notes
+
+* The record's ID never changes.
+* Editing a student preserves their payment status and lesson enrollments.
+* Editing a lesson preserves its student enrollments.
+* No data is changed if the command fails validation.
+
+#### Possible sources of errors
+
+Each of these starts from the sample data. The command is shown first, then the message you see.
+
+Command | Message
+--------|--------
+`edit teacher 1 s/Alice` | Invalid command format. Use: edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL] OR edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]
+`edit student 1` | At least one field to edit must be provided.
+`edit student 1 c/90001111 c/92223333` | A parameter can only be specified once.
+`edit student 1 l/English` | Only s/, c/ and slv/ can be used when editing a student.
+`edit lesson 1 c/90001111` | Only l/, llv/, d/, st/, et/ and f/ can be used when editing a lesson.
+`edit student 0 c/90001111` | ID must be a positive whole number.
+`edit lesson 99 f/55` | No lesson found with ID 99.
+`edit student 1 s/Bryan Lim c/98765432` | Another student with the same name and contact already exists (Student ID: 2).
+`edit lesson 2 l/Mathematics d/Monday st/15:00 et/16:30` | Another identical lesson already exists (Lesson ID: 1).
+`edit student 1 slv/Primary 4` | Student level does not match an enrolled lesson.
+`edit lesson 1 llv/Secondary 2` | Lesson level does not match an enrolled student.
+`edit lesson 2 d/Monday st/16:00 et/17:00` | Edited lesson clashes with another lesson.
+`edit lesson 1 st/17:00` | Invalid end time. Use HH:mm and enter a time later than the start time.
+
+Invalid names, contacts, levels, subjects, days, times and fees follow the rules in the parameter table above.
 
 ### Deleting a student or a lesson: `delete`
 
@@ -329,6 +402,7 @@ _Details coming soon ..._
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> _Examples to be added by the owner of `add`._
+**Edit**   | `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]` <br> `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]`
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
 **Filter** | `filter student\|lesson ID` or `filter day DAY` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`

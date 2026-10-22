@@ -1,0 +1,94 @@
+package seedu.address.logic.parser;
+
+import static seedu.address.logic.Messages.MESSAGE_DUPLICATE_PARAMETER;
+import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.commands.EditCommand.MESSAGE_LESSON_PARAMETERS_NOT_ALLOWED;
+import static seedu.address.logic.commands.EditCommand.MESSAGE_NO_FIELDS;
+import static seedu.address.logic.commands.EditCommand.MESSAGE_STUDENT_PARAMETERS_NOT_ALLOWED;
+import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
+import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
+
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+
+import seedu.address.logic.commands.EditCommand;
+import seedu.address.logic.commands.EditCommand.LessonEdit;
+import seedu.address.logic.commands.EditCommand.StudentEdit;
+import seedu.address.model.common.Level;
+import seedu.address.model.lesson.Fee;
+import seedu.address.model.lesson.LessonId;
+import seedu.address.model.lesson.Subject;
+import seedu.address.model.student.Contact;
+import seedu.address.model.student.Name;
+import seedu.address.model.student.StudentId;
+
+public class EditCommandParserTest {
+
+    private final EditCommandParser parser = new EditCommandParser();
+
+    @Test
+    public void parse_studentFields_returnsEditCommand() {
+        StudentEdit edit = new StudentEdit(new StudentId(3), Optional.of(new Name("Chloe Tan")),
+                Optional.of(new Contact("90001111")), Optional.of(new Level("Secondary 1")));
+
+        assertParseSuccess(parser, " student 3 c/90001111 slv/Secondary 1 s/Chloe Tan",
+                new EditCommand(edit));
+    }
+
+    @Test
+    public void parse_lessonFields_returnsEditCommand() {
+        LessonEdit edit = new LessonEdit(new LessonId(2), Optional.of(new Subject("Physics")),
+                Optional.of(new Level("Primary 6")), Optional.of(DayOfWeek.FRIDAY),
+                Optional.of(LocalTime.of(14, 0)), Optional.of(LocalTime.of(15, 30)),
+                Optional.of(new Fee("55")));
+
+        assertParseSuccess(parser,
+                " lesson 2 f/55 et/15:30 l/Physics d/friday st/14:00 llv/Primary 6",
+                new EditCommand(edit));
+    }
+
+    @Test
+    public void parse_kindIsCaseInsensitiveAndLeadingZeroIsAllowed_returnsEditCommand() {
+        StudentEdit edit = new StudentEdit(new StudentId(3), Optional.empty(),
+                Optional.of(new Contact("90001111")), Optional.empty());
+
+        assertParseSuccess(parser, " STUDENT 003 c/90001111", new EditCommand(edit));
+    }
+
+    @Test
+    public void parse_partialLessonTimes_returnsEditCommand() {
+        LessonEdit edit = new LessonEdit(new LessonId(2), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.of(LocalTime.of(16, 0)), Optional.empty());
+
+        assertParseSuccess(parser, " lesson 2 et/16:00", new EditCommand(edit));
+    }
+
+    @Test
+    public void parse_noFields_throwsParseException() {
+        assertParseFailure(parser, " student 1", MESSAGE_NO_FIELDS);
+        assertParseFailure(parser, " lesson 1", MESSAGE_NO_FIELDS);
+    }
+
+    @Test
+    public void parse_wrongKindParameters_throwsParseException() {
+        assertParseFailure(parser, " student 1 l/Mathematics", MESSAGE_STUDENT_PARAMETERS_NOT_ALLOWED);
+        assertParseFailure(parser, " lesson 1 c/91234567", MESSAGE_LESSON_PARAMETERS_NOT_ALLOWED);
+    }
+
+    @Test
+    public void parse_repeatedParameter_throwsParseException() {
+        assertParseFailure(parser, " student 1 c/91234567 c/98765432", MESSAGE_DUPLICATE_PARAMETER);
+    }
+
+    @Test
+    public void parse_invalidTarget_throwsParseException() {
+        String message = String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE);
+
+        assertParseFailure(parser, "", message);
+        assertParseFailure(parser, " teacher 1 s/Alice", message);
+        assertParseFailure(parser, " student 1 extra s/Alice", message);
+    }
+}

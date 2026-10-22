@@ -120,6 +120,16 @@ public class ModelStub implements Model {
     }
 
     @Override
+    public Student editStudent(StudentId studentId, Name name, Contact contact, Level level) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
+    public Lesson editLesson(LessonId lessonId, Subject subject, Level level, Timeslot timeslot, Fee fee) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
     public void enroll(StudentId studentId, LessonId lessonId) {
         throw new AssertionError("This method should not be called.");
     }

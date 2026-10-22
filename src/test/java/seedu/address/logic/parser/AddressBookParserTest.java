@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.DeleteCommand;
+import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FilterCommand;
 import seedu.address.logic.commands.HelpCommand;
@@ -33,6 +34,12 @@ public class AddressBookParserTest {
     @Test
     public void parseCommand_delete() throws Exception {
         assertTrue(parser.parseCommand("delete student 12") instanceof DeleteCommand);
+    }
+
+    @Test
+    public void parseCommand_edit() throws Exception {
+        assertTrue(parser.parseCommand("edit student 12 s/Alice Tan") instanceof EditCommand);
+        assertTrue(parser.parseCommand("edit lesson 7 f/55") instanceof EditCommand);
     }
 
     @Test
@@ -93,7 +100,7 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_commandsRemovedFromTheAddressBook_areUnknown() {
-        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("edit 1 n/Bob"));
+        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("unknown command"));
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("find alice"));
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("clear"));
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("remark 1 r/hi"));
