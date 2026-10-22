@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static seedu.address.logic.Messages.MESSAGE_DUPLICATE_PARAMETER;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
@@ -10,7 +11,9 @@ import java.time.DayOfWeek;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.FilterCommand;
+import seedu.address.model.common.Level;
 import seedu.address.model.lesson.LessonId;
+import seedu.address.model.lesson.Subject;
 import seedu.address.model.lesson.Timeslot;
 import seedu.address.model.student.StudentId;
 
@@ -40,6 +43,45 @@ public class FilterCommandParserTest {
 
         // letter case and whitespace are ignored
         assertParseSuccess(parser, "  day   MONDAY  ", new FilterCommand(DayOfWeek.MONDAY));
+    }
+
+    @Test
+    public void parse_validSubjectAndLevelArgs_returnsFilterCommand() {
+        Subject subject = new Subject("Additional Mathematics");
+        Level level = new Level("Secondary 3");
+
+        // subject only
+        assertParseSuccess(parser, " l/Additional Mathematics", new FilterCommand(subject, null));
+
+        // level only
+        assertParseSuccess(parser, " llv/Secondary 3", new FilterCommand(null, level));
+
+        // both, in either order
+        assertParseSuccess(parser, " l/Additional Mathematics llv/Secondary 3", new FilterCommand(subject, level));
+        assertParseSuccess(parser, " llv/Secondary 3 l/Additional Mathematics", new FilterCommand(subject, level));
+
+        // no leading space
+        assertParseSuccess(parser, "l/Additional Mathematics", new FilterCommand(subject, null));
+    }
+
+    @Test
+    public void parse_invalidSubjectOrLevel_throwsParseException() {
+        assertParseFailure(parser, " l/", FilterCommandParser.MESSAGE_INVALID_SUBJECT);
+        assertParseFailure(parser, " l/123", FilterCommandParser.MESSAGE_INVALID_SUBJECT);
+        assertParseFailure(parser, " llv/", Level.MESSAGE_CONSTRAINTS_LESSON);
+        assertParseFailure(parser, " l/Mathematics llv/Primary 6!", Level.MESSAGE_CONSTRAINTS_LESSON);
+    }
+
+    @Test
+    public void parse_repeatedSubjectOrLevel_throwsParseException() {
+        assertParseFailure(parser, " l/Mathematics l/Science", MESSAGE_DUPLICATE_PARAMETER);
+        assertParseFailure(parser, " llv/Primary 6 llv/Primary 5", MESSAGE_DUPLICATE_PARAMETER);
+    }
+
+    @Test
+    public void parse_textBeforeSubjectOrLevel_throwsParseException() {
+        assertParseFailure(parser, " day l/Mathematics", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, " lesson 1 llv/Primary 6", MESSAGE_INVALID_FORMAT);
     }
 
     @Test

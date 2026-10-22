@@ -29,7 +29,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.GuiSettings;
+import seedu.address.model.common.Level;
 import seedu.address.model.lesson.Lesson;
+import seedu.address.model.lesson.Subject;
 import seedu.address.model.student.Student;
 
 public class ModelManagerTest {
@@ -209,6 +211,40 @@ public class ModelManagerTest {
 
         assertEquals(Collections.singletonList(BRYAN), modelManager.getStudentList());
         assertEquals(4, modelManager.getLessonList().size()); // lessons unaffected
+    }
+
+    @Test
+    public void filterLessonsBySubjectAndLevel_subjectOnly_ignoresLetterCase() {
+        modelManager.filterLessonsBySubjectAndLevel(new Subject("science"), null);
+
+        assertEquals(Arrays.asList(SCIENCE_S2, SCIENCE_P6), modelManager.getLessonList()); // Wed, Thu
+        assertEquals(3, modelManager.getStudentList().size()); // students unaffected
+    }
+
+    @Test
+    public void filterLessonsBySubjectAndLevel_levelOnly_showsLessonsAtThatLevel() {
+        modelManager.filterLessonsBySubjectAndLevel(null, new Level("PRIMARY 6"));
+
+        assertEquals(Arrays.asList(MATHEMATICS, SCIENCE_P6), modelManager.getLessonList());
+    }
+
+    @Test
+    public void filterLessonsBySubjectAndLevel_both_showsLessonsMatchingBoth() {
+        modelManager.filterLessonsBySubjectAndLevel(new Subject("Science"), new Level("Primary 6"));
+
+        assertEquals(Collections.singletonList(SCIENCE_P6), modelManager.getLessonList());
+    }
+
+    @Test
+    public void filterLessonsBySubjectAndLevel_subjectIsNotPartiallyMatched() {
+        modelManager.filterLessonsBySubjectAndLevel(new Subject("Math"), null);
+
+        assertEquals(Collections.emptyList(), modelManager.getLessonList());
+    }
+
+    @Test
+    public void filterLessonsBySubjectAndLevel_neitherGiven_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> modelManager.filterLessonsBySubjectAndLevel(null, null));
     }
 
     @Test

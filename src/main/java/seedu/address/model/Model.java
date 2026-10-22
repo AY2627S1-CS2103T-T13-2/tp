@@ -169,6 +169,12 @@ public interface Model {
     void filterLessonsByDay(DayOfWeek day);
 
     /**
+     * Shows only the lessons with the given subject and level, replacing any earlier filter. Either may be null to
+     * match any subject or any level, but not both. Letter case is ignored. The student list is unaffected.
+     */
+    void filterLessonsBySubjectAndLevel(Subject subject, Level level);
+
+    /**
      * Clears any filter, so that every student and every lesson is shown.
      */
     void resetFilters();

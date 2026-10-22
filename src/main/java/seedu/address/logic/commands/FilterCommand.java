@@ -1,28 +1,35 @@
 package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.commons.util.AppUtil.checkArgument;
 import static seedu.address.logic.Messages.MESSAGE_LESSON_NOT_FOUND;
 import static seedu.address.logic.Messages.MESSAGE_STUDENT_NOT_FOUND;
 
 import java.time.DayOfWeek;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.ListView;
 import seedu.address.model.Model;
+import seedu.address.model.common.Level;
 import seedu.address.model.lesson.LessonId;
+import seedu.address.model.lesson.Subject;
 import seedu.address.model.lesson.Timeslot;
 import seedu.address.model.student.StudentId;
 
 /**
- * Shows only the lessons of one student, only the students of one lesson, or only the lessons on one day.
+ * Shows only the lessons of one student, only the students of one lesson, only the lessons on one day,
+ * or only the lessons with a given subject, level, or both.
  */
 public class FilterCommand extends Command {
 
     public static final String COMMAND_WORD = "filter";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + " student|lesson ID or " + COMMAND_WORD + " day DAY";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + " student|lesson ID or " + COMMAND_WORD + " day DAY or "
+            + COMMAND_WORD + " [l/SUBJECT] [llv/LESSON_LEVEL]";
 
     public static final String MESSAGE_SHOWING_LESSONS = "Showing %1$d lesson(s) for student ID %2$s.";
 
@@ -30,10 +37,17 @@ public class FilterCommand extends Command {
 
     public static final String MESSAGE_SHOWING_LESSONS_ON_DAY = "Showing %1$d lesson(s) on %2$s.";
 
-    /** At most one of these is set, depending on whether the user filtered by student, by lesson or by day. */
+    public static final String MESSAGE_SHOWING_LESSONS_MATCHING = "Showing %1$d lesson(s) with %2$s.";
+
+    /**
+     * Only one kind of filter is set: the student, the lesson, the day, or the subject and level.
+     * When filtering by subject and level, either one or both may be set.
+     */
     private final StudentId studentId;
     private final LessonId lessonId;
     private final DayOfWeek day;
+    private final Subject subject;
+    private final Level level;
 
     /**
      * Creates a command that shows only the lessons the given student is enrolled in.
@@ -42,6 +56,8 @@ public class FilterCommand extends Command {
         this.studentId = requireNonNull(studentId);
         this.lessonId = null;
         this.day = null;
+        this.subject = null;
+        this.level = null;
     }
 
     /**
@@ -51,6 +67,8 @@ public class FilterCommand extends Command {
         this.studentId = null;
         this.lessonId = requireNonNull(lessonId);
         this.day = null;
+        this.subject = null;
+        this.level = null;
     }
 
     /**
@@ -60,6 +78,21 @@ public class FilterCommand extends Command {
         this.studentId = null;
         this.lessonId = null;
         this.day = requireNonNull(day);
+        this.subject = null;
+        this.level = null;
+    }
+
+    /**
+     * Creates a command that shows only the lessons with the given subject and level.
+     * Either one may be null to leave it out, but not both.
+     */
+    public FilterCommand(Subject subject, Level level) {
+        checkArgument(subject != null || level != null, "At least one of subject and level must be given.");
+        this.studentId = null;
+        this.lessonId = null;
+        this.day = null;
+        this.subject = subject;
+        this.level = level;
     }
 
     @Override
@@ -88,10 +121,31 @@ public class FilterCommand extends Command {
                     lessonId));
         }
 
-        model.filterLessonsByDay(day);
+        if (day != null) {
+            model.filterLessonsByDay(day);
+            model.setListView(ListView.LESSONS);
+            return new CommandResult(String.format(MESSAGE_SHOWING_LESSONS_ON_DAY, model.getLessonList().size(),
+                    Timeslot.dayName(day)));
+        }
+
+        model.filterLessonsBySubjectAndLevel(subject, level);
         model.setListView(ListView.LESSONS);
-        return new CommandResult(String.format(MESSAGE_SHOWING_LESSONS_ON_DAY, model.getLessonList().size(),
-                Timeslot.dayName(day)));
+        return new CommandResult(String.format(MESSAGE_SHOWING_LESSONS_MATCHING, model.getLessonList().size(),
+                describeSubjectAndLevel()));
+    }
+
+    /**
+     * Returns the subject and level being filtered by, e.g. "subject Mathematics and level Primary 6".
+     */
+    private String describeSubjectAndLevel() {
+        List<String> parts = new ArrayList<>();
+        if (subject != null) {
+            parts.add("subject " + subject);
+        }
+        if (level != null) {
+            parts.add("level " + level);
+        }
+        return String.join(" and ", parts);
     }
 
     @Override
@@ -107,12 +161,14 @@ public class FilterCommand extends Command {
 
         return Objects.equals(studentId, otherFilterCommand.studentId)
                 && Objects.equals(lessonId, otherFilterCommand.lessonId)
-                && Objects.equals(day, otherFilterCommand.day);
+                && Objects.equals(day, otherFilterCommand.day)
+                && Objects.equals(subject, otherFilterCommand.subject)
+                && Objects.equals(level, otherFilterCommand.level);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(studentId, lessonId, day);
+        return Objects.hash(studentId, lessonId, day, subject, level);
     }
 
     @Override
@@ -121,6 +177,8 @@ public class FilterCommand extends Command {
                 .add("studentId", studentId)
                 .add("lessonId", lessonId)
                 .add("day", day)
+                .add("subject", subject)
+                .add("level", level)
                 .toString();
     }
 }

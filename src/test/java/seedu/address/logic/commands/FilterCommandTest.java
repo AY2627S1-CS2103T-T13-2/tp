@@ -21,7 +21,9 @@ import seedu.address.model.ListView;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.common.Level;
 import seedu.address.model.lesson.LessonId;
+import seedu.address.model.lesson.Subject;
 import seedu.address.model.lesson.Timeslot;
 import seedu.address.model.student.StudentId;
 
@@ -74,6 +76,52 @@ public class FilterCommandTest {
     }
 
     @Test
+    public void execute_subjectGiven_showsLessonsWithThatSubject() {
+        Subject science = new Subject("science");
+        FilterCommand filterCommand = new FilterCommand(science, null);
+
+        Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+        expectedModel.filterLessonsBySubjectAndLevel(science, null);
+        expectedModel.setListView(ListView.LESSONS);
+
+        String expectedMessage = String.format(FilterCommand.MESSAGE_SHOWING_LESSONS_MATCHING, 2,
+                "subject science");
+
+        assertCommandSuccess(filterCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_levelGiven_showsLessonsAtThatLevel() {
+        Level primary6 = new Level("Primary 6");
+        FilterCommand filterCommand = new FilterCommand(null, primary6);
+
+        Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+        expectedModel.filterLessonsBySubjectAndLevel(null, primary6);
+        expectedModel.setListView(ListView.LESSONS);
+
+        String expectedMessage = String.format(FilterCommand.MESSAGE_SHOWING_LESSONS_MATCHING, 2,
+                "level Primary 6");
+
+        assertCommandSuccess(filterCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_subjectAndLevelGiven_showsLessonsMatchingBoth() {
+        Subject science = new Subject("Science");
+        Level primary6 = new Level("Primary 6");
+        FilterCommand filterCommand = new FilterCommand(science, primary6);
+
+        Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+        expectedModel.filterLessonsBySubjectAndLevel(science, primary6);
+        expectedModel.setListView(ListView.LESSONS);
+
+        String expectedMessage = String.format(FilterCommand.MESSAGE_SHOWING_LESSONS_MATCHING, 1,
+                "subject Science and level Primary 6");
+
+        assertCommandSuccess(filterCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
     public void execute_studentIdNotFound_throwsCommandException() {
         StudentId missingId = new StudentId(999);
         FilterCommand filterCommand = new FilterCommand(missingId);
@@ -96,6 +144,9 @@ public class FilterCommandTest {
         FilterCommand filterByMaths = new FilterCommand(MATHEMATICS.getId());
         FilterCommand filterByMonday = new FilterCommand(DayOfWeek.MONDAY);
         FilterCommand filterByTuesday = new FilterCommand(DayOfWeek.TUESDAY);
+        FilterCommand filterByScience = new FilterCommand(new Subject("Science"), null);
+        FilterCommand filterByPrimary6 = new FilterCommand(null, new Level("Primary 6"));
+        FilterCommand filterByScienceP6 = new FilterCommand(new Subject("Science"), new Level("Primary 6"));
 
         // same object -> returns true
         assertTrue(filterByAlice.equals(filterByAlice));
@@ -115,6 +166,14 @@ public class FilterCommandTest {
 
         // lesson vs day -> returns false
         assertFalse(filterByMaths.equals(filterByMonday));
+
+        // same subject and level -> returns true
+        assertTrue(filterByScienceP6.equals(new FilterCommand(new Subject("Science"), new Level("Primary 6"))));
+
+        // subject only vs level only vs both -> returns false
+        assertFalse(filterByScience.equals(filterByPrimary6));
+        assertFalse(filterByScience.equals(filterByScienceP6));
+        assertFalse(filterByPrimary6.equals(filterByScienceP6));
 
         // null -> returns false
         assertFalse(filterByAlice.equals(null));

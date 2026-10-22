@@ -252,26 +252,31 @@ Marks a student as paid for the current month using the student's ID. Use this c
 
 No data is changed on failure.
 
-### Showing a student's lessons, a lesson's students, or a day's lessons: `filter`
+### Showing a student's lessons, a lesson's students, or lessons by day, subject or level: `filter`
 
-Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, or only the lessons on one day of the week.
+Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, only the lessons on one day of the week, or only the lessons with a given subject, level, or both.
 
-Format: `filter student|lesson ID` or `filter day DAY`
+Format: `filter student|lesson ID`, `filter day DAY` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]`
 
 * Shows a student's lessons: `filter student ID`.
 * Shows a lesson's students: `filter lesson ID`.
 * Shows a day's lessons: `filter day DAY`.
+* Shows lessons by subject, level, or both: `filter l/SUBJECT`, `filter llv/LESSON_LEVEL` or `filter l/SUBJECT llv/LESSON_LEVEL`. At least one of `l/` and `llv/` must be given, and they can be in any order. When both are given, only lessons matching both are shown.
+* `SUBJECT` and `LESSON_LEVEL` must match the lesson's subject and level exactly; letter case is ignored. For example, `l/mathematics` matches `Mathematics` but `l/Math` does not.
 * The `ID` refers to the student ID or lesson ID shown in the displayed list, not its position in the list.
 * The specified `ID` must belong to an existing student or lesson.
 * `DAY` is the full day name, e.g. `Monday`; letter case is ignored.
 * Filtering replaces any earlier filter; only one filter can be active at a time.
-* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson switches it to **Students**; filtering by a day also switches it to **Lessons**.
+* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson switches it to **Students**; filtering by a day, subject or level also switches it to **Lessons**.
 * To clear the filter and show every student and lesson again, use `list`.
 
 Examples:
 * `filter student 1` shows only the lessons that the student with ID `1` is enrolled in.
 * `filter lesson 2` shows only the students enrolled in the lesson with ID `2`.
 * `filter day Monday` shows only the lessons that take place on Monday.
+* `filter l/Mathematics` shows only the Mathematics lessons.
+* `filter llv/Primary 6` shows only the Primary 6 lessons.
+* `filter l/Mathematics llv/Primary 6` shows only the Primary 6 Mathematics lessons.
 
 ### Exiting the program: `exit`
 
@@ -320,7 +325,7 @@ Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> _Examples to be added by the owner of `add`._
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
-**Filter** | `filter student\|lesson ID` or `filter day DAY` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`
+**Filter** | `filter student\|lesson ID`, `filter day DAY` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter l/Mathematics llv/Primary 6`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
 **Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
 **Help**   | `help`
