@@ -5,10 +5,13 @@ import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailur
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_ID;
 
+import java.time.DayOfWeek;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.FilterCommand;
 import seedu.address.model.lesson.LessonId;
+import seedu.address.model.lesson.Timeslot;
 import seedu.address.model.student.StudentId;
 
 public class FilterCommandParserTest {
@@ -32,6 +35,14 @@ public class FilterCommandParserTest {
     }
 
     @Test
+    public void parse_validDayArgs_returnsFilterCommand() {
+        assertParseSuccess(parser, "day monday", new FilterCommand(DayOfWeek.MONDAY));
+
+        // letter case and whitespace are ignored
+        assertParseSuccess(parser, "  day   MONDAY  ", new FilterCommand(DayOfWeek.MONDAY));
+    }
+
+    @Test
     public void parse_missingOrExtraParts_throwsParseException() {
         assertParseFailure(parser, "", MESSAGE_INVALID_FORMAT);
         assertParseFailure(parser, "student", MESSAGE_INVALID_FORMAT);
@@ -49,5 +60,10 @@ public class FilterCommandParserTest {
     public void parse_invalidId_throwsParseException() {
         assertParseFailure(parser, "student abc", MESSAGE_INVALID_ID);
         assertParseFailure(parser, "lesson 0", MESSAGE_INVALID_ID);
+    }
+
+    @Test
+    public void parse_invalidDay_throwsParseException() {
+        assertParseFailure(parser, "day someday", Timeslot.MESSAGE_INVALID_DAY);
     }
 }

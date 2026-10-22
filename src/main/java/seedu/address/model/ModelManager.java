@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.time.Clock;
+import java.time.DayOfWeek;
 import java.time.YearMonth;
 import java.util.Comparator;
 import java.util.List;
@@ -56,6 +57,7 @@ public class ModelManager implements Model {
     /** At most one of these is set: the filter that is currently active. */
     private StudentId filteredByStudent;
     private LessonId filteredByLesson;
+    private DayOfWeek filteredByDay;
 
     /**
      * Initializes a ModelManager with the given tuiTracker, userPrefs and clock.
@@ -223,6 +225,7 @@ public class ModelManager implements Model {
         requireNonNull(studentId);
         filteredByStudent = studentId;
         filteredByLesson = null;
+        filteredByDay = null;
         refreshFilters();
     }
 
@@ -231,6 +234,16 @@ public class ModelManager implements Model {
         requireNonNull(lessonId);
         filteredByLesson = lessonId;
         filteredByStudent = null;
+        filteredByDay = null;
+        refreshFilters();
+    }
+
+    @Override
+    public void filterLessonsByDay(DayOfWeek day) {
+        requireNonNull(day);
+        filteredByDay = day;
+        filteredByStudent = null;
+        filteredByLesson = null;
         refreshFilters();
     }
 
@@ -238,6 +251,7 @@ public class ModelManager implements Model {
     public void resetFilters() {
         filteredByStudent = null;
         filteredByLesson = null;
+        filteredByDay = null;
         refreshFilters();
     }
 
@@ -248,13 +262,19 @@ public class ModelManager implements Model {
     private void refreshFilters() {
         final LessonId lessonFilter = filteredByLesson;
         final StudentId studentFilter = filteredByStudent;
+        final DayOfWeek dayFilter = filteredByDay;
 
         Predicate<Student> studentPredicate = lessonFilter == null
                 ? student -> true
                 : student -> tuiTracker.isEnrolled(student.getId(), lessonFilter);
-        Predicate<Lesson> lessonPredicate = studentFilter == null
-                ? lesson -> true
-                : lesson -> tuiTracker.isEnrolled(studentFilter, lesson.getId());
+        Predicate<Lesson> lessonPredicate;
+        if (studentFilter != null) {
+            lessonPredicate = lesson -> tuiTracker.isEnrolled(studentFilter, lesson.getId());
+        } else if (dayFilter != null) {
+            lessonPredicate = lesson -> lesson.getTimeslot().getDay() == dayFilter;
+        } else {
+            lessonPredicate = lesson -> true;
+        }
 
         filteredStudents.setPredicate(studentPredicate);
         filteredLessons.setPredicate(lessonPredicate);
