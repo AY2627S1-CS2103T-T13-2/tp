@@ -177,7 +177,58 @@ _To be written by the owner of `mark`._
 
 ### Filter feature
 
-_To be written by the owner of `filter`._
+The `filter` command narrows the displayed list down to one student's lessons or one lesson's students. Unlike `add`, it never creates or changes data — it only changes what `Model` currently shows, so its implementation is much smaller.
+
+#### Parsing the arguments
+
+`FilterCommandParser` expects exactly two tokens: a keyword (`student` or `lesson`) and an ID.
+
+1. The arguments split into exactly two whitespace-separated tokens; any other shape is rejected with `FilterCommand.MESSAGE_USAGE`.
+2. The first token must be exactly `student` or `lesson`; any other keyword is rejected the same way.
+3. The second token is parsed as a `StudentId` or `LessonId` using the shared `ParserUtil` methods, which carry the exact error messages.
+
+The parser builds the matching `FilterCommand` directly — `FilterCommand(StudentId)` or `FilterCommand(LessonId)` — there is no intermediate "reference" object like `AddCommand.StudentRef`/`LessonRef`, because a filter only ever needs an ID, never new details.
+
+#### Executing the command
+
+`FilterCommand#execute(Model)` does two things, in order:
+
+1. Confirms the ID refers to an existing student or lesson, otherwise throws a `CommandException` (`MESSAGE_STUDENT_NOT_FOUND` / `MESSAGE_LESSON_NOT_FOUND`).
+2. Delegates to `Model#filterLessonsByStudent(StudentId)` or `Model#filterStudentsByLesson(LessonId)`, then calls `Model#setListView(ListView)` so the UI switches to the list that was just filtered.
+
+Inside `ModelManager`, at most one of `filteredByStudent` / `filteredByLesson` is ever set — setting one clears the other, which is what makes the two filters mutually exclusive. The actual filtering is done by `refreshFilters()`, which rebuilds the `Predicate` for both `FilteredList`s from scratch and re-applies it. This method is also called after every mutating operation (`addStudent`, `addLesson`, `enroll`, `deleteStudent`, `deleteLesson`), which is why an active filter stays correct even as enrollments change after it was set — the predicate re-checks `Model#isEnrolled` live rather than capturing a snapshot.
+
+The sequence diagram below shows `execute("filter student 1")`.
+
+<puml src="diagrams/FilterSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `filter` Command" />
+
+#### Design considerations
+
+**Aspect: how the active filter is stored**
+
+* **Alternative 1 (current choice):** two nullable fields in `ModelManager` (`filteredByStudent`, `filteredByLesson`), each clearing the other when set.
+  * Pros: Simple; `resetFilters()` and the delete commands just null both fields out.
+  * Cons: The "at most one is set" invariant is enforced by convention (every setter must remember to clear the other), not by the type system.
+* **Alternative 2:** a small sealed type, similar to `AddCommand.StudentRef`/`LessonRef`, representing "no filter / filtered by student / filtered by lesson".
+  * Pros: The compiler guarantees exactly one state at a time.
+  * Cons: More machinery for a feature this small; `ModelManager` would need to unwrap the sealed type everywhere `refreshFilters()` uses it.
+
+**Aspect: when the filter predicate is recomputed**
+
+* **Alternative 1 (current choice):** recompute both predicates from scratch in `refreshFilters()`, called after every mutation.
+  * Pros: The filter is always consistent with the latest data; no risk of a stale filtered list after an unrelated `enroll` or `delete`.
+  * Cons: Every mutating `Model` method must remember to call `refreshFilters()`.
+* **Alternative 2:** filter once when `filter` runs and leave the resulting list static until the next `filter`/`list`.
+  * Pros: Slightly less coupling between mutating methods and the filter.
+  * Cons: The filtered list would go stale the moment a student is deleted or an enrollment changes, showing outdated data.
+
+**Aspect: clearing the filter when its target is deleted**
+
+`deleteStudent`/`deleteLesson` check whether the ID being deleted is the one currently filtered on, and clear the filter if so, before calling `refreshFilters()`. This was a deliberate choice over leaving the filter as-is: an active filter pointing at a now-deleted ID would otherwise just show an empty list with no indication why, which would confuse the user more than falling back to the full list.
+
+#### Testing
+
+`FilterCommandParserTest` covers the valid `student`/`lesson` forms, malformed argument counts, an unknown keyword, and an invalid ID. `FilterCommandTest` covers both successful filters (checking the resulting model and list view), both not-found cases, and `equals()`.
 
 ### \[Proposed\] Undo/redo feature
 
