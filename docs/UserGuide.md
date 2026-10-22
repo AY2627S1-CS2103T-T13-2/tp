@@ -223,7 +223,7 @@ Marks a student as paid for the current month using the student's ID. Use this c
 
 **Parameters:**
 
-* `ID` — the student's positive whole-number ID. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
+* `ID` — the student's positive whole-number ID, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
 * Leading and trailing spaces are ignored. No other text may follow the ID.
 
 **Examples:**
@@ -246,7 +246,7 @@ Marks a student as paid for the current month using the student's ID. Use this c
 **Errors:**
 
 * A missing ID or extra text after the ID — the app displays `Invalid command format. Use: mark ID`.
-* A malformed or non-positive ID — the app displays `ID must be a positive whole number.`
+* A malformed, non-positive, or oversized ID — the app displays `ID must be a positive whole number.`
 * No student has that ID — the app displays `No student found with ID 999.` (using the requested ID). An ID belonging only to a lesson does not match.
 * The student is already marked as paid for the current month — the app displays `Alice Tan is already marked as paid for the current month.` (using the student's name).
 
