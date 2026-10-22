@@ -13,6 +13,7 @@ With TuiTracker, tutors can:
 * view student details, enrolled lessons, fees, and payment status;
 * view lesson schedules, fees, and enrolled students;
 * add students and lessons;
+* edit existing student and lesson details;
 * mark monthly payments as paid; and
 * delete students or lessons that are no longer needed.
 
