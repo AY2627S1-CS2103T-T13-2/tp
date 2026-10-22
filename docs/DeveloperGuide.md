@@ -234,6 +234,14 @@ The order is deliberate. Duplicates are checked **before** clashes because an id
 
 `AddCommandParserTest` has one test for each way the parser can fail, and `AddCommandTest` covers each form, each rule and each pair of checks whose order matters.
 
+### Edit feature
+
+The `edit` command changes the specified fields of one existing student or lesson while preserving its ID and related data. `EditCommandParser` creates an `EditCommand` containing either a `StudentEdit` or a `LessonEdit`; fields that were not supplied remain empty in that edit request and retain their existing values during execution. `EditCommand` validates the complete updated record before asking the `Model` to replace the original.
+
+The sequence diagram below shows `execute("edit student 1 c/90001111")`, which updates only an existing student's contact number. Less-important method parameters, the duplicate and enrolled-lesson checks, the no-change path and the error paths are omitted to keep the diagram focused. Editing a lesson follows the same overall flow, with validation of its final timeslot, level, duplicates and clashes before the update.
+
+<puml src="diagrams/EditSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `edit` Command" />
+
 ### Delete feature
 
 The sequence diagram above shows the internal command flow. The activity diagram below summarizes validation, lookup and deletion of a student or lesson, including removal of associated enrollments and the relevant error paths.
@@ -242,7 +250,11 @@ The sequence diagram above shows the internal command flow. The activity diagram
 
 ### List feature
 
-_To be written by the owner of `list`._
+The `list` command clears any active filter and switches the interface to the requested student or lesson list. If no view is supplied, `ListCommandParser` defaults to the student list.
+
+The sequence diagram below shows `execute("list lessons")` when four lessons exist. The invalid-view and empty-list paths are omitted because they do not change the main interaction between the Logic and Model components.
+
+<puml src="diagrams/ListSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `list` Command" />
 
 ### Mark feature
 
