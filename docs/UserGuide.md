@@ -252,23 +252,26 @@ Marks a student as paid for the current month using the student's ID. Use this c
 
 No data is changed on failure.
 
-### Showing a student's lessons or a lesson's students: `filter`
+### Showing a student's lessons, a lesson's students, or a day's lessons: `filter`
 
-Shows only the lessons that one student is enrolled in, or only the students enrolled in one lesson.
+Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, or only the lessons on one day of the week.
 
-Format: `filter student|lesson ID`
+Format: `filter student|lesson ID` or `filter day DAY`
 
 * Shows a student's lessons: `filter student ID`.
 * Shows a lesson's students: `filter lesson ID`.
+* Shows a day's lessons: `filter day DAY`.
 * The `ID` refers to the student ID or lesson ID shown in the displayed list, not its position in the list.
 * The specified `ID` must belong to an existing student or lesson.
+* `DAY` is the full day name, e.g. `Monday`; letter case is ignored.
 * Filtering replaces any earlier filter; only one filter can be active at a time.
-* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson switches it to **Students**.
+* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson switches it to **Students**; filtering by a day also switches it to **Lessons**.
 * To clear the filter and show every student and lesson again, use `list`.
 
 Examples:
 * `filter student 1` shows only the lessons that the student with ID `1` is enrolled in.
 * `filter lesson 2` shows only the students enrolled in the lesson with ID `2`.
+* `filter day Monday` shows only the lessons that take place on Monday.
 
 ### Exiting the program: `exit`
 
@@ -317,7 +320,7 @@ Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> _Examples to be added by the owner of `add`._
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
-**Filter** | `filter student\|lesson ID` <br> e.g., `filter student 1`, `filter lesson 2`
+**Filter** | `filter student\|lesson ID` or `filter day DAY` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
 **Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
 **Help**   | `help`

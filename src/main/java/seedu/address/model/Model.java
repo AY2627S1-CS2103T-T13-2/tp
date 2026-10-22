@@ -1,5 +1,6 @@
 package seedu.address.model;
 
+import java.time.DayOfWeek;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
@@ -161,6 +162,11 @@ public interface Model {
      * The filter stays up to date as enrollments change. The lesson must exist.
      */
     void filterStudentsByLesson(LessonId lessonId);
+
+    /**
+     * Shows only the lessons on the given day, replacing any earlier filter. The student list is unaffected.
+     */
+    void filterLessonsByDay(DayOfWeek day);
 
     /**
      * Clears any filter, so that every student and every lesson is shown.

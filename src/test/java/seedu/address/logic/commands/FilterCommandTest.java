@@ -13,6 +13,8 @@ import static seedu.address.testutil.TypicalStudents.ALICE;
 import static seedu.address.testutil.TypicalStudents.BRYAN;
 import static seedu.address.testutil.TypicalTuiTracker.getTypicalTuiTracker;
 
+import java.time.DayOfWeek;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.model.ListView;
@@ -20,6 +22,7 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.lesson.LessonId;
+import seedu.address.model.lesson.Timeslot;
 import seedu.address.model.student.StudentId;
 
 public class FilterCommandTest {
@@ -57,6 +60,20 @@ public class FilterCommandTest {
     }
 
     @Test
+    public void execute_dayGiven_showsLessonsOnThatDay() {
+        FilterCommand filterCommand = new FilterCommand(DayOfWeek.MONDAY);
+
+        Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+        expectedModel.filterLessonsByDay(DayOfWeek.MONDAY);
+        expectedModel.setListView(ListView.LESSONS);
+
+        String expectedMessage = String.format(FilterCommand.MESSAGE_SHOWING_LESSONS_ON_DAY,
+                expectedModel.getLessonList().size(), Timeslot.dayName(DayOfWeek.MONDAY));
+
+        assertCommandSuccess(filterCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
     public void execute_studentIdNotFound_throwsCommandException() {
         StudentId missingId = new StudentId(999);
         FilterCommand filterCommand = new FilterCommand(missingId);
@@ -77,18 +94,27 @@ public class FilterCommandTest {
         FilterCommand filterByAlice = new FilterCommand(ALICE.getId());
         FilterCommand filterByBryan = new FilterCommand(BRYAN.getId());
         FilterCommand filterByMaths = new FilterCommand(MATHEMATICS.getId());
+        FilterCommand filterByMonday = new FilterCommand(DayOfWeek.MONDAY);
+        FilterCommand filterByTuesday = new FilterCommand(DayOfWeek.TUESDAY);
 
         // same object -> returns true
         assertTrue(filterByAlice.equals(filterByAlice));
 
         // same values -> returns true
         assertTrue(filterByAlice.equals(new FilterCommand(ALICE.getId())));
+        assertTrue(filterByMonday.equals(new FilterCommand(DayOfWeek.MONDAY)));
 
         // different student -> returns false
         assertFalse(filterByAlice.equals(filterByBryan));
 
         // student vs lesson -> returns false
         assertFalse(filterByAlice.equals(filterByMaths));
+
+        // different day -> returns false
+        assertFalse(filterByMonday.equals(filterByTuesday));
+
+        // lesson vs day -> returns false
+        assertFalse(filterByMaths.equals(filterByMonday));
 
         // null -> returns false
         assertFalse(filterByAlice.equals(null));
