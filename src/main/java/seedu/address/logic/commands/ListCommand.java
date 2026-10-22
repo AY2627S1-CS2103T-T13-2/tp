@@ -44,14 +44,21 @@ public class ListCommand extends Command {
         model.resetFilters();
         model.setListView(view);
 
-        if (view == ListView.STUDENTS) {
-            int studentCount = model.getStudentList().size();
-            String message = studentCount == 0
-                    ? MESSAGE_NO_STUDENTS
-                    : String.format(MESSAGE_LISTED_STUDENTS, studentCount);
-            return new CommandResult(message);
-        }
+        return switch (view) {
+            case STUDENTS -> listStudents(model);
+            case LESSONS -> listLessons(model);
+        };
+    }
 
+    private static CommandResult listStudents(Model model) {
+        int studentCount = model.getStudentList().size();
+        String message = studentCount == 0
+                ? MESSAGE_NO_STUDENTS
+                : String.format(MESSAGE_LISTED_STUDENTS, studentCount);
+        return new CommandResult(message);
+    }
+
+    private static CommandResult listLessons(Model model) {
         int lessonCount = model.getLessonList().size();
         String message = lessonCount == 0
                 ? MESSAGE_NO_LESSONS

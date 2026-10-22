@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static seedu.address.logic.Messages.MESSAGE_DUPLICATE_PARAMETER;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_LESSON_PARAMETERS_NOT_ALLOWED;
@@ -7,6 +8,7 @@ import static seedu.address.logic.commands.EditCommand.MESSAGE_NO_FIELDS;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_STUDENT_PARAMETERS_NOT_ALLOWED;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
+import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_ID;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
@@ -28,6 +30,11 @@ import seedu.address.model.student.StudentId;
 public class EditCommandParserTest {
 
     private final EditCommandParser parser = new EditCommandParser();
+
+    @Test
+    public void parse_nullArguments_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> parser.parse(null));
+    }
 
     @Test
     public void parse_studentFields_returnsEditCommand() {
@@ -90,5 +97,12 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "", message);
         assertParseFailure(parser, " teacher 1 s/Alice", message);
         assertParseFailure(parser, " student 1 extra s/Alice", message);
+    }
+
+    @Test
+    public void parse_invalidId_throwsParseException() {
+        assertParseFailure(parser, " student 0 s/Alice", MESSAGE_INVALID_ID);
+        assertParseFailure(parser, " student -1 s/Alice", MESSAGE_INVALID_ID);
+        assertParseFailure(parser, " lesson 1.5 f/50", MESSAGE_INVALID_ID);
     }
 }

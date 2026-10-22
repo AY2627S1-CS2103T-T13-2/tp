@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 
@@ -11,6 +12,11 @@ import seedu.address.model.ListView;
 public class ListCommandParserTest {
 
     private final ListCommandParser parser = new ListCommandParser();
+
+    @Test
+    public void parse_nullArguments_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> parser.parse(null));
+    }
 
     @Test
     public void parse_noView_returnsStudentListCommand() {
@@ -43,5 +49,6 @@ public class ListCommandParserTest {
     public void parse_viewGivenTwice_throwsParseException() {
         assertParseFailure(parser, " students students", ListCommand.MESSAGE_VIEW_GIVEN_TWICE);
         assertParseFailure(parser, " lessons LESSONS", ListCommand.MESSAGE_VIEW_GIVEN_TWICE);
+        assertParseFailure(parser, " students lessons", ListCommand.MESSAGE_VIEW_GIVEN_TWICE);
     }
 }

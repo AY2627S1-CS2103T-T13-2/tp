@@ -71,6 +71,7 @@ public class EditCommand extends Command {
     private CommandResult editStudent(Model model, StudentEdit edit) throws CommandException {
         Student original = model.findStudent(edit.id()).orElseThrow(() ->
                 new CommandException(String.format(MESSAGE_STUDENT_NOT_FOUND, edit.id())));
+        assert original.getId().equals(edit.id()) : "Student lookup returned a different ID";
         Name name = edit.name().orElse(original.getName());
         Contact contact = edit.contact().orElse(original.getContact());
         Level level = edit.level().orElse(original.getLevel());
@@ -90,19 +91,21 @@ public class EditCommand extends Command {
         }
 
         boolean mismatchedLesson = model.getLessonIdsOf(original.getId()).stream()
-                .map(id -> model.findLesson(id).orElseThrow())
+                .map(id -> findEnrolledLesson(model, id))
                 .anyMatch(lesson -> !lesson.getLevel().equals(level));
         if (mismatchedLesson) {
             throw new CommandException(MESSAGE_STUDENT_LEVEL_MISMATCH);
         }
 
         Student edited = model.editStudent(original.getId(), name, contact, level);
+        assert updated.equals(edited) : "Model returned unexpected student details after edit";
         return new CommandResult(String.format(MESSAGE_SUCCESS_STUDENT, edited.getName(), edited.getId()));
     }
 
     private CommandResult editLesson(Model model, LessonEdit edit) throws CommandException {
         Lesson original = model.findLesson(edit.id()).orElseThrow(() ->
                 new CommandException(String.format(MESSAGE_LESSON_NOT_FOUND, edit.id())));
+        assert original.getId().equals(edit.id()) : "Lesson lookup returned a different ID";
         Subject subject = edit.subject().orElse(original.getSubject());
         Level level = edit.level().orElse(original.getLevel());
         DayOfWeek day = edit.day().orElse(original.getTimeslot().getDay());
@@ -143,8 +146,15 @@ public class EditCommand extends Command {
         }
 
         Lesson edited = model.editLesson(original.getId(), subject, level, timeslot, fee);
+        assert updated.equals(edited) : "Model returned unexpected lesson details after edit";
         return new CommandResult(String.format(MESSAGE_SUCCESS_LESSON, edited.getSubject(), edited.getLevel(),
                 edited.getTimeslot(), edited.getId()));
+    }
+
+    private static Lesson findEnrolledLesson(Model model, LessonId id) {
+        Optional<Lesson> lesson = model.findLesson(id);
+        assert lesson.isPresent() : "Enrollment references a missing lesson";
+        return lesson.orElseThrow();
     }
 
     @Override
@@ -167,6 +177,8 @@ public class EditCommand extends Command {
         /** Creates an edit request for a student. */
         public StudentEdit {
             requireAllNonNull(id, name, contact, level);
+            assert name.isPresent() || contact.isPresent() || level.isPresent()
+                    : "A student edit must contain at least one field";
         }
     }
 
@@ -177,6 +189,9 @@ public class EditCommand extends Command {
         /** Creates an edit request for a lesson. */
         public LessonEdit {
             requireAllNonNull(id, subject, level, day, start, end, fee);
+            assert subject.isPresent() || level.isPresent() || day.isPresent() || start.isPresent()
+                    || end.isPresent() || fee.isPresent()
+                    : "A lesson edit must contain at least one field";
         }
     }
 }

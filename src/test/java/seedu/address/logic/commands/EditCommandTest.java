@@ -1,5 +1,6 @@
 package seedu.address.logic.commands;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static seedu.address.logic.Messages.MESSAGE_LESSON_NOT_FOUND;
 import static seedu.address.logic.Messages.MESSAGE_STUDENT_NOT_FOUND;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
@@ -38,6 +39,43 @@ import seedu.address.model.student.Name;
 import seedu.address.model.student.StudentId;
 
 public class EditCommandTest {
+
+    @Test
+    public void constructor_nullTarget_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new EditCommand(null));
+    }
+
+    @Test
+    public void execute_nullModel_throwsNullPointerException() {
+        StudentEdit edit = new StudentEdit(ALICE.getId(), Optional.of(new Name("Alice Lee")), Optional.empty(),
+                Optional.empty());
+
+        assertThrows(NullPointerException.class, () -> new EditCommand(edit).execute(null));
+    }
+
+    @Test
+    public void studentEdit_noFields_throwsAssertionError() {
+        assertThrows(AssertionError.class, () -> new StudentEdit(ALICE.getId(), Optional.empty(), Optional.empty(),
+                Optional.empty()));
+    }
+
+    @Test
+    public void studentEdit_nullFieldContainer_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new StudentEdit(ALICE.getId(), null, Optional.empty(),
+                Optional.empty()));
+    }
+
+    @Test
+    public void lessonEdit_noFields_throwsAssertionError() {
+        assertThrows(AssertionError.class, () -> new LessonEdit(MATHEMATICS.getId(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()));
+    }
+
+    @Test
+    public void lessonEdit_nullFieldContainer_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new LessonEdit(MATHEMATICS.getId(), null, Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()));
+    }
 
     @Test
     public void execute_studentPartialEdit_updatesOnlySuppliedField() {
