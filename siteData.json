@@ -52,6 +52,7 @@
         "common-classes": "Common classes",
         "implementation": "Implementation",
         "add-feature": "Add feature",
+        "edit-feature": "Edit feature",
         "delete-feature": "Delete feature",
         "list-feature": "List feature",
         "mark-feature": "Mark feature",
