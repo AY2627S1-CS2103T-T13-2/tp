@@ -47,6 +47,7 @@ public class ListCommand extends Command {
         return switch (view) {
             case STUDENTS -> listStudents(model);
             case LESSONS -> listLessons(model);
+            case SCHEDULE -> throw new AssertionError("list never show the schedule");
         };
     }
 
