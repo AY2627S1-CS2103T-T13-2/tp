@@ -56,6 +56,7 @@
         "delete-feature": "Delete feature",
         "list-feature": "List feature",
         "mark-feature": "Mark feature",
+        "help-feature": "Help feature",
         "filter-feature": "Filter feature",
         "proposed-undo-redo-feature": "[Proposed] Undo/redo feature",
         "proposed-data-archiving": "[Proposed] Data archiving",
