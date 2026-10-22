@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.TypicalClock.CLOCK;
@@ -20,6 +21,16 @@ import seedu.address.model.UserPrefs;
 public class ListCommandTest {
 
     private final Model model = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+
+    @Test
+    public void constructor_nullView_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new ListCommand(null));
+    }
+
+    @Test
+    public void execute_nullModel_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new ListCommand(ListView.STUDENTS).execute(null));
+    }
 
     @Test
     public void execute_students_clearsFilterAndShowsAllStudents() {

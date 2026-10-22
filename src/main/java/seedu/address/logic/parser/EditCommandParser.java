@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_CONTACT;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_DAY;
@@ -41,6 +42,7 @@ public class EditCommandParser implements Parser<EditCommand> {
 
     @Override
     public EditCommand parse(String args) throws ParseException {
+        requireNonNull(args);
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(args, ALL_PREFIXES);
         String[] target = arguments.getPreamble().trim().split("\\s+");
         if (target.length != 2 || !isKind(target[0])) {
