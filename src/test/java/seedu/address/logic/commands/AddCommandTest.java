@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static seedu.address.logic.Messages.MESSAGE_LESSON_NOT_FOUND;
 import static seedu.address.logic.Messages.MESSAGE_STUDENT_NOT_FOUND;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_ALREADY_ENROLLED;
@@ -137,6 +138,36 @@ public class AddCommandTest {
         String expected = AddCommand.class.getCanonicalName() + "{student=" + EXISTING_STUDENT + ", lesson="
                 + NEW_LESSON + "}";
         assertEquals(expected, command.toString());
+    }
+
+    //// defensive checks
+
+    @Test
+    public void execute_nullModel_throwsNullPointerException() {
+        AddCommand command = new AddCommand(EXISTING_STUDENT, EXISTING_LESSON);
+
+        assertThrows(NullPointerException.class, () -> command.execute(null));
+    }
+
+    @Test
+    public void execute_modelThatDoesNotEnroll_failsPostConditionAssertion() {
+        // Assertions are on in Gradle test runs; skip, and do not fail, where they have been turned off.
+        assumeTrue(assertionsAreEnabled());
+        // A model that breaks the Model contract: enroll does nothing, so the student is not enrolled afterwards.
+        Model brokenModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK) {
+            @Override
+            public void enroll(StudentId studentId, LessonId lessonId) {
+            }
+        };
+        AddCommand command = new AddCommand(new ExistingStudent(ALICE.getId()), HISTORY_DETAILS);
+
+        assertThrows(AssertionError.class, () -> command.execute(brokenModel));
+    }
+
+    private static boolean assertionsAreEnabled() {
+        boolean enabled = false;
+        assert enabled = true; // deliberate side effect: only runs when assertions are on
+        return enabled;
     }
 
     //// enrolling an existing student in an existing lesson

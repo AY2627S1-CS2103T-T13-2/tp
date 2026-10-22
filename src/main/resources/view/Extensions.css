@@ -18,3 +18,108 @@
 .tooltip-text {
     -fx-text-fill: white;
 }
+
+.schedule-panel {
+    -fx-background-color: #292d32;
+}
+
+.schedule-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f5f7fa;
+}
+
+.schedule-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #b7c1ca;
+}
+
+.schedule-warning {
+    -fx-background-color: #654321;
+    -fx-background-radius: 5px;
+    -fx-padding: 7px;
+    -fx-text-fill: #fff2ce;
+}
+
+.schedule-scroll,
+.schedule-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.schedule-day {
+    -fx-background-color: #383e45;
+    -fx-background-radius: 6px;
+    -fx-padding: 10px;
+}
+
+.schedule-today {
+    -fx-border-color: #50b5d2;
+    -fx-border-width: 2px;
+    -fx-border-radius: 6px;
+}
+
+.schedule-day-heading {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f5f7fa;
+}
+
+.schedule-day-scroll,
+.schedule-day-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.schedule-timeline {
+    -fx-background-color: #343b42;
+}
+
+.schedule-hour-line {
+    -fx-background-color: #58636d;
+}
+
+.schedule-hour-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #b7c1ca;
+}
+
+.schedule-empty {
+    -fx-font-style: italic;
+    -fx-text-fill: #b7c1ca;
+}
+
+.schedule-lesson {
+    -fx-background-color: #314e60;
+    -fx-background-radius: 5px;
+    -fx-padding: 0;
+}
+
+.schedule-lesson .viewport {
+    -fx-background-color: #314e60;
+}
+
+.schedule-lesson-content {
+    -fx-padding: 9px;
+}
+
+.schedule-overlap {
+    -fx-border-color: #ffb25f;
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+}
+
+.schedule-lesson-time {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+}
+
+.schedule-lesson-subject {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+}
+
+.schedule-lesson-detail {
+    -fx-font-size: 11px;
+    -fx-text-fill: #dce8ef;
+}

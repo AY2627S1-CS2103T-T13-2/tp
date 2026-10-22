@@ -94,6 +94,11 @@ public class LogicManager implements Logic {
     }
 
     @Override
+    public List<Lesson> getAllLessons() {
+        return List.copyOf(model.getTuiTracker().getLessonList());
+    }
+
+    @Override
     public ReadOnlyObjectProperty<ListView> listViewProperty() {
         return model.listViewProperty();
     }

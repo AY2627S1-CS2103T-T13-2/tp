@@ -33,6 +33,9 @@ public interface Logic {
     /** Returns an unmodifiable view of the lessons to show, with any filter applied. */
     ObservableList<Lesson> getLessonList();
 
+    /** Returns all lessons, including those excluded by an active filter. */
+    List<Lesson> getAllLessons();
+
     /** Returns which list the main panel should show. Observe it to react when {@code list} switches it. */
     ReadOnlyObjectProperty<ListView> listViewProperty();
 

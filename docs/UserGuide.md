@@ -278,6 +278,16 @@ Examples:
 * `filter llv/Primary 6` shows only the Primary 6 lessons.
 * `filter l/Mathematics llv/Primary 6` shows only the Primary 6 Mathematics lessons.
 
+### Viewing the weekly schedule: `schedule`
+
+Shows all recurring lessons in a Monday-to-Sunday weekly timeline. Each day runs from 00:00 to 23:59, with lessons positioned at their scheduled times. Lesson cards show the subject, time, lesson ID, and enrolled students. A day with no lessons shows `No lessons`; a lesson with no students shows `No students`.
+
+**Format:** `schedule`
+
+The schedule repeats each week because lessons are stored by weekday and time, without calendar dates. It includes all lessons even when a student or lesson filter is active. The current weekday is outlined. Scroll horizontally to see all seven day columns, and scroll within a day to move through its 24-hour timeline. Overlapping lessons appear side by side and are highlighted with a warning naming the affected day. Use `list` or `filter` to switch back to a student or lesson list.
+
+If there are no lessons, the result box shows `No lessons are scheduled for this week.` Any argument after `schedule` produces `Unknown parameter. Use: schedule`.
+
 ### Exiting the program: `exit`
 
 Exits the program.
@@ -328,5 +338,6 @@ Action     | Format, Examples
 **Filter** | `filter student\|lesson ID`, `filter day DAY` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter l/Mathematics llv/Primary 6`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
 **Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
+**Schedule** | `schedule` <br> Shows recurring lessons from Monday to Sunday
 **Help**   | `help`
 **Exit**   | `exit`

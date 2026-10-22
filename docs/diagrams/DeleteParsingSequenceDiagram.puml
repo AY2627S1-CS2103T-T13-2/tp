@@ -1,0 +1,29 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+Participant ":LogicManager" as LogicManager LOGIC_COLOR
+Participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+Participant ":DeleteCommandParser" as DeleteCommandParser LOGIC_COLOR
+Participant "d:DeleteCommand" as DeleteCommand LOGIC_COLOR
+
+LogicManager -> AddressBookParser : parseCommand("delete KIND ID")
+activate AddressBookParser LOGIC_COLOR
+
+create DeleteCommandParser
+AddressBookParser -> DeleteCommandParser : create
+activate DeleteCommandParser LOGIC_COLOR
+AddressBookParser -> DeleteCommandParser : parse(" KIND ID")
+
+create DeleteCommand
+DeleteCommandParser -> DeleteCommand : create(StudentId or LessonId)
+activate DeleteCommand LOGIC_COLOR
+DeleteCommand --> DeleteCommandParser : d
+deactivate DeleteCommand
+
+DeleteCommandParser --> AddressBookParser : d
+deactivate DeleteCommandParser
+destroy DeleteCommandParser
+AddressBookParser --> LogicManager : d
+deactivate AddressBookParser
+@enduml
