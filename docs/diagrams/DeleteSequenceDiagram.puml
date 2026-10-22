@@ -2,69 +2,44 @@
 !include style.puml
 skinparam ArrowFontStyle plain
 
-box Logic LOGIC_COLOR_T1
-participant ":LogicManager" as LogicManager LOGIC_COLOR
-participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
-participant ":DeleteCommandParser" as DeleteCommandParser LOGIC_COLOR
-participant "d:DeleteCommand" as DeleteCommand LOGIC_COLOR
-participant "r:CommandResult" as CommandResult LOGIC_COLOR
-end box
+Actor User as user USER_COLOR
+Participant ":MainWindow" as MainWindow UI_COLOR
+Participant ":LogicManager" as LogicManager LOGIC_COLOR
+Participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+Participant ":ModelManager" as ModelManager MODEL_COLOR
+Participant ":StorageManager" as StorageManager STORAGE_COLOR
 
-box Model MODEL_COLOR_T1
-participant "m:Model" as Model MODEL_COLOR
-end box
+user -[USER_COLOR]> MainWindow : executeCommand("delete KIND ID")
+activate MainWindow UI_COLOR
+MainWindow -[UI_COLOR]> LogicManager : execute("delete KIND ID")
+activate LogicManager LOGIC_COLOR
 
-[-> LogicManager : execute("delete 1")
-activate LogicManager
-
-LogicManager -> AddressBookParser : parseCommand("delete 1")
-activate AddressBookParser
-
-create DeleteCommandParser
-AddressBookParser -> DeleteCommandParser
-activate DeleteCommandParser
-
-DeleteCommandParser --> AddressBookParser
-deactivate DeleteCommandParser
-
-AddressBookParser -> DeleteCommandParser : parse("1")
-activate DeleteCommandParser
-
-create DeleteCommand
-DeleteCommandParser -> DeleteCommand
-activate DeleteCommand
-
-DeleteCommand --> DeleteCommandParser :
-deactivate DeleteCommand
-
-DeleteCommandParser --> AddressBookParser : d
-deactivate DeleteCommandParser
-'Hidden arrow to position the destroy marker below the end of the activation bar.
-DeleteCommandParser -[hidden]-> AddressBookParser
-destroy DeleteCommandParser
-
-AddressBookParser --> LogicManager : d
+LogicManager -> AddressBookParser : parseCommand("delete KIND ID")
+activate AddressBookParser LOGIC_COLOR
+AddressBookParser --> LogicManager : d:DeleteCommand
 deactivate AddressBookParser
 
-LogicManager -> DeleteCommand : execute(m)
-activate DeleteCommand
+LogicManager -> ModelManager : getTuiTracker()
+ModelManager --> LogicManager : current tracker
+LogicManager -> LogicManager : copy tracker for rollback
+alt KIND is student
+    ref over LogicManager, ModelManager : Execute delete student 12\n(see student sequence below)
+else KIND is lesson
+    ref over LogicManager, ModelManager : Execute delete lesson 7\n(see lesson sequence below)
+end
 
-DeleteCommand -> Model : deletePerson(1)
-activate Model
+alt Command succeeds
+    LogicManager -> ModelManager : getTuiTracker()
+    ModelManager --> LogicManager : updated data
+    LogicManager -> StorageManager : saveTuiTracker(updated data)
+    StorageManager --> LogicManager : saved
+    LogicManager --> MainWindow : CommandResult
+    MainWindow -> MainWindow : refresh panels and display confirmation
+else Command fails
+    LogicManager --> MainWindow : CommandException
+    MainWindow -> MainWindow : display error
+end
 
-Model --> DeleteCommand
-deactivate Model
-
-create CommandResult
-DeleteCommand -> CommandResult
-activate CommandResult
-
-CommandResult --> DeleteCommand
-deactivate CommandResult
-
-DeleteCommand --> LogicManager : r
-deactivate DeleteCommand
-
-[<--LogicManager
 deactivate LogicManager
+deactivate MainWindow
 @enduml
