@@ -1,0 +1,29 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+Participant ":LogicManager" as LogicManager LOGIC_COLOR
+Participant "d:DeleteCommand" as DeleteCommand LOGIC_COLOR
+Participant ":ModelManager" as ModelManager MODEL_COLOR
+Participant "t:TuiTracker" as TuiTracker MODEL_COLOR
+
+LogicManager -> DeleteCommand : execute(ModelManager)
+activate DeleteCommand LOGIC_COLOR
+
+DeleteCommand -> ModelManager : findLesson(LessonId(7))
+ModelManager -> TuiTracker : findLesson(LessonId(7))
+TuiTracker --> ModelManager : Optional<Lesson>
+ModelManager --> DeleteCommand : Optional<Lesson>
+
+alt Lesson exists
+    DeleteCommand -> ModelManager : deleteLesson(LessonId(7))
+    ModelManager -> TuiTracker : deleteLesson(LessonId(7))
+    TuiTracker --> ModelManager : deleted Lesson
+    ModelManager --> DeleteCommand : deleted Lesson
+    DeleteCommand --> LogicManager : CommandResult with confirmation
+else Lesson does not exist
+    DeleteCommand --> LogicManager : CommandException: lesson not found
+end
+
+deactivate DeleteCommand
+@enduml

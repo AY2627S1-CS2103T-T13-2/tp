@@ -90,14 +90,24 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <puml src="diagrams/LogicClassDiagram.puml" width="550"/>
 
-The sequence diagram below illustrates the interactions within the `Logic` component, taking `execute("delete student 12")` as an example.
+The sequence diagram below gives an overview of the delete command flow. `KIND ID` stands for the selected kind and ID; the branches use `student 12` and `lesson 7` as examples.
 
-<puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the Delete Command" />
+<puml src="diagrams/DeleteSequenceDiagram.puml" alt="Overview of the Delete Command Sequence" />
+
+The parsing interactions summarized in the overview are shown here:
+
+<puml src="diagrams/DeleteParsingSequenceDiagram.puml" alt="Parsing Sequence for the Delete Command" />
 
 <box type="info" seamless>
 
 **Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
 </box>
+
+The next two diagrams expand the student and lesson reference frames. Each shows the lookup, deletion and associated enrollment removal, and the not-found path.
+
+<puml src="diagrams/DeleteStudentSequenceDiagram.puml" alt="Student Deletion Sequence for the Delete Command" />
+
+<puml src="diagrams/DeleteLessonSequenceDiagram.puml" alt="Lesson Deletion Sequence for the Delete Command" />
 
 
 How the `Logic` component works:
