@@ -1,5 +1,6 @@
 package seedu.address.testutil;
 
+import java.time.DayOfWeek;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
@@ -140,6 +141,11 @@ public class ModelStub implements Model {
 
     @Override
     public void filterStudentsByLesson(LessonId lessonId) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
+    public void filterLessonsByDay(DayOfWeek day) {
         throw new AssertionError("This method should not be called.");
     }
 

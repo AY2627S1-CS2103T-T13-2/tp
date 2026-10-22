@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_LESSON_NOT_FOUND;
 import static seedu.address.logic.Messages.MESSAGE_STUDENT_NOT_FOUND;
 
+import java.time.DayOfWeek;
 import java.util.Objects;
 
 import seedu.address.commons.util.ToStringBuilder;
@@ -11,24 +12,28 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.ListView;
 import seedu.address.model.Model;
 import seedu.address.model.lesson.LessonId;
+import seedu.address.model.lesson.Timeslot;
 import seedu.address.model.student.StudentId;
 
 /**
- * Shows only the lessons of one student, or only the students of one lesson.
+ * Shows only the lessons of one student, only the students of one lesson, or only the lessons on one day.
  */
 public class FilterCommand extends Command {
 
     public static final String COMMAND_WORD = "filter";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + " student|lesson ID";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + " student|lesson ID or " + COMMAND_WORD + " day DAY";
 
     public static final String MESSAGE_SHOWING_LESSONS = "Showing %1$d lesson(s) for student ID %2$s.";
 
     public static final String MESSAGE_SHOWING_STUDENTS = "Showing %1$d student(s) for lesson ID %2$s.";
 
-    /** At most one of these is set, depending on whether the user filtered by student or by lesson. */
+    public static final String MESSAGE_SHOWING_LESSONS_ON_DAY = "Showing %1$d lesson(s) on %2$s.";
+
+    /** At most one of these is set, depending on whether the user filtered by student, by lesson or by day. */
     private final StudentId studentId;
     private final LessonId lessonId;
+    private final DayOfWeek day;
 
     /**
      * Creates a command that shows only the lessons the given student is enrolled in.
@@ -36,6 +41,7 @@ public class FilterCommand extends Command {
     public FilterCommand(StudentId studentId) {
         this.studentId = requireNonNull(studentId);
         this.lessonId = null;
+        this.day = null;
     }
 
     /**
@@ -44,6 +50,16 @@ public class FilterCommand extends Command {
     public FilterCommand(LessonId lessonId) {
         this.studentId = null;
         this.lessonId = requireNonNull(lessonId);
+        this.day = null;
+    }
+
+    /**
+     * Creates a command that shows only the lessons on the given day.
+     */
+    public FilterCommand(DayOfWeek day) {
+        this.studentId = null;
+        this.lessonId = null;
+        this.day = requireNonNull(day);
     }
 
     @Override
@@ -61,13 +77,21 @@ public class FilterCommand extends Command {
                     studentId));
         }
 
-        if (model.findLesson(lessonId).isEmpty()) {
-            throw new CommandException(String.format(MESSAGE_LESSON_NOT_FOUND, lessonId));
+        if (lessonId != null) {
+            if (model.findLesson(lessonId).isEmpty()) {
+                throw new CommandException(String.format(MESSAGE_LESSON_NOT_FOUND, lessonId));
+            }
+
+            model.filterStudentsByLesson(lessonId);
+            model.setListView(ListView.STUDENTS);
+            return new CommandResult(String.format(MESSAGE_SHOWING_STUDENTS, model.getStudentList().size(),
+                    lessonId));
         }
 
-        model.filterStudentsByLesson(lessonId);
-        model.setListView(ListView.STUDENTS);
-        return new CommandResult(String.format(MESSAGE_SHOWING_STUDENTS, model.getStudentList().size(), lessonId));
+        model.filterLessonsByDay(day);
+        model.setListView(ListView.LESSONS);
+        return new CommandResult(String.format(MESSAGE_SHOWING_LESSONS_ON_DAY, model.getLessonList().size(),
+                Timeslot.dayName(day)));
     }
 
     @Override
@@ -82,12 +106,13 @@ public class FilterCommand extends Command {
         }
 
         return Objects.equals(studentId, otherFilterCommand.studentId)
-                && Objects.equals(lessonId, otherFilterCommand.lessonId);
+                && Objects.equals(lessonId, otherFilterCommand.lessonId)
+                && Objects.equals(day, otherFilterCommand.day);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(studentId, lessonId);
+        return Objects.hash(studentId, lessonId, day);
     }
 
     @Override
@@ -95,6 +120,7 @@ public class FilterCommand extends Command {
         return new ToStringBuilder(this)
                 .add("studentId", studentId)
                 .add("lessonId", lessonId)
+                .add("day", day)
                 .toString();
     }
 }

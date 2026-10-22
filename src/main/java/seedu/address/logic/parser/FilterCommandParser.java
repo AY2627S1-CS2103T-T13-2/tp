@@ -3,6 +3,8 @@ package seedu.address.logic.parser;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 
+import java.time.DayOfWeek;
+
 import seedu.address.logic.commands.FilterCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.lesson.LessonId;
@@ -15,6 +17,7 @@ public class FilterCommandParser implements Parser<FilterCommand> {
 
     private static final String KEYWORD_STUDENT = "student";
     private static final String KEYWORD_LESSON = "lesson";
+    private static final String KEYWORD_DAY = "day";
 
     /**
      * Parses the given {@code String} of arguments in the context of the FilterCommand
@@ -41,6 +44,11 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         if (keyword.equals(KEYWORD_LESSON)) {
             LessonId lessonId = ParserUtil.parseLessonId(id);
             return new FilterCommand(lessonId);
+        }
+
+        if (keyword.equals(KEYWORD_DAY)) {
+            DayOfWeek day = ParserUtil.parseDay(id);
+            return new FilterCommand(day);
         }
 
         throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, FilterCommand.MESSAGE_USAGE));
