@@ -175,6 +175,33 @@ public class TuiTracker implements ReadOnlyTuiTracker {
     }
 
     /**
+     * Replaces the student's editable details while preserving their ID, payment status and enrollments.
+     *
+     * @throws StudentNotFoundException if there is no such student.
+     */
+    public Student editStudent(StudentId studentId, Name name, Contact contact, Level level) {
+        requireAllNonNull(studentId, name, contact, level);
+        Student original = students.find(studentId).orElseThrow(StudentNotFoundException::new);
+        Student edited = new Student(studentId, name, contact, level,
+                original.getLastPaidMonth().orElse(null));
+        students.replace(original, edited);
+        return edited;
+    }
+
+    /**
+     * Replaces the lesson's editable details while preserving its ID and enrollments.
+     *
+     * @throws LessonNotFoundException if there is no such lesson.
+     */
+    public Lesson editLesson(LessonId lessonId, Subject subject, Level level, Timeslot timeslot, Fee fee) {
+        requireAllNonNull(lessonId, subject, level, timeslot, fee);
+        Lesson original = lessons.find(lessonId).orElseThrow(LessonNotFoundException::new);
+        Lesson edited = new Lesson(lessonId, subject, level, timeslot, fee);
+        lessons.replace(original, edited);
+        return edited;
+    }
+
+    /**
      * Enrolls the student in the lesson.
      *
      * @throws StudentNotFoundException if there is no such student.

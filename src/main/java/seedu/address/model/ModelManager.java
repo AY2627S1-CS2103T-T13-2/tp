@@ -174,7 +174,7 @@ public class ModelManager implements Model {
         return tuiTracker.markPaid(studentId, currentMonth());
     }
 
-    //=========== Create and delete ==========================================================================
+    //=========== Create, edit and delete ====================================================================
 
     @Override
     public Student addStudent(Name name, Contact contact, Level level) {
@@ -186,6 +186,20 @@ public class ModelManager implements Model {
     @Override
     public Lesson addLesson(Subject subject, Level level, Timeslot timeslot, Fee fee) {
         Lesson lesson = tuiTracker.addLesson(subject, level, timeslot, fee);
+        refreshFilters();
+        return lesson;
+    }
+
+    @Override
+    public Student editStudent(StudentId studentId, Name name, Contact contact, Level level) {
+        Student student = tuiTracker.editStudent(studentId, name, contact, level);
+        refreshFilters();
+        return student;
+    }
+
+    @Override
+    public Lesson editLesson(LessonId lessonId, Subject subject, Level level, Timeslot timeslot, Fee fee) {
+        Lesson lesson = tuiTracker.editLesson(lessonId, subject, level, timeslot, fee);
         refreshFilters();
         return lesson;
     }

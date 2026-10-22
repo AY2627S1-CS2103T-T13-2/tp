@@ -119,7 +119,7 @@ public interface Model {
      */
     Student markPaid(StudentId studentId);
 
-    //// create and delete
+    //// create, edit and delete
 
     /**
      * Creates a student with a new ID and returns it.
@@ -130,6 +130,18 @@ public interface Model {
      * Creates a lesson with a new ID and returns it.
      */
     Lesson addLesson(Subject subject, Level level, Timeslot timeslot, Fee fee);
+
+    /**
+     * Replaces the editable details of the student while preserving their ID, payment status and enrollments.
+     * The student must exist.
+     */
+    Student editStudent(StudentId studentId, Name name, Contact contact, Level level);
+
+    /**
+     * Replaces the editable details of the lesson while preserving its ID and enrollments.
+     * The lesson must exist.
+     */
+    Lesson editLesson(LessonId lessonId, Subject subject, Level level, Timeslot timeslot, Fee fee);
 
     /**
      * Enrolls the student in the lesson. Both must exist, and the student must not already be enrolled.
