@@ -305,6 +305,30 @@ public class TuiTrackerTest {
     }
 
     @Test
+    public void addStudent_nullArgument_throwsNullPointerExceptionAndUsesNoId() {
+        int nextStudentId = tracker.getNextStudentId();
+
+        assertThrows(NullPointerException.class, () ->
+                tracker.addStudent(null, DANIEL.getContact(), DANIEL.getLevel()));
+        assertEquals(nextStudentId, tracker.getNextStudentId());
+    }
+
+    @Test
+    public void addLesson_nullArgument_throwsNullPointerExceptionAndUsesNoId() {
+        int nextLessonId = tracker.getNextLessonId();
+
+        assertThrows(NullPointerException.class, () ->
+                tracker.addLesson(null, MATHEMATICS.getLevel(), MATHEMATICS.getTimeslot(), MATHEMATICS.getFee()));
+        assertEquals(nextLessonId, tracker.getNextLessonId());
+    }
+
+    @Test
+    public void delete_nullId_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> tracker.deleteStudent(null));
+        assertThrows(NullPointerException.class, () -> tracker.deleteLesson(null));
+    }
+
+    @Test
     public void delete_missingRecord_throwsNotFoundException() {
         assertThrows(StudentNotFoundException.class, () -> tracker.deleteStudent(DANIEL.getId()));
         assertThrows(LessonNotFoundException.class, () -> tracker.deleteLesson(HISTORY.getId()));
