@@ -1,5 +1,7 @@
 package seedu.address.storage;
 
+import static seedu.address.storage.JsonFields.validated;
+
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 
@@ -58,48 +60,34 @@ class JsonAdaptedStudent {
      * @throws IllegalValueException if there were any data constraints violated in the adapted student.
      */
     public Student toModelType() throws IllegalValueException {
-        if (id == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "id"));
-        }
-        if (!StudentId.isValidId(id)) {
-            throw new IllegalValueException(StudentId.MESSAGE_CONSTRAINTS);
-        }
-        final StudentId modelId = new StudentId(id);
+        StudentId modelId = validated(required("id", id),
+                StudentId::isValidId, StudentId.MESSAGE_CONSTRAINTS, StudentId::new);
+        Name modelName = validated(required("name", name),
+                Name::isValidName, Name.MESSAGE_CONSTRAINTS, Name::new);
+        Contact modelContact = validated(required("contact", contact),
+                Contact::isValidContact, Contact.MESSAGE_CONSTRAINTS, Contact::new);
+        Level modelLevel = validated(required("level", level),
+                Level::isValidLevel, Level.MESSAGE_CONSTRAINTS_STUDENT, Level::new);
 
-        if (name == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "name"));
-        }
-        if (!Name.isValidName(name)) {
-            throw new IllegalValueException(Name.MESSAGE_CONSTRAINTS);
-        }
-        final Name modelName = new Name(name);
+        return new Student(modelId, modelName, modelContact, modelLevel, toLastPaidMonth());
+    }
 
-        if (contact == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "contact"));
+    /**
+     * Returns the month the student last paid, or null if they have not paid yet.
+     */
+    private YearMonth toLastPaidMonth() throws IllegalValueException {
+        if (lastPaidMonth == null) {
+            return null;
         }
-        if (!Contact.isValidContact(contact)) {
-            throw new IllegalValueException(Contact.MESSAGE_CONSTRAINTS);
+        try {
+            return YearMonth.parse(lastPaidMonth);
+        } catch (DateTimeParseException e) {
+            throw new IllegalValueException(INVALID_MONTH_MESSAGE);
         }
-        final Contact modelContact = new Contact(contact);
+    }
 
-        if (level == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "level"));
-        }
-        if (!Level.isValidLevel(level)) {
-            throw new IllegalValueException(Level.MESSAGE_CONSTRAINTS_STUDENT);
-        }
-        final Level modelLevel = new Level(level);
-
-        YearMonth modelLastPaidMonth = null;
-        if (lastPaidMonth != null) {
-            try {
-                modelLastPaidMonth = YearMonth.parse(lastPaidMonth);
-            } catch (DateTimeParseException e) {
-                throw new IllegalValueException(INVALID_MONTH_MESSAGE);
-            }
-        }
-
-        return new Student(modelId, modelName, modelContact, modelLevel, modelLastPaidMonth);
+    private static <T> T required(String fieldName, T value) throws IllegalValueException {
+        return JsonFields.required(value, MISSING_FIELD_MESSAGE_FORMAT, fieldName);
     }
 
 }
