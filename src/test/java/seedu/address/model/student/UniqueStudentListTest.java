@@ -15,6 +15,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.model.lesson.UniqueLessonList;
 import seedu.address.model.student.exceptions.StudentNotFoundException;
 import seedu.address.testutil.StudentBuilder;
 
@@ -146,5 +147,10 @@ public class UniqueStudentListTest {
         other.add(ALICE);
         assertTrue(list.equals(other));
         assertEquals(list.hashCode(), other.hashCode());
+    }
+
+    @Test
+    public void equals_listOfAnotherKindOfRecord_returnsFalse() {
+        assertFalse(list.equals(new UniqueLessonList()));
     }
 }
