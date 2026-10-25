@@ -15,8 +15,13 @@ public class Fee {
     public static final String MESSAGE_CONSTRAINTS =
             "Invalid fee. Enter a positive amount with at most two decimal places.";
 
+    /** A fee is kept to the cent, so it has this many digits after the decimal point. */
+    public static final int DECIMAL_PLACES = 2;
+
     /** Digits with an optional decimal point and one or two decimal places. */
-    public static final String VALIDATION_REGEX = "^\\d+(\\.\\d{1,2})?$";
+    public static final String VALIDATION_REGEX = "^\\d+(\\.\\d{1," + DECIMAL_PLACES + "})?$";
+
+    private static final String CURRENCY_SYMBOL = "$";
 
     private final BigDecimal amount;
 
@@ -28,7 +33,7 @@ public class Fee {
     public Fee(String fee) {
         requireNonNull(fee);
         checkArgument(isValidFee(fee), MESSAGE_CONSTRAINTS);
-        amount = new BigDecimal(fee).setScale(2);
+        amount = new BigDecimal(fee).setScale(DECIMAL_PLACES);
     }
 
     /**
@@ -52,7 +57,7 @@ public class Fee {
 
     @Override
     public String toString() {
-        return "$" + amount.toPlainString();
+        return CURRENCY_SYMBOL + amount.toPlainString();
     }
 
     @Override
