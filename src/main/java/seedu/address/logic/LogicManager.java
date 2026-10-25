@@ -1,5 +1,7 @@
 package seedu.address.logic;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
@@ -60,7 +62,8 @@ public class LogicManager implements Logic {
 
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
-        logger.info("----------------[USER COMMAND][" + commandText + "]");
+        requireNonNull(commandText);
+        logger.info("----------------[USER COMMAND][" + commandWordOf(commandText) + "]");
 
         Command command = addressBookParser.parseCommand(commandText);
 
@@ -84,6 +87,14 @@ public class LogicManager implements Logic {
         }
 
         return commandResult;
+    }
+
+    /**
+     * Returns the first word of {@code commandText}. Only this is logged, because the rest of a command holds the
+     * names and contact numbers of students.
+     */
+    private static String commandWordOf(String commandText) {
+        return commandText.trim().split("\\s+", 2)[0];
     }
 
     @Override

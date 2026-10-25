@@ -16,13 +16,19 @@ import static seedu.address.testutil.TypicalTuiTracker.getTypicalTuiTracker;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.HelpCommand;
@@ -65,6 +71,36 @@ public class LogicManagerTest {
     @Test
     public void execute_blankCommand_throwsParseException() {
         assertParseException("", String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.COMMAND_WORD));
+    }
+
+    @Test
+    public void execute_commandWithPersonalDetails_logsNoNamesOrContactNumbers() throws Exception {
+        List<String> logged = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                logged.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {}
+
+            @Override
+            public void close() {}
+        };
+        Logger baseLogger = LogsCenter.getLogger(LogicManager.class).getParent();
+        baseLogger.addHandler(handler);
+        try {
+            logic.execute("add s/Zara Quinn c/91112222 slv/Primary 6 l/1");
+        } finally {
+            baseLogger.removeHandler(handler);
+        }
+
+        assertFalse(logged.isEmpty());
+        for (String message : logged) {
+            assertFalse(message.contains("Zara") || message.contains("91112222"),
+                    "Personal data was logged: " + message);
+        }
     }
 
     @Test

@@ -72,7 +72,8 @@ public class ModelManager implements Model {
     public ModelManager(ReadOnlyTuiTracker tuiTracker, ReadOnlyUserPrefs userPrefs, Clock clock) {
         requireAllNonNull(tuiTracker, userPrefs, clock);
 
-        logger.fine("Initializing with TuiTracker: " + tuiTracker + " and user prefs " + userPrefs);
+        logger.fine("Initializing with " + tuiTracker.getStudentList().size() + " students, "
+                + tuiTracker.getLessonList().size() + " lessons and user prefs " + userPrefs);
 
         this.tuiTracker = new TuiTracker(tuiTracker);
         this.userPrefs = new UserPrefs(userPrefs);
