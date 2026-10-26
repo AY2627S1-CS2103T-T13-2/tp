@@ -10,7 +10,7 @@ import static seedu.address.logic.commands.AddCommand.MESSAGE_ALREADY_ENROLLED;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_DUPLICATE_LESSON;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_DUPLICATE_STUDENT;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_LESSON_CLASH;
-import static seedu.address.logic.commands.AddCommand.MESSAGE_LEVEL_MISMATCH;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_LEVEL_MISMATCH;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_SAME_NAME;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
@@ -264,21 +264,27 @@ public class AddCommandTest {
     }
 
     @Test
-    public void execute_levelsDoNotMatch_throwsCommandException() {
+    public void execute_levelsDoNotMatch_enrollsWithNote() throws Exception {
         Model model = modelWith(List.of(), List.of());
 
         // ALICE is Primary 6 and ENGLISH is Primary 4
-        assertCommandFailure(enroll(ALICE.getId().value, ENGLISH.getId().value), model, MESSAGE_LEVEL_MISMATCH);
+        String feedback = enroll(ALICE.getId().value, ENGLISH.getId().value).execute(model).getFeedbackToUser();
+
+        assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_LEVEL_MISMATCH, ALICE.getName(),
+                ALICE.getLevel(), ENGLISH.getLevel())));
+        assertTrue(model.isEnrolled(ALICE.getId(), ENGLISH.getId()));
     }
 
     @Test
-    public void execute_abbreviatedLevel_isADifferentLevel() {
+    public void execute_abbreviatedLevel_isADifferentLevel() throws Exception {
         Student abbreviated = new StudentBuilder(ALICE).withId(5).withName("Eve Ong").withContact("90001111")
                 .withLevel("P6").build();
         Model model = modelWith(List.of(abbreviated), List.of(HISTORY)); // HISTORY is "Primary 6"
 
-        assertCommandFailure(enroll(abbreviated.getId().value, HISTORY.getId().value), model,
-                MESSAGE_LEVEL_MISMATCH);
+        String feedback = enroll(abbreviated.getId().value, HISTORY.getId().value).execute(model).getFeedbackToUser();
+
+        assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_LEVEL_MISMATCH, "Eve Ong", "P6",
+                HISTORY.getLevel())));
     }
 
     @Test
@@ -555,13 +561,13 @@ public class AddCommandTest {
     }
 
     @Test
-    public void execute_levelMismatchIsReportedBeforeAClash() {
-        // a Primary 4 lesson at the same time as MATHEMATICS, for a Primary 6 student
+    public void execute_levelMismatchAndClash_reportsTheClash() {
+        // a Primary 4 lesson at the same time as MATHEMATICS, for a Primary 6 student: the level only gives a note
         NewLesson wrongLevelAndClashing = new NewLesson(new Subject("Art"), new Level("Primary 4"),
                 MATHEMATICS.getTimeslot(), new Fee("30"));
 
         assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), wrongLevelAndClashing),
-                typicalModel(), MESSAGE_LEVEL_MISMATCH);
+                typicalModel(), MESSAGE_LESSON_CLASH);
     }
 
     //// a failed command creates nothing
@@ -575,10 +581,15 @@ public class AddCommandTest {
     }
 
     @Test
-    public void execute_newStudentAndNewLessonOfDifferentLevels_createsNeitherAndUsesNoId() {
+    public void execute_newStudentAndNewLessonOfDifferentLevels_createsBothWithNote() throws Exception {
         NewLesson primaryFour = newLesson("Art", "Primary 4", DayOfWeek.TUESDAY, 10, 0, 11, 0);
+        Model model = typicalModel();
 
-        assertCommandFailure(new AddCommand(DANIEL_DETAILS, primaryFour), typicalModel(), MESSAGE_LEVEL_MISMATCH);
+        String feedback = new AddCommand(DANIEL_DETAILS, primaryFour).execute(model).getFeedbackToUser();
+
+        assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_LEVEL_MISMATCH, DANIEL.getName(),
+                DANIEL.getLevel(), "Primary 4")));
+        assertTrue(model.findStudentWithSameName(DANIEL.getName()).isPresent());
     }
 
     @Test
@@ -588,21 +599,29 @@ public class AddCommandTest {
     }
 
     @Test
-    public void execute_newStudentAndExistingLessonOfAnotherLevel_createsNoStudent() {
-        // a Primary 4 student cannot join MATHEMATICS, which is Primary 6
+    public void execute_levelMismatch_enrollsWithNote() throws Exception {
+        // a Primary 4 student joins MATHEMATICS, which is Primary 6
         NewStudent primaryFour = new NewStudent(DANIEL.getName(), DANIEL.getContact(), new Level("Primary 4"));
+        Model model = typicalModel();
 
-        assertCommandFailure(new AddCommand(primaryFour, new ExistingLesson(MATHEMATICS.getId())), typicalModel(),
-                MESSAGE_LEVEL_MISMATCH);
+        String feedback = new AddCommand(primaryFour, new ExistingLesson(MATHEMATICS.getId())).execute(model)
+                .getFeedbackToUser();
+
+        assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_LEVEL_MISMATCH,
+                DANIEL.getName(), "Primary 4", MATHEMATICS.getLevel())));
+        assertTrue(model.findStudentWithSameName(DANIEL.getName()).isPresent());
     }
 
     @Test
-    public void execute_newLessonAndMismatchedExistingStudent_createsNoLesson() {
+    public void execute_newLessonAndMismatchedExistingStudent_createsLessonWithNote() throws Exception {
         // ALICE is Primary 6; the new lesson is Primary 4
         NewLesson primaryFour = newLesson("Art", "Primary 4", DayOfWeek.TUESDAY, 10, 0, 11, 0);
 
-        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), primaryFour), typicalModel(),
-                MESSAGE_LEVEL_MISMATCH);
+        String feedback = new AddCommand(new ExistingStudent(ALICE.getId()), primaryFour).execute(typicalModel())
+                .getFeedbackToUser();
+
+        assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_LEVEL_MISMATCH, ALICE.getName(),
+                ALICE.getLevel(), "Primary 4")));
     }
 
     private static Model typicalModel() {

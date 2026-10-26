@@ -197,12 +197,13 @@ The parser works in this order, and reports the first problem it finds:
 
 1. The student exists, then the lesson exists (only for an existing student or lesson).
 2. A new student is not a duplicate, a new lesson is not a duplicate, and the student is not already enrolled in the lesson. Duplicates are found with `Name#isSameName`, `Contact#isSameContact` and `Subject#isSameSubject`, which ignore letter case, extra spaces and (for contacts) everything but the digits. `equals` on these classes stays exact, so that `edit` can still change only the letter case of a value.
-3. The student's level is the same as the lesson's level.
-4. A new lesson does not clash with an existing lesson.
+3. A new lesson does not clash with an existing lesson.
+
+It then works out the notes for things that are probably mistakes but might be intended: a new student with the same name as an existing student, and a student whose level differs from the lesson's level. Notes do not stop the command; each one is added to the result on its own line.
 
 Only then does it create what is new (`Model#addStudent`, `Model#addLesson`) and call `Model#enroll`. The IDs in the result message come from the objects that the `Model` returns.
 
-The sequence diagram below shows `execute("add s/Daniel Koh c/92223333 slv/Primary 6 l/1")`, a new student joining an existing lesson. The checks that do not apply to this form (the clash check, which is only for a new lesson, and the comparison of levels, which is done inside `AddCommand`) are left out to keep the diagram readable.
+The sequence diagram below shows `execute("add s/Daniel Koh c/92223333 slv/Primary 6 l/1")`, a new student joining an existing lesson. The checks that do not apply to this form (the clash check, which is only for a new lesson, and the notes, which are worked out inside `AddCommand`) are left out to keep the diagram readable.
 
 <puml src="diagrams/AddSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `add` Command" />
 
@@ -228,7 +229,7 @@ The sequence diagram below shows `execute("add s/Daniel Koh c/92223333 slv/Prima
 
 **Aspect: the order of the checks**
 
-The order is deliberate. Duplicates are checked **before** clashes because an identical lesson always overlaps the original: if the clash were checked first, the more helpful message "an identical lesson already exists" could never be shown. Existence is checked first because the other checks need the records. Levels are checked before clashes so that the user hears about a wrong level before a scheduling problem.
+The order is deliberate. Duplicates are checked **before** clashes because an identical lesson always overlaps the original: if the clash were checked first, the more helpful message "an identical lesson already exists" could never be shown. Existence is checked first because the other checks need the records. A different level is not checked at all: it only gives a note, because a student may attend a lesson of another level on purpose, for example a stronger student in a higher-level class.
 
 #### Testing
 

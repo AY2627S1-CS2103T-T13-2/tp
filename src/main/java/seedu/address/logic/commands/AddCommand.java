@@ -47,10 +47,11 @@ public class AddCommand extends Command {
     public static final String MESSAGE_DUPLICATE_LESSON =
             "An identical lesson already exists (Lesson ID: %1$s). Use the existing lesson ID.";
     public static final String MESSAGE_ALREADY_ENROLLED = "The student is already enrolled in this lesson.";
-    public static final String MESSAGE_LEVEL_MISMATCH = "Student level does not match lesson level.";
     public static final String MESSAGE_LESSON_CLASH = "Lesson clashes with an existing lesson.";
     public static final String MESSAGE_NOTE_SAME_NAME =
             "Note: another student named %1$s already exists (Student ID: %2$s).";
+    public static final String MESSAGE_NOTE_LEVEL_MISMATCH =
+            "Note: %1$s's level (%2$s) differs from the lesson's level (%3$s).";
 
     private static final String PAID = "Paid";
     private static final String UNPAID = "Unpaid";
@@ -107,13 +108,13 @@ public class AddCommand extends Command {
                 : "An existing lesson must be found if, and only if, the lesson was given by ID";
 
         checkForDuplicates(model, existingStudent, existingLesson);
-        checkLevelsMatch(existingStudent, existingLesson);
         checkForClash(model);
 
         // Notes point out what is probably a mistake but might be intended. They are worked out before anything is
         // created, so that a new student is never reported as its own namesake.
         List<String> notes = new ArrayList<>();
         noteForNamesake(model).ifPresent(notes::add);
+        noteForLevelMismatch(existingStudent, existingLesson).ifPresent(notes::add);
 
         // The whole request is valid, so create what is new and enroll.
         Student studentToEnroll = createStudentIfNew(model, existingStudent);
@@ -135,13 +136,19 @@ public class AddCommand extends Command {
     }
 
     /**
-     * Throws if the student's level is not the same as the lesson's level.
+     * Returns a note if the student's level is not the same as the lesson's level. A student may still join a
+     * lesson of another level, for example a stronger student in a higher-level class, so this is not an error.
      */
-    private void checkLevelsMatch(Optional<Student> existingStudent, Optional<Lesson> existingLesson)
-            throws CommandException {
-        if (!levelOfStudent(existingStudent).equals(levelOfLesson(existingLesson))) {
-            throw new CommandException(MESSAGE_LEVEL_MISMATCH);
+    private Optional<String> noteForLevelMismatch(Optional<Student> existingStudent, Optional<Lesson> existingLesson) {
+        Level studentLevel = levelOfStudent(existingStudent);
+        Level lessonLevel = levelOfLesson(existingLesson);
+        if (studentLevel.equals(lessonLevel)) {
+            return Optional.empty();
         }
+        Name studentName = student instanceof NewStudent newStudent
+                ? newStudent.name()
+                : existingStudent.orElseThrow().getName();
+        return Optional.of(String.format(MESSAGE_NOTE_LEVEL_MISMATCH, studentName, studentLevel, lessonLevel));
     }
 
     /**

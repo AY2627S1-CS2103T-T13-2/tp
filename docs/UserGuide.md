@@ -167,6 +167,7 @@ Each one is followed by the result you should see.
 1. `add s/Eve Ong c/90001111 slv/Primary 4 l/Drama llv/Primary 4 d/Wednesday st/10:00 et/11:00 f/35`: Enrolled Eve Ong [Student ID: 5] in Drama [Lesson ID: 6]. Payment status: Unpaid.
 1. `add s/4 l/2`: Enrolled Daniel Koh [Student ID: 4] in Science [Lesson ID: 2]. Payment status: Unpaid.
 1. `add s/2 l/Physics llv/Secondary 2 d/Friday st/14:00 et/15:00 f/55`: Enrolled Bryan Lim [Student ID: 2] in Physics [Lesson ID: 7]. Payment status: Paid.
+1. `add s/1 l/4`: Enrolled Alice Tan [Student ID: 1] in English [Lesson ID: 4]. Payment status: Unpaid. The result ends with `Note: Alice Tan's level (Primary 6) differs from the lesson's level (Primary 4).` A student can join a lesson of another level, but the note asks you to check that this is intended.
 
 #### Possible sources of errors
 
@@ -175,7 +176,6 @@ Each of these starts from the sample data. The command is shown first, then the 
 Command | Message
 --------|--------
 `add s/1 l/1` | The student is already enrolled in this lesson.
-`add s/1 l/4` | Student level does not match lesson level.
 `add s/1 l/99` | No lesson found with ID 99.
 `add s/99 l/1` | No student found with ID 99.
 `add s/Alice Tan c/91234567 slv/Primary 6 l/1` | A student with the same name and contact already exists (Student ID: 1). Use the existing student ID.
