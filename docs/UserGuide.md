@@ -270,7 +270,8 @@ Command | Message
 `edit lesson 2 l/mathematics d/Mon st/15:00 et/16:30` | Another identical lesson already exists (Lesson ID: 1).
 `edit lesson 2 d/Mon st/16:00 et/17:00` | Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).
 `edit lesson 1 st/17:00` | Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start time.
-`edit lesson 1 et/24:00` | A lesson cannot end at 24:00. To end at midnight, use 23:59.
+`edit lesson 1 et/24:00` | A lesson cannot end at 24:00 or 00:00. To end at midnight, use 23:59.
+`edit lesson 1 st/23:00 et/00:59` | Invalid end time. A lesson must end later on the same day it starts, so it cannot run past midnight. To teach past midnight, split it into two lessons, such as 23:00-23:59 and 00:00-01:00 the next day.
 
 Invalid names, contacts, levels, subjects, days, times and fees follow the rules in the parameter table above.
 
