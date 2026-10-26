@@ -216,17 +216,17 @@ Parameter | Meaning | Used when | Rules
 ----------|---------|-----------|------
 `student\|lesson` | The type of record to edit | always | Must be exactly `student` or `lesson`. Letter case is ignored.
 `ID` | The existing record's ID | always | A positive whole number. Leading zeros are allowed and ignored, so `0012` refers to ID `12`.
-`s/` | The student's name | editing a student | At most 100 characters: letters, numbers, spaces, apostrophes and hyphens, with at least one letter.
-`c/` | The student's contact number | editing a student | Digits only, from 3 to 15 digits.
+`s/` | The student's name | editing a student | At most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter. The words `s/o` and `d/o` can be part of a name, such as `Ravi s/o Kumar`.
+`c/` | The student's contact number | editing a student | 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a `+` can start the number, such as `+65 (9123) 4567`.
 `slv/` | The student's level, such as `Primary 6` | editing a student | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
-`l/` | The lesson's subject | editing a lesson | At most 50 characters: letters, numbers, spaces and hyphens, with at least one letter.
+`l/` | The lesson's subject | editing a lesson | At most 50 characters: letters, numbers, spaces and `.` `,` `-` `(` `)` `&` `@`, with at least one letter.
 `llv/` | The lesson's level, such as `Primary 6` | editing a lesson | The same rules as `slv/`.
-`d/` | The day of the week | editing a lesson | `Monday` to `Sunday`, in any letter case.
-`st/` | The start time | editing a lesson | In the 24-hour format `HH:mm`, such as `09:00`.
-`et/` | The end time | editing a lesson | In the same format, and later than the final start time.
-`f/` | The fee for one session | editing a lesson | More than zero, with at most two decimal places, such as `50` or `50.00`.
+`d/` | The day of the week | editing a lesson | `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Letter case is ignored.
+`st/` | The start time | editing a lesson | In the 24-hour format, such as `9:00`, `09:00` or `14:30`.
+`et/` | The end time | editing a lesson | In the same format, and later than the final start time on the same day.
+`f/` | The fee for one session | editing a lesson | 0 or more, with at most two decimal places, such as `50` or `45.50`.
 
-Give at least one editable field after the ID. You can give the field parameters in any order, but each parameter can appear only once. For a lesson, you may give `st/`, `et/`, or both. If you give only one, the other keeps its existing value. The resulting end time must still be later than the start time.
+Give at least one editable field after the ID. You can give the field parameters in any order, but each parameter can appear only once. The command word, record type and prefixes ignore letter case. For a lesson, you may give `st/`, `et/`, or both. If you give only one, the other keeps its existing value. The resulting end time must still be later than the start time.
 
 #### Examples
 
@@ -236,6 +236,8 @@ Each one starts from the sample data and is followed by the result you should se
 1. `edit student 1 s/Alice Lee slv/Primary 6`: Edited student: Alice Lee (ID: 1).
 1. `edit lesson 1 f/55`: Edited lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 1).
 1. `edit lesson 1 d/Friday st/14:00 et/15:30`: Edited lesson: Mathematics | Primary 6 | Friday 14:00-15:30 (ID: 1).
+1. `edit student 1 slv/Primary 4`: Edited student: Alice Tan (ID: 1). The result also includes `Note: Alice Tan's level (Primary 4) differs from lesson 1's level (Primary 6).` and a corresponding note for lesson 2.
+1. `edit lesson 1 f/0`: Edited lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 1). The result ends with `Note: the fee is 0. Check that this lesson is meant to be free.`
 1. `edit student 1 s/Alice Tan`: No changes were made.
 
 #### Notes
@@ -243,6 +245,11 @@ Each one starts from the sample data and is followed by the result you should se
 * The record's ID never changes.
 * Editing a student preserves their payment status and lesson enrollments.
 * Editing a lesson preserves its student enrollments.
+* Student duplicates are compared using the name without regard to letter case or extra spaces, and using only the digits of the contact number. Lesson duplicates compare the subject and level without regard to letter case or extra spaces.
+* An edit that results in the same name as another student but a different contact number goes ahead with a note naming that student and ID.
+* Changing a student's level goes ahead even if it differs from their enrolled lessons. The result adds one note per mismatching lesson, including its ID. Changing a lesson's level similarly adds one note per affected student.
+* Changing a lesson fee to `0` goes ahead with a note asking you to check that it is meant to be free.
+* A change in letter case still counts as an edit, including for a student's or lesson's level.
 * No data is changed if the command fails validation.
 
 #### Possible sources of errors
@@ -258,12 +265,11 @@ Command | Message
 `edit lesson 1 c/90001111` | Only l/, llv/, d/, st/, et/ and f/ can be used when editing a lesson.
 `edit student 0 c/90001111` | ID must be a positive whole number.
 `edit lesson 99 f/55` | No lesson found with ID 99.
-`edit student 1 s/Bryan Lim c/98765432` | Another student with the same name and contact already exists (Student ID: 2).
-`edit lesson 2 l/Mathematics d/Monday st/15:00 et/16:30` | Another identical lesson already exists (Lesson ID: 1).
-`edit student 1 slv/Primary 4` | Student level does not match an enrolled lesson.
-`edit lesson 1 llv/Secondary 2` | Lesson level does not match an enrolled student.
-`edit lesson 2 d/Monday st/16:00 et/17:00` | Edited lesson clashes with another lesson.
-`edit lesson 1 st/17:00` | Invalid end time. Use HH:mm and enter a time later than the start time.
+`edit student 1 s/bryan lim c/9876-5432` | Another student with the same name and contact already exists (Student ID: 2).
+`edit lesson 2 l/mathematics d/Mon st/15:00 et/16:30` | Another identical lesson already exists (Lesson ID: 1).
+`edit lesson 2 d/Mon st/16:00 et/17:00` | Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).
+`edit lesson 1 st/17:00` | Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start time.
+`edit lesson 1 et/24:00` | A lesson cannot end at 24:00. To end at midnight, use 23:59.
 
 Invalid names, contacts, levels, subjects, days, times and fees follow the rules in the parameter table above.
 
