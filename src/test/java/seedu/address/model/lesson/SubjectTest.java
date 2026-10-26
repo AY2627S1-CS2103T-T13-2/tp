@@ -56,4 +56,12 @@ public class SubjectTest {
         assertTrue(new Subject("H2 Math").isSameSubject(new Subject("h2  math")));
         assertFalse(new Subject("Math").isSameSubject(new Subject("Maths")));
     }
+
+    @Test
+    public void isValidSubject_punctuation() {
+        assertTrue(Subject.isValidSubject("Maths & Science"));
+        assertTrue(Subject.isValidSubject("English (Oral)"));
+        assertTrue(Subject.isValidSubject("A.Maths"));
+        assertFalse(Subject.isValidSubject("Physics/Chemistry"));
+    }
 }

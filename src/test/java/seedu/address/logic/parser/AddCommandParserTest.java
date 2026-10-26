@@ -238,7 +238,7 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_invalidStudentValues_throwsParseException() {
-        assertParseFailure(parser, " s/R@chel c/91234567 slv/Primary 6" + EXISTING_LESSON,
+        assertParseFailure(parser, " s/R#chel c/91234567 slv/Primary 6" + EXISTING_LESSON,
                 Name.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " s/0 c/91234567 slv/Primary 6" + EXISTING_LESSON,
                 Name.MESSAGE_CONSTRAINTS); // zero is not an ID, and it has no letter to be a name
@@ -299,7 +299,7 @@ public class AddCommandParserTest {
                 + "et/16:30 f/0", Contact.MESSAGE_CONSTRAINTS);
 
         // an invalid student name and an invalid subject: the student comes first
-        assertParseFailure(parser, " s/R@chel c/91234567 slv/Primary 6 l/Maths! llv/Primary 6 d/Monday st/15:00 "
+        assertParseFailure(parser, " s/R#chel c/91234567 slv/Primary 6 l/Maths! llv/Primary 6 d/Monday st/15:00 "
                 + "et/16:30 f/50", Name.MESSAGE_CONSTRAINTS);
     }
 
@@ -318,5 +318,12 @@ public class AddCommandParserTest {
         assertParseSuccess(parser, " s/Daniel Koh c/9222 3333 slv/Primary 6" + EXISTING_LESSON,
                 new AddCommand(new NewStudent(new Name("Daniel Koh"), new Contact("9222 3333"), new Level("Primary 6")),
                         EXISTING_LESSON_REF));
+    }
+
+    @Test
+    public void parse_nameWithFullStops_success() {
+        assertParseSuccess(parser, " s/J. K. Rowling c/90000007 slv/Primary 6" + EXISTING_LESSON,
+                new AddCommand(new NewStudent(new Name("J. K. Rowling"), new Contact("90000007"),
+                        new Level("Primary 6")), EXISTING_LESSON_REF));
     }
 }

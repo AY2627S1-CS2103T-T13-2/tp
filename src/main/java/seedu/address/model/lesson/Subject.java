@@ -13,11 +13,12 @@ public class Subject {
 
     public static final int MAX_LENGTH = 50;
 
-    public static final String MESSAGE_CONSTRAINTS =
-            "Invalid lesson. Enter an existing lesson ID or a valid subject.";
+    public static final String MESSAGE_CONSTRAINTS = "Invalid subject. A subject has 1 to " + MAX_LENGTH
+            + " characters: letters, numbers, spaces and . , - ( ) & @, with at least one letter. "
+            + "To refer to an existing lesson, use its ID.";
 
-    /** Must contain at least one letter, and may contain letters, numbers, spaces and hyphens. */
-    public static final String VALIDATION_REGEX = "^(?=.*\\p{L})[\\p{L}\\p{N} \\-]{1," + MAX_LENGTH + "}$";
+    /** Must contain at least one letter, and may contain letters, numbers, spaces and the symbols . , - ( ) & @. */
+    public static final String VALIDATION_REGEX = "^(?=.*\\p{L})[\\p{L}\\p{N} \\-.,()&@]{1," + MAX_LENGTH + "}$";
 
     public final String value;
 

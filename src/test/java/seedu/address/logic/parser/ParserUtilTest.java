@@ -83,7 +83,7 @@ public class ParserUtilTest {
         assertEquals(new Name("Alice Tan"), ParserUtil.parseName("  Alice Tan  ")); // trimmed
         assertThrows(ParseException.class, Name.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseName(""));
         assertThrows(ParseException.class, Name.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseName("12345"));
-        assertThrows(ParseException.class, Name.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseName("R@chel"));
+        assertThrows(ParseException.class, Name.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseName("R#chel"));
         assertThrows(NullPointerException.class, () -> ParserUtil.parseName(null));
     }
 
