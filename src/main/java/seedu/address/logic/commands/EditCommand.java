@@ -52,6 +52,8 @@ public class EditCommand extends Command {
     public static final String MESSAGE_LESSON_CLASH = AddCommand.MESSAGE_LESSON_CLASH;
     public static final String MESSAGE_NOTE_SAME_NAME = AddCommand.MESSAGE_NOTE_SAME_NAME;
     public static final String MESSAGE_NOTE_LEVEL_MISMATCH = AddCommand.MESSAGE_NOTE_LEVEL_MISMATCH;
+    public static final String MESSAGE_NOTE_STUDENT_LEVEL_MISMATCH =
+            "Note: %1$s's level (%2$s) differs from lesson %3$s's level (%4$s).";
     public static final String MESSAGE_NOTE_FREE_LESSON = AddCommand.MESSAGE_NOTE_FREE_LESSON;
 
     private final EditTarget target;
@@ -90,7 +92,7 @@ public class EditCommand extends Command {
 
         List<String> notes = new ArrayList<>();
         noteForNamesake(model, edit, original.getId(), name, contact).ifPresent(notes::add);
-        noteForStudentLevelMismatch(model, edit, updated).ifPresent(notes::add);
+        notes.addAll(notesForStudentLevelMismatches(model, edit, updated));
 
         Student edited = model.editStudent(original.getId(), name, contact, level);
         assert updated.equals(edited) : "Model returned unexpected student details after edit";
@@ -183,17 +185,20 @@ public class EditCommand extends Command {
                 .map(namesake -> String.format(MESSAGE_NOTE_SAME_NAME, namesake.getName(), namesake.getId()));
     }
 
-    /** Returns a note for the first enrolled lesson whose level differs from the edited student level. */
-    private static Optional<String> noteForStudentLevelMismatch(Model model, StudentEdit edit, Student updated) {
+    /** Returns one note for each enrolled lesson whose level differs from the edited student level. */
+    private static List<String> notesForStudentLevelMismatches(Model model, StudentEdit edit, Student updated) {
+        List<String> notes = new ArrayList<>();
         if (edit.level().isEmpty()) {
-            return Optional.empty();
+            return notes;
         }
-        return model.getLessonIdsOf(updated.getId()).stream()
-                .map(id -> findEnrolledLesson(model, id))
-                .filter(lesson -> !lesson.getLevel().equals(updated.getLevel()))
-                .findFirst()
-                .map(lesson -> String.format(MESSAGE_NOTE_LEVEL_MISMATCH, updated.getName(), updated.getLevel(),
-                        lesson.getLevel()));
+        for (LessonId lessonId : model.getLessonIdsOf(updated.getId())) {
+            Lesson lesson = findEnrolledLesson(model, lessonId);
+            if (!lesson.getLevel().equals(updated.getLevel())) {
+                notes.add(String.format(MESSAGE_NOTE_STUDENT_LEVEL_MISMATCH, updated.getName(), updated.getLevel(),
+                        lesson.getId(), lesson.getLevel()));
+            }
+        }
+        return notes;
     }
 
     /** Returns one note for each enrolled student whose level differs from the edited lesson level. */
