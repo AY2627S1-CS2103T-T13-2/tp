@@ -18,7 +18,8 @@ import seedu.address.model.student.StudentId;
  * Parses input arguments and creates a new FilterCommand object.
  *
  * <p>The arguments are either a keyword and a value ({@code student ID}, {@code lesson ID} or {@code day DAY}),
- * or one or both of {@code l/SUBJECT} and {@code llv/LESSON_LEVEL}.
+ * the bare keyword {@code paid} or {@code unpaid}, or one or both of {@code l/SUBJECT} and
+ * {@code llv/LESSON_LEVEL}.
  */
 public class FilterCommandParser implements Parser<FilterCommand> {
 
@@ -29,6 +30,8 @@ public class FilterCommandParser implements Parser<FilterCommand> {
     private static final String KEYWORD_STUDENT = "student";
     private static final String KEYWORD_LESSON = "lesson";
     private static final String KEYWORD_DAY = "day";
+    private static final String KEYWORD_PAID = "paid";
+    private static final String KEYWORD_UNPAID = "unpaid";
 
     /**
      * Parses the given {@code String} of arguments in the context of the FilterCommand
@@ -43,6 +46,14 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" " + args, PREFIX_LESSON, PREFIX_LESSON_LEVEL);
         if (argMultimap.getValue(PREFIX_LESSON).isPresent() || argMultimap.getValue(PREFIX_LESSON_LEVEL).isPresent()) {
             return parseSubjectAndLevel(argMultimap);
+        }
+
+        String trimmedArgs = args.trim();
+        if (trimmedArgs.equals(KEYWORD_PAID)) {
+            return new FilterCommand(true);
+        }
+        if (trimmedArgs.equals(KEYWORD_UNPAID)) {
+            return new FilterCommand(false);
         }
 
         String[] parts = args.trim().split("\\s+");

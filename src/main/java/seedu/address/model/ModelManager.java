@@ -57,13 +57,14 @@ public class ModelManager implements Model {
 
     /**
      * The filter that is currently active, if any. Only one kind is set at a time: the student, the lesson,
-     * the day, or the subject and level (either or both of which may be set).
+     * the day, the paid status, or the subject and level (either or both of which may be set).
      */
     private StudentId filteredByStudent;
     private LessonId filteredByLesson;
     private DayOfWeek filteredByDay;
     private Subject filteredBySubject;
     private Level filteredByLevel;
+    private Boolean filteredByPaidStatus;
 
     /**
      * Initializes a ModelManager with the given tuiTracker, userPrefs and clock.
@@ -281,6 +282,13 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public void filterStudentsByPaidStatus(boolean paid) {
+        clearFilterFields();
+        filteredByPaidStatus = paid;
+        refreshFilters();
+    }
+
+    @Override
     public void resetFilters() {
         clearFilterFields();
         refreshFilters();
@@ -292,6 +300,7 @@ public class ModelManager implements Model {
         filteredByDay = null;
         filteredBySubject = null;
         filteredByLevel = null;
+        filteredByPaidStatus = null;
     }
 
     /**
@@ -304,10 +313,17 @@ public class ModelManager implements Model {
         final DayOfWeek dayFilter = filteredByDay;
         final Subject subjectFilter = filteredBySubject;
         final Level levelFilter = filteredByLevel;
+        final Boolean paidFilter = filteredByPaidStatus;
 
-        Predicate<Student> studentPredicate = lessonFilter == null
-                ? student -> true
-                : student -> tuiTracker.isEnrolled(student.getId(), lessonFilter);
+        Predicate<Student> studentPredicate;
+        if (lessonFilter != null) {
+            studentPredicate = student -> tuiTracker.isEnrolled(student.getId(), lessonFilter);
+        } else if (paidFilter != null) {
+            final YearMonth month = currentMonth();
+            studentPredicate = student -> student.isPaid(month) == paidFilter;
+        } else {
+            studentPredicate = student -> true;
+        }
         Predicate<Lesson> lessonPredicate;
         if (studentFilter != null) {
             lessonPredicate = lesson -> tuiTracker.isEnrolled(studentFilter, lesson.getId());

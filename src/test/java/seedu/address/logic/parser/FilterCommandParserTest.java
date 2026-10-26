@@ -46,6 +46,15 @@ public class FilterCommandParserTest {
     }
 
     @Test
+    public void parse_validPaidArgs_returnsFilterCommand() {
+        assertParseSuccess(parser, "paid", new FilterCommand(true));
+        assertParseSuccess(parser, "unpaid", new FilterCommand(false));
+
+        // extra whitespace is ignored
+        assertParseSuccess(parser, "  paid  ", new FilterCommand(true));
+    }
+
+    @Test
     public void parse_validSubjectAndLevelArgs_returnsFilterCommand() {
         Subject subject = new Subject("Additional Mathematics");
         Level level = new Level("Secondary 3");
@@ -96,6 +105,8 @@ public class FilterCommandParserTest {
     public void parse_unknownKeyword_throwsParseException() {
         assertParseFailure(parser, "students 1", MESSAGE_INVALID_FORMAT);
         assertParseFailure(parser, "Student 1", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "Paid", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "paid now", MESSAGE_INVALID_FORMAT);
     }
 
     @Test
