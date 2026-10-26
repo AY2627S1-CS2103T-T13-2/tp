@@ -11,7 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.common.Level;
@@ -56,6 +58,8 @@ public class EditCommand extends Command {
             "Note: %1$s's level (%2$s) differs from lesson %3$s's level (%4$s).";
     public static final String MESSAGE_NOTE_FREE_LESSON = AddCommand.MESSAGE_NOTE_FREE_LESSON;
 
+    private static final Logger logger = LogsCenter.getLogger(EditCommand.class);
+
     private final EditTarget target;
 
     /** Creates a command that applies the changes in {@code target}. */
@@ -66,9 +70,17 @@ public class EditCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        return target instanceof StudentEdit studentEdit
-                ? editStudent(model, studentEdit)
-                : editLesson(model, (LessonEdit) target);
+        logger.fine("Executing edit command for " + describeTarget());
+        try {
+            return target instanceof StudentEdit studentEdit
+                    ? editStudent(model, studentEdit)
+                    : editLesson(model, (LessonEdit) target);
+        } catch (CommandException e) {
+            // User mistakes are expected and are logged at info rather than warning.
+            // Edit error messages contain IDs and validation details, never names or contacts.
+            logger.info("Rejected edit command: " + e.getMessage());
+            throw e;
+        }
     }
 
     private CommandResult editStudent(Model model, StudentEdit edit) throws CommandException {
@@ -82,6 +94,7 @@ public class EditCommand extends Command {
                 original.getLastPaidMonth().orElse(null));
 
         if (updated.equals(original) && !hasDifferentLevelSpelling(original.getLevel(), edit.level())) {
+            logger.fine("Student " + original.getId() + " already has the requested details");
             return new CommandResult(MESSAGE_NO_CHANGES);
         }
 
@@ -96,6 +109,7 @@ public class EditCommand extends Command {
 
         Student edited = model.editStudent(original.getId(), name, contact, level);
         assert updated.equals(edited) : "Model returned unexpected student details after edit";
+        logger.info("Edited student " + edited.getId());
         String success = String.format(MESSAGE_SUCCESS_STUDENT, edited.getName(), edited.getId());
         return new CommandResult(withNotes(success, notes));
     }
@@ -117,6 +131,7 @@ public class EditCommand extends Command {
         Lesson updated = new Lesson(original.getId(), subject, level, timeslot, fee);
 
         if (updated.equals(original) && !hasDifferentLevelSpelling(original.getLevel(), edit.level())) {
+            logger.fine("Lesson " + original.getId() + " already has the requested details");
             return new CommandResult(MESSAGE_NO_CHANGES);
         }
 
@@ -137,6 +152,7 @@ public class EditCommand extends Command {
 
         Lesson edited = model.editLesson(original.getId(), subject, level, timeslot, fee);
         assert updated.equals(edited) : "Model returned unexpected lesson details after edit";
+        logger.info("Edited lesson " + edited.getId());
         String success = String.format(MESSAGE_SUCCESS_LESSON, edited.getSubject(), edited.getLevel(),
                 edited.getTimeslot(), edited.getId());
         return new CommandResult(withNotes(success, notes));
@@ -234,6 +250,13 @@ public class EditCommand extends Command {
         lines.add(success);
         lines.addAll(notes);
         return String.join("\n", lines);
+    }
+
+    /** Returns a log-safe description containing only the target type and ID. */
+    private String describeTarget() {
+        return target instanceof StudentEdit studentEdit
+                ? "student " + studentEdit.id()
+                : "lesson " + ((LessonEdit) target).id();
     }
 
     private static Lesson findEnrolledLesson(Model model, LessonId id) {
