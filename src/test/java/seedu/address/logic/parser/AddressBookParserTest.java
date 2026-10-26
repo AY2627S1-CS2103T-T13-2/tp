@@ -94,15 +94,17 @@ public class AddressBookParserTest {
     }
 
     @Test
-    public void parseCommand_commandWordIsCaseSensitive() {
-        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("LIST"));
-    }
-
-    @Test
     public void parseCommand_commandsRemovedFromTheAddressBook_areUnknown() {
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("unknown command"));
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("find alice"));
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("clear"));
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("remark 1 r/hi"));
+    }
+
+    @Test
+    public void parseCommand_commandWordInAnyCase() throws Exception {
+        assertTrue(parser.parseCommand("ADD s/1 l/2") instanceof AddCommand);
+        assertTrue(parser.parseCommand("Add s/1 l/2") instanceof AddCommand);
+        assertTrue(parser.parseCommand("List") instanceof ListCommand);
     }
 }
