@@ -10,18 +10,18 @@
 <HBox id="cardPane" fx:id="cardPane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
   <GridPane HBox.hgrow="ALWAYS">
     <columnConstraints>
-      <ColumnConstraints hgrow="SOMETIMES" minWidth="10" prefWidth="150" />
+      <ColumnConstraints hgrow="ALWAYS" minWidth="10" percentWidth="100" />
     </columnConstraints>
     <VBox alignment="CENTER_LEFT" minHeight="105" GridPane.columnIndex="0">
       <padding>
         <Insets top="5" right="5" bottom="5" left="15" />
       </padding>
-      <Label fx:id="subject" text="\$subject" styleClass="cell_big_label" />
+      <Label fx:id="subject" text="\$subject" styleClass="cell_big_label" wrapText="true" />
       <Label fx:id="id" styleClass="cell_small_label" text="\$id" />
       <Label fx:id="level" styleClass="cell_small_label" text="\$level" />
       <Label fx:id="timeslot" styleClass="cell_small_label" text="\$timeslot" />
       <Label fx:id="fee" styleClass="cell_small_label" text="\$fee" />
-      <Label fx:id="students" styleClass="cell_small_label" text="\$students" />
+      <Label fx:id="students" styleClass="cell_small_label" text="\$students" wrapText="true" />
     </VBox>
   </GridPane>
 </HBox>
