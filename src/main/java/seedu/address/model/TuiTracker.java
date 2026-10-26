@@ -108,21 +108,34 @@ public class TuiTracker implements ReadOnlyTuiTracker {
 
     /**
      * Returns the student with the lowest ID who has the same name and contact, if there is one.
+     * Names are compared ignoring letter case and extra spaces, and contacts by their digits only.
      */
     public Optional<Student> findDuplicateStudent(Name name, Contact contact) {
         requireAllNonNull(name, contact);
         return students.asUnmodifiableObservableList().stream()
-                .filter(student -> student.getName().equals(name) && student.getContact().equals(contact))
+                .filter(student -> student.getName().isSameName(name) && student.getContact().isSameContact(contact))
+                .findFirst();
+    }
+
+    /**
+     * Returns the student with the lowest ID who has the same name, ignoring letter case and extra spaces, if there
+     * is one. Unlike {@link #findDuplicateStudent(Name, Contact)}, the contact is not compared.
+     */
+    public Optional<Student> findStudentWithSameName(Name name) {
+        requireNonNull(name);
+        return students.asUnmodifiableObservableList().stream()
+                .filter(student -> student.getName().isSameName(name))
                 .findFirst();
     }
 
     /**
      * Returns the lesson with the lowest ID that has the same subject, level and timeslot, if there is one.
+     * Subjects are compared ignoring letter case and extra spaces.
      */
     public Optional<Lesson> findIdenticalLesson(Subject subject, Level level, Timeslot timeslot) {
         requireAllNonNull(subject, level, timeslot);
         return lessons.asUnmodifiableObservableList().stream()
-                .filter(lesson -> lesson.getSubject().equals(subject)
+                .filter(lesson -> lesson.getSubject().isSameSubject(subject)
                         && lesson.getLevel().equals(level)
                         && lesson.getTimeslot().equals(timeslot))
                 .findFirst();
@@ -143,6 +156,17 @@ public class TuiTracker implements ReadOnlyTuiTracker {
         requireNonNull(timeslot);
         return lessons.asUnmodifiableObservableList().stream()
                 .anyMatch(lesson -> lesson.getTimeslot().overlaps(timeslot));
+    }
+
+    /**
+     * Returns the lesson with the lowest ID whose timeslot overlaps {@code timeslot}, if there is one.
+     * A lesson that starts exactly when another ends does not clash with it.
+     */
+    public Optional<Lesson> findClash(Timeslot timeslot) {
+        requireNonNull(timeslot);
+        return lessons.asUnmodifiableObservableList().stream()
+                .filter(lesson -> lesson.getTimeslot().overlaps(timeslot))
+                .findFirst();
     }
 
     /**

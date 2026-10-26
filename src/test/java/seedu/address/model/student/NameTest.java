@@ -29,7 +29,6 @@ public class NameTest {
         assertFalse(Name.isValidName("12345")); // no letter, so it would be read as an ID
         assertFalse(Name.isValidName("- '")); // no letter
         assertFalse(Name.isValidName("peter*")); // contains a symbol
-        assertFalse(Name.isValidName("Tan Ah Kow Jr.")); // a full stop is not allowed
         assertFalse(Name.isValidName("a".repeat(101))); // too long
 
         // valid name
@@ -37,6 +36,7 @@ public class NameTest {
         assertTrue(Name.isValidName("Alice Tan"));
         assertTrue(Name.isValidName("O'Brien")); // apostrophe
         assertTrue(Name.isValidName("Mary-Jane")); // hyphen
+        assertTrue(Name.isValidName("Tan Ah Kow Jr.")); // full stop
         assertTrue(Name.isValidName("Alice 2nd")); // numbers are allowed if there is also a letter
         assertTrue(Name.isValidName("a")); // one letter
         assertTrue(Name.isValidName("a".repeat(100))); // longest allowed
@@ -51,5 +51,36 @@ public class NameTest {
         assertFalse(name.equals(null));
         assertFalse(name.equals(5.0f));
         assertFalse(name.equals(new Name("Other Valid Name")));
+    }
+
+    @Test
+    public void isSameName_differentCaseOrSpacing_returnsTrue() {
+        assertTrue(new Name("Alice Tan").isSameName(new Name("alice tan")));
+        assertTrue(new Name("Alice Tan").isSameName(new Name("Alice  Tan")));
+        assertTrue(new Name("José Tan").isSameName(new Name("JOSÉ TAN")));
+        assertFalse(new Name("Alice Tan").isSameName(new Name("Alice Tann")));
+    }
+
+    @Test
+    public void equals_differentCase_stillReturnsFalse() {
+        assertFalse(new Name("Alice Tan").equals(new Name("alice tan")));
+    }
+
+    @Test
+    public void isValidName_punctuationAndRelationWords() {
+        assertTrue(Name.isValidName("J. K. Rowling"));
+        assertTrue(Name.isValidName("Muhammad Ali, Jr"));
+        assertTrue(Name.isValidName("Lim (Jason)"));
+        assertTrue(Name.isValidName("Tan Ah Kow @ Alex"));
+        assertTrue(Name.isValidName("Ravi s/o Kumar"));
+        assertTrue(Name.isValidName("Priya D/O Raj"));
+        assertFalse(Name.isValidName("Ravi/Kumar"));
+        assertFalse(Name.isValidName("Ravis/o Kumar"));
+    }
+
+    @Test
+    public void constraintsMessage_mentionsRelationWords() {
+        assertTrue(Name.MESSAGE_CONSTRAINTS.contains("s/o"));
+        assertTrue(Name.MESSAGE_CONSTRAINTS.contains("d/o"));
     }
 }

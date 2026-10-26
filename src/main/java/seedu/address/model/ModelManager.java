@@ -140,6 +140,11 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public Optional<Student> findStudentWithSameName(Name name) {
+        return tuiTracker.findStudentWithSameName(name);
+    }
+
+    @Override
     public Optional<Lesson> findIdenticalLesson(Subject subject, Level level, Timeslot timeslot) {
         return tuiTracker.findIdenticalLesson(subject, level, timeslot);
     }
@@ -152,6 +157,11 @@ public class ModelManager implements Model {
     @Override
     public boolean hasClash(Timeslot timeslot) {
         return tuiTracker.hasClash(timeslot);
+    }
+
+    @Override
+    public Optional<Lesson> findClash(Timeslot timeslot) {
+        return tuiTracker.findClash(timeslot);
     }
 
     @Override

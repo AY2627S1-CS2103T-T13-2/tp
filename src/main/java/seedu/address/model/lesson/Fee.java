@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 public class Fee {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Invalid fee. Enter a positive amount with at most two decimal places.";
+            "Invalid fee. Enter an amount of 0 or more with at most two decimal places, such as 50 or 45.50.";
 
     /** A fee is kept to the cent, so it has this many digits after the decimal point. */
     public static final int DECIMAL_PLACES = 2;
@@ -40,7 +40,14 @@ public class Fee {
      * Returns true if a given string is a valid fee.
      */
     public static boolean isValidFee(String test) {
-        return test.matches(VALIDATION_REGEX) && new BigDecimal(test).signum() > 0;
+        return test.matches(VALIDATION_REGEX);
+    }
+
+    /**
+     * Returns true if the fee is 0, for a lesson that is meant to be free.
+     */
+    public boolean isFree() {
+        return amount.signum() == 0;
     }
 
     public BigDecimal getAmount() {
