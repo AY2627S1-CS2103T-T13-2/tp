@@ -12,6 +12,7 @@ import static seedu.address.logic.commands.EditCommand.MESSAGE_LESSON_CLASH;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_NOTE_FREE_LESSON;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_NOTE_LEVEL_MISMATCH;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_NOTE_SAME_NAME;
+import static seedu.address.logic.commands.EditCommand.MESSAGE_NOTE_STUDENT_LEVEL_MISMATCH;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_NO_CHANGES;
 import static seedu.address.testutil.TypicalClock.CLOCK;
 import static seedu.address.testutil.TypicalLessons.MATHEMATICS;
@@ -144,15 +145,17 @@ public class EditCommandTest {
     }
 
     @Test
-    public void execute_studentLevelConflictsWithEnrollment_editsAndAddsNote() {
+    public void execute_studentLevelConflictsWithEnrollments_editsAndAddsNoteForEachLesson() {
         Model model = typicalModel();
         Model expected = typicalModel();
         Level editedLevel = new Level("Primary 4");
         expected.editStudent(ALICE.getId(), ALICE.getName(), ALICE.getContact(), editedLevel);
         StudentEdit edit = new StudentEdit(ALICE.getId(), Optional.empty(), Optional.empty(), Optional.of(editedLevel));
         String expectedMessage = "Edited student: Alice Tan (ID: 1).\n"
-                + String.format(MESSAGE_NOTE_LEVEL_MISMATCH, ALICE.getName(), editedLevel,
-                        MATHEMATICS.getLevel());
+                + String.format(MESSAGE_NOTE_STUDENT_LEVEL_MISMATCH, ALICE.getName(), editedLevel,
+                        MATHEMATICS.getId(), MATHEMATICS.getLevel()) + "\n"
+                + String.format(MESSAGE_NOTE_STUDENT_LEVEL_MISMATCH, ALICE.getName(), editedLevel,
+                        SCIENCE_P6.getId(), SCIENCE_P6.getLevel());
 
         assertCommandSuccess(new EditCommand(edit), model, expectedMessage, expected);
     }

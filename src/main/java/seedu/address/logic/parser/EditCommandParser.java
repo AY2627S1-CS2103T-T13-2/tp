@@ -131,6 +131,9 @@ public class EditCommandParser implements Parser<EditCommand> {
             return Optional.empty();
         }
         String value = arguments.getValue(PREFIX_END_TIME).get().trim();
+        if (value.equals("24:00")) {
+            throw new ParseException(Timeslot.MESSAGE_MIDNIGHT_END);
+        }
         return Optional.of(Timeslot.parseTime(value)
                 .orElseThrow(() -> new ParseException(Timeslot.MESSAGE_INVALID_END_TIME)));
     }

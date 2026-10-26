@@ -23,6 +23,7 @@ import seedu.address.model.common.Level;
 import seedu.address.model.lesson.Fee;
 import seedu.address.model.lesson.LessonId;
 import seedu.address.model.lesson.Subject;
+import seedu.address.model.lesson.Timeslot;
 import seedu.address.model.student.Contact;
 import seedu.address.model.student.Name;
 import seedu.address.model.student.StudentId;
@@ -71,6 +72,11 @@ public class EditCommandParserTest {
                 Optional.empty(), Optional.of(LocalTime.of(16, 0)), Optional.empty());
 
         assertParseSuccess(parser, " lesson 2 et/16:00", new EditCommand(edit));
+    }
+
+    @Test
+    public void parse_lessonEndingAtMidnight_throwsSpecificParseException() {
+        assertParseFailure(parser, " lesson 1 et/24:00", Timeslot.MESSAGE_MIDNIGHT_END);
     }
 
     @Test

@@ -236,7 +236,7 @@ Each one starts from the sample data and is followed by the result you should se
 1. `edit student 1 s/Alice Lee slv/Primary 6`: Edited student: Alice Lee (ID: 1).
 1. `edit lesson 1 f/55`: Edited lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 1).
 1. `edit lesson 1 d/Friday st/14:00 et/15:30`: Edited lesson: Mathematics | Primary 6 | Friday 14:00-15:30 (ID: 1).
-1. `edit student 1 slv/Primary 4`: Edited student: Alice Tan (ID: 1). The result ends with `Note: Alice Tan's level (Primary 4) differs from the lesson's level (Primary 6).`
+1. `edit student 1 slv/Primary 4`: Edited student: Alice Tan (ID: 1). The result also includes `Note: Alice Tan's level (Primary 4) differs from lesson 1's level (Primary 6).` and a corresponding note for lesson 2.
 1. `edit lesson 1 f/0`: Edited lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 1). The result ends with `Note: the fee is 0. Check that this lesson is meant to be free.`
 1. `edit student 1 s/Alice Tan`: No changes were made.
 
@@ -247,7 +247,7 @@ Each one starts from the sample data and is followed by the result you should se
 * Editing a lesson preserves its student enrollments.
 * Student duplicates are compared using the name without regard to letter case or extra spaces, and using only the digits of the contact number. Lesson duplicates compare the subject and level without regard to letter case or extra spaces.
 * An edit that results in the same name as another student but a different contact number goes ahead with a note naming that student and ID.
-* Changing a student or lesson level to one that differs from an enrollment goes ahead. The result adds a note for the affected student so you can check that the difference is intended.
+* Changing a student's level goes ahead even if it differs from their enrolled lessons. The result adds one note per mismatching lesson, including its ID. Changing a lesson's level similarly adds one note per affected student.
 * Changing a lesson fee to `0` goes ahead with a note asking you to check that it is meant to be free.
 * A change in letter case still counts as an edit, including for a student's or lesson's level.
 * No data is changed if the command fails validation.
@@ -269,6 +269,7 @@ Command | Message
 `edit lesson 2 l/mathematics d/Mon st/15:00 et/16:30` | Another identical lesson already exists (Lesson ID: 1).
 `edit lesson 2 d/Mon st/16:00 et/17:00` | Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).
 `edit lesson 1 st/17:00` | Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start time.
+`edit lesson 1 et/24:00` | A lesson cannot end at 24:00. To end at midnight, use 23:59.
 
 Invalid names, contacts, levels, subjects, days, times and fees follow the rules in the parameter table above.
 
