@@ -52,6 +52,8 @@ public class AddCommand extends Command {
             "Note: another student named %1$s already exists (Student ID: %2$s).";
     public static final String MESSAGE_NOTE_LEVEL_MISMATCH =
             "Note: %1$s's level (%2$s) differs from the lesson's level (%3$s).";
+    public static final String MESSAGE_NOTE_FREE_LESSON =
+            "Note: the fee is 0. Check that this lesson is meant to be free.";
 
     private static final String PAID = "Paid";
     private static final String UNPAID = "Unpaid";
@@ -115,6 +117,7 @@ public class AddCommand extends Command {
         List<String> notes = new ArrayList<>();
         noteForNamesake(model).ifPresent(notes::add);
         noteForLevelMismatch(existingStudent, existingLesson).ifPresent(notes::add);
+        noteForFreeLesson().ifPresent(notes::add);
 
         // The whole request is valid, so create what is new and enroll.
         Student studentToEnroll = createStudentIfNew(model, existingStudent);
@@ -158,6 +161,16 @@ public class AddCommand extends Command {
         if (lesson instanceof NewLesson newLesson && model.hasClash(newLesson.timeslot())) {
             throw new CommandException(MESSAGE_LESSON_CLASH);
         }
+    }
+
+    /**
+     * Returns a note if the lesson is new and its fee is 0, in case the fee was left out by mistake.
+     */
+    private Optional<String> noteForFreeLesson() {
+        if (lesson instanceof NewLesson newLesson && newLesson.fee().isFree()) {
+            return Optional.of(MESSAGE_NOTE_FREE_LESSON);
+        }
+        return Optional.empty();
     }
 
     /**

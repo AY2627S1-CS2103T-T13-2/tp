@@ -35,20 +35,20 @@ public class TimeslotTest {
         assertEquals(Optional.of(DayOfWeek.MONDAY), Timeslot.parseDay("Monday"));
         assertEquals(Optional.of(DayOfWeek.MONDAY), Timeslot.parseDay("mOnDaY")); // letter case is ignored
         assertEquals(Optional.of(DayOfWeek.SUNDAY), Timeslot.parseDay(" Sunday ")); // surrounding spaces
-        assertEquals(Optional.empty(), Timeslot.parseDay("Mon")); // abbreviation
+        assertEquals(Optional.empty(), Timeslot.parseDay("Mo")); // not one of the short forms
         assertEquals(Optional.empty(), Timeslot.parseDay("Someday"));
         assertEquals(Optional.empty(), Timeslot.parseDay(""));
         assertThrows(NullPointerException.class, () -> Timeslot.parseDay(null));
     }
 
     @Test
-    public void parseTime_requiresExactlyHhMm() {
+    public void parseTime_acceptsOneOrTwoDigitHours() {
         assertEquals(Optional.of(LocalTime.of(9, 5)), Timeslot.parseTime("09:05"));
         assertEquals(Optional.of(LocalTime.of(0, 0)), Timeslot.parseTime("00:00"));
         assertEquals(Optional.of(LocalTime.of(23, 59)), Timeslot.parseTime("23:59"));
         assertEquals(Optional.of(LocalTime.of(15, 0)), Timeslot.parseTime(" 15:00 ")); // surrounding spaces
 
-        assertEquals(Optional.empty(), Timeslot.parseTime("9:00")); // one-digit hour
+        assertEquals(Optional.empty(), Timeslot.parseTime("9:0")); // one-digit minute
         assertEquals(Optional.empty(), Timeslot.parseTime("24:00")); // hour out of range
         assertEquals(Optional.empty(), Timeslot.parseTime("12:60")); // minute out of range
         assertEquals(Optional.empty(), Timeslot.parseTime("1500")); // no colon
@@ -93,5 +93,22 @@ public class TimeslotTest {
         assertFalse(base.equals(slot(DayOfWeek.MONDAY, 15, 1, 16, 30)));
         assertFalse(base.equals(slot(DayOfWeek.MONDAY, 15, 0, 16, 31)));
         assertEquals(base.hashCode(), slot(DayOfWeek.MONDAY, 15, 0, 16, 30).hashCode());
+    }
+
+    @Test
+    public void parseTime_oneDigitHour_sameAsTwoDigits() {
+        assertEquals(Timeslot.parseTime("09:00"), Timeslot.parseTime("9:00"));
+        assertEquals(Optional.empty(), Timeslot.parseTime("24:00"));
+        assertEquals(Optional.empty(), Timeslot.parseTime("9:0"));
+    }
+
+    @Test
+    public void parseDay_shortForms() {
+        assertEquals(Optional.of(DayOfWeek.MONDAY), Timeslot.parseDay("mon"));
+        assertEquals(Optional.of(DayOfWeek.TUESDAY), Timeslot.parseDay("Tues"));
+        assertEquals(Optional.of(DayOfWeek.THURSDAY), Timeslot.parseDay("THURS"));
+        assertEquals(Optional.of(DayOfWeek.THURSDAY), Timeslot.parseDay("Thur"));
+        assertEquals(Optional.of(DayOfWeek.SUNDAY), Timeslot.parseDay("Sun"));
+        assertEquals(Optional.empty(), Timeslot.parseDay("Tu"));
     }
 }

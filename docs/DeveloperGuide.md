@@ -703,7 +703,7 @@ Use case ends.
 * **Student**: A person taught by the tutor, defined by their name, contact and level.
 * **Student ID**: A unique positive integer assigned to a student when they are created. It never changes, and is used to refer to the student in commands. Not to be confused with a _display index_.
 * **Subject**: The subject taught in a lesson, e.g., `Mathematics`.
-* **Timeslot**: The day, start time and end time of a lesson, e.g., Monday `15:00-16:30`. Times use the 24-hour `HH:mm` format.
+* **Timeslot**: The day, start time and end time of a lesson, e.g., Monday `15:00-16:30`. Times use the 24-hour format with a one- or two-digit hour (`9:00` or `09:00`), and are stored and shown as `HH:mm`.
 * **Tutor**: The user of TuiTracker, i.e., a private tutor who manages their own students, lessons and payments.
 * **WPM**: Words per minute, a standard measurement of how fast someone types.
 

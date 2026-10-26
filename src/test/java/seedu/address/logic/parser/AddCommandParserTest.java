@@ -266,7 +266,7 @@ public class AddCommandParserTest {
 
         assertParseFailure(parser, EXISTING_STUDENT + " l/Mathematics llv/--- d/Monday st/15:00 et/16:30 f/50",
                 Level.MESSAGE_CONSTRAINTS_LESSON);
-        assertParseFailure(parser, EXISTING_STUDENT + " l/Mathematics llv/Primary 6 d/Mon st/15:00 et/16:30 f/50",
+        assertParseFailure(parser, EXISTING_STUDENT + " l/Mathematics llv/Primary 6 d/Mo st/15:00 et/16:30 f/50",
                 Timeslot.MESSAGE_INVALID_DAY);
     }
 
@@ -274,19 +274,19 @@ public class AddCommandParserTest {
     public void parse_invalidTimes_throwsParseException() {
         String start = EXISTING_STUDENT + " l/Mathematics llv/Primary 6 d/Monday st/";
 
-        assertParseFailure(parser, start + "9:00 et/16:30 f/50", Timeslot.MESSAGE_INVALID_START_TIME);
+        assertParseFailure(parser, start + "9:60 et/16:30 f/50", Timeslot.MESSAGE_INVALID_START_TIME);
         assertParseFailure(parser, start + "24:00 et/16:30 f/50", Timeslot.MESSAGE_INVALID_START_TIME);
 
         assertParseFailure(parser, start + "15:00 et/15:00 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // not later
         assertParseFailure(parser, start + "15:00 et/14:00 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // earlier
-        assertParseFailure(parser, start + "15:00 et/4:30 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // wrong format
+        assertParseFailure(parser, start + "15:00 et/4:30 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // earlier
     }
 
     @Test
     public void parse_invalidFee_throwsParseException() {
         String lesson = EXISTING_STUDENT + " l/Mathematics llv/Primary 6 d/Monday st/15:00 et/16:30 f/";
 
-        assertParseFailure(parser, lesson + "0", Fee.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, lesson + "free", Fee.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, lesson + "50.001", Fee.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, lesson + "$50", Fee.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, lesson + "-5", Fee.MESSAGE_CONSTRAINTS);

@@ -10,6 +10,7 @@ import static seedu.address.logic.commands.AddCommand.MESSAGE_ALREADY_ENROLLED;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_DUPLICATE_LESSON;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_DUPLICATE_STUDENT;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_LESSON_CLASH;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_FREE_LESSON;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_LEVEL_MISMATCH;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_SAME_NAME;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
@@ -40,6 +41,7 @@ import seedu.address.logic.commands.AddCommand.LessonRef;
 import seedu.address.logic.commands.AddCommand.NewLesson;
 import seedu.address.logic.commands.AddCommand.NewStudent;
 import seedu.address.logic.commands.AddCommand.StudentRef;
+import seedu.address.logic.parser.AddCommandParser;
 import seedu.address.model.ListView;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
@@ -658,5 +660,37 @@ public class AddCommandTest {
         String feedback = new AddCommand(namesake, new ExistingLesson(MATHEMATICS.getId()))
                 .execute(typicalModel()).getFeedbackToUser();
         assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_SAME_NAME, ALICE.getName(), ALICE.getId())));
+    }
+
+    @Test
+    public void execute_oneDigitHourSameAsExisting_rejectedAsIdentical() throws Exception {
+        Model model = typicalModel();
+        Lesson morning = model.addLesson(new Subject("Art"), new Level("Primary 6"),
+                new Timeslot(DayOfWeek.SUNDAY, LocalTime.of(9, 0), LocalTime.of(10, 0)), new Fee("40"));
+        AddCommand command = new AddCommandParser()
+                .parse(" s/1 l/Art llv/Primary 6 d/Sunday st/9:00 et/10:00 f/40");
+
+        assertCommandFailure(command, model, String.format(MESSAGE_DUPLICATE_LESSON, morning.getId()));
+    }
+
+    @Test
+    public void execute_severalNotes_eachOnItsOwnLineInOrder() throws Exception {
+        // a new Primary 4 student named like ALICE, but with another contact, joins a new free Primary 6 lesson on
+        // Sunday, when the typical data has no lesson
+        String feedback = new AddCommand(
+                new NewStudent(ALICE.getName(), new Contact("99990000"), new Level("Primary 4")),
+                newFreeLesson("Art", "Primary 6", DayOfWeek.SUNDAY))
+                .execute(typicalModel()).getFeedbackToUser();
+
+        String[] lines = feedback.split("\n");
+        assertEquals(4, lines.length);
+        assertTrue(lines[1].startsWith("Note: another student named"));
+        assertTrue(lines[2].contains("differs from the lesson's level"));
+        assertEquals(MESSAGE_NOTE_FREE_LESSON, lines[3]);
+    }
+
+    private static NewLesson newFreeLesson(String subject, String level, DayOfWeek day) {
+        return new NewLesson(new Subject(subject), new Level(level),
+                new Timeslot(day, LocalTime.of(10, 0), LocalTime.of(11, 0)), new Fee("0"));
     }
 }

@@ -8,6 +8,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -19,13 +20,23 @@ import java.util.regex.Pattern;
  */
 public class Timeslot {
 
-    public static final String MESSAGE_INVALID_DAY = "Invalid day. Enter a day from Monday to Sunday.";
-    public static final String MESSAGE_INVALID_START_TIME = "Invalid start time. Use the 24-hour format HH:mm.";
+    public static final String MESSAGE_INVALID_DAY = "Invalid day. Enter a day such as Monday or Mon.";
+    public static final String MESSAGE_INVALID_START_TIME =
+            "Invalid start time. Use the 24-hour format, such as 9:00 or 14:30.";
     public static final String MESSAGE_INVALID_END_TIME =
-            "Invalid end time. Use HH:mm and enter a time later than the start time.";
+            "Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start "
+            + "time.";
+    public static final String MESSAGE_MIDNIGHT_END = "A lesson cannot end at 24:00. To end at midnight, use 23:59.";
 
-    /** Exactly two-digit hour, a colon and a two-digit minute, e.g. {@code 09:00}. */
-    private static final Pattern TIME_PATTERN = Pattern.compile("^([01]\\d|2[0-3]):[0-5]\\d$");
+    /** A one- or two-digit hour from 0 to 23, a colon and a two-digit minute, e.g. {@code 9:00} or {@code 09:00}. */
+    private static final Pattern TIME_PATTERN = Pattern.compile("^([01]?\\d|2[0-3]):[0-5]\\d$");
+
+    /** The short day names that are accepted besides the full names, in lower case. */
+    private static final Map<String, DayOfWeek> SHORT_DAY_NAMES = Map.of(
+            "mon", DayOfWeek.MONDAY, "tue", DayOfWeek.TUESDAY, "tues", DayOfWeek.TUESDAY,
+            "wed", DayOfWeek.WEDNESDAY, "thu", DayOfWeek.THURSDAY, "thur", DayOfWeek.THURSDAY,
+            "thurs", DayOfWeek.THURSDAY, "fri", DayOfWeek.FRIDAY, "sat", DayOfWeek.SATURDAY,
+            "sun", DayOfWeek.SUNDAY);
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 
     private final DayOfWeek day;
@@ -57,7 +68,7 @@ public class Timeslot {
     }
 
     /**
-     * Parses a day name such as "Monday". Letter case is ignored.
+     * Parses a day name such as "Monday", or a short form such as "Mon", "Tues" or "Thurs". Letter case is ignored.
      * Returns an empty {@code Optional} if {@code test} is not a day of the week.
      */
     public static Optional<DayOfWeek> parseDay(String test) {
@@ -68,11 +79,11 @@ public class Timeslot {
                 return Optional.of(candidate);
             }
         }
-        return Optional.empty();
+        return Optional.ofNullable(SHORT_DAY_NAMES.get(trimmed.toLowerCase(Locale.ROOT)));
     }
 
     /**
-     * Parses a time written exactly as {@code HH:mm} (24-hour), so "09:00" is accepted and "9:00" is not.
+     * Parses a 24-hour time with a one- or two-digit hour, so "9:00" and "09:00" give the same time.
      * Returns an empty {@code Optional} if {@code test} is not in that format.
      */
     public static Optional<LocalTime> parseTime(String test) {
@@ -81,7 +92,8 @@ public class Timeslot {
         if (!TIME_PATTERN.matcher(trimmed).matches()) {
             return Optional.empty();
         }
-        return Optional.of(LocalTime.parse(trimmed));
+        String twoDigitHour = trimmed.indexOf(':') == 1 ? "0" + trimmed : trimmed;
+        return Optional.of(LocalTime.parse(twoDigitHour));
     }
 
     /**

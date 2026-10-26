@@ -129,7 +129,7 @@ public class ParserUtilTest {
     public void parseDay() throws Exception {
         assertEquals(DayOfWeek.MONDAY, ParserUtil.parseDay("monday"));
         assertEquals(DayOfWeek.SATURDAY, ParserUtil.parseDay(" SATURDAY "));
-        assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_DAY, () -> ParserUtil.parseDay("Mon"));
+        assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_DAY, () -> ParserUtil.parseDay("Tu"));
         assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_DAY, () -> ParserUtil.parseDay(""));
         assertThrows(NullPointerException.class, () -> ParserUtil.parseDay(null));
     }
@@ -137,8 +137,9 @@ public class ParserUtilTest {
     @Test
     public void parseStartTime() throws Exception {
         assertEquals(LocalTime.of(9, 0), ParserUtil.parseStartTime("09:00"));
+        assertEquals(LocalTime.of(9, 0), ParserUtil.parseStartTime("9:00"));
         assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_START_TIME, () ->
-            ParserUtil.parseStartTime("9:00"));
+            ParserUtil.parseStartTime("9:60"));
         assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_START_TIME, () ->
                 ParserUtil.parseStartTime("24:00"));
         assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_START_TIME, () -> ParserUtil.parseStartTime(""));
@@ -180,10 +181,16 @@ public class ParserUtilTest {
     public void parseFee() throws Exception {
         assertEquals(new Fee("50.00"), ParserUtil.parseFee(" 50 "));
         assertEquals(new Fee("50.50"), ParserUtil.parseFee("50.5"));
-        assertThrows(ParseException.class, Fee.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseFee("0"));
+        assertThrows(ParseException.class, Fee.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseFee("-5"));
         assertThrows(ParseException.class, Fee.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseFee("50.001"));
         assertThrows(ParseException.class, Fee.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseFee("$50"));
         assertThrows(ParseException.class, Fee.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseFee(""));
         assertThrows(NullPointerException.class, () -> ParserUtil.parseFee(null));
+    }
+
+    @Test
+    public void parseEndTime_midnight_suggests2359() {
+        assertThrows(ParseException.class, Timeslot.MESSAGE_MIDNIGHT_END, () ->
+                ParserUtil.parseEndTime("24:00", LocalTime.of(22, 0)));
     }
 }

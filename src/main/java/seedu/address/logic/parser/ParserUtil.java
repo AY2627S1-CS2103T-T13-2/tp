@@ -164,6 +164,9 @@ public class ParserUtil {
     public static LocalTime parseEndTime(String time, LocalTime start) throws ParseException {
         requireNonNull(time);
         requireNonNull(start);
+        if (time.trim().equals("24:00")) {
+            throw new ParseException(Timeslot.MESSAGE_MIDNIGHT_END);
+        }
         LocalTime end = Timeslot.parseTime(time)
                 .orElseThrow(() -> new ParseException(Timeslot.MESSAGE_INVALID_END_TIME));
         if (!Timeslot.isValidTimeslot(start, end)) {

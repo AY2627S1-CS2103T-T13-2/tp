@@ -62,13 +62,13 @@ public class JsonAdaptedLessonTest {
         assertInvalid(Level.MESSAGE_CONSTRAINTS_LESSON,
                 lesson(VALID_ID, VALID_SUBJECT, "---", VALID_DAY, VALID_START, VALID_END, VALID_FEE));
         assertInvalid(Timeslot.MESSAGE_INVALID_DAY,
-                lesson(VALID_ID, VALID_SUBJECT, VALID_LEVEL, "Mon", VALID_START, VALID_END, VALID_FEE));
+                lesson(VALID_ID, VALID_SUBJECT, VALID_LEVEL, "Mo", VALID_START, VALID_END, VALID_FEE));
         assertInvalid(Timeslot.MESSAGE_INVALID_START_TIME,
                 lesson(VALID_ID, VALID_SUBJECT, VALID_LEVEL, VALID_DAY, "3pm", VALID_END, VALID_FEE));
         assertInvalid(Timeslot.MESSAGE_INVALID_END_TIME,
                 lesson(VALID_ID, VALID_SUBJECT, VALID_LEVEL, VALID_DAY, VALID_START, "9:00", VALID_FEE));
         assertInvalid(Fee.MESSAGE_CONSTRAINTS,
-                lesson(VALID_ID, VALID_SUBJECT, VALID_LEVEL, VALID_DAY, VALID_START, VALID_END, "0"));
+                lesson(VALID_ID, VALID_SUBJECT, VALID_LEVEL, VALID_DAY, VALID_START, VALID_END, "-1"));
     }
 
     @Test

@@ -145,10 +145,10 @@ Parameter | Meaning | Needed when | Rules
 `c/` | The student's contact number | the student is new | 3 to 15 digits. Spaces, `+`, `-`, `(` and `)` are also allowed, such as `+65 9123 4567`. Duplicates are compared by the digits only.
 `slv/` | The student's level, such as `Primary 6` | the student is new | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
 `llv/` | The lesson's level, such as `Primary 6` | the lesson is new | The same as `slv/`.
-`d/` | The day of the week | the lesson is new | `Monday` to `Sunday`, in any letter case.
-`st/` | The start time | the lesson is new | In the 24-hour format `HH:mm`, such as `09:00`. A time such as `9:00` is not accepted.
-`et/` | The end time | the lesson is new | In the same format, and later than the start time.
-`f/` | The fee for one session | the lesson is new | More than zero, with at most two decimal places, such as `50` or `50.00`.
+`d/` | The day of the week | the lesson is new | `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Letter case is ignored.
+`st/` | The start time | the lesson is new | In the 24-hour format, such as `9:00`, `09:00` or `14:30`.
+`et/` | The end time | the lesson is new | In the same format, and later than the start time. A lesson cannot end at `24:00`; to end at midnight, use `23:59`.
+`f/` | The fee for one session | the lesson is new | 0 or more, with at most two decimal places, such as `50` or `45.50`. A fee of `0` is accepted for a free lesson, and the result ends with a note asking you to check it.
 
 Using a parameter that does not belong, such as `c/` with an existing student, is an error.
 
@@ -186,7 +186,7 @@ Command | Message
 `add s/1 l/1 d/Monday` | llv/, d/, st/, et/ and f/ can only be used when adding a new lesson.
 `add s/1 s/2 l/1` | A parameter can only be specified once.
 `add s/Daniel Koh c/12 slv/Primary 6 l/1` | Invalid contact. Use 3 to 15 digits. Spaces, +, -, ( and ) are also allowed, such as +65 9123 4567.
-`add s/1 l/History llv/Primary 6 d/Monday st/9:00 et/10:00 f/35` | Invalid start time. Use the 24-hour format HH:mm.
+`add s/1 l/History llv/Primary 6 d/Monday st/9:60 et/10:00 f/35` | Invalid start time. Use the 24-hour format, such as 9:00 or 14:30.
 `add` | Invalid command format. Use: add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
 
 ### Editing a student or lesson: `edit`
