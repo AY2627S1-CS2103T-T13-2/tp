@@ -49,4 +49,11 @@ public class SubjectTest {
         assertFalse(subject.equals(5.0f));
         assertFalse(subject.equals(new Subject("English")));
     }
+
+    @Test
+    public void isSameSubject_differentCaseOrSpacing_returnsTrue() {
+        assertTrue(new Subject("Mathematics").isSameSubject(new Subject("MATHEMATICS")));
+        assertTrue(new Subject("H2 Math").isSameSubject(new Subject("h2  math")));
+        assertFalse(new Subject("Math").isSameSubject(new Subject("Maths")));
+    }
 }

@@ -3,6 +3,8 @@ package seedu.address.model.lesson;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import seedu.address.commons.util.StringUtil;
+
 /**
  * Represents the subject of a Lesson, e.g. "Mathematics".
  * Guarantees: immutable; is valid as declared in {@link #isValidSubject(String)}
@@ -35,6 +37,16 @@ public class Subject {
      */
     public static boolean isValidSubject(String test) {
         return test.matches(VALIDATION_REGEX);
+    }
+
+    /**
+     * Returns true if {@code other} is the same subject, ignoring letter case and extra spaces.
+     * This decides whether two lessons are identical. {@link #equals(Object)} stays exact, so that a change in
+     * letter case still counts as an edit.
+     */
+    public boolean isSameSubject(Subject other) {
+        requireNonNull(other);
+        return StringUtil.toMatchingKey(value).equals(StringUtil.toMatchingKey(other.value));
     }
 
     @Override

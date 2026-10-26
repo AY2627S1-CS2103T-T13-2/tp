@@ -3,6 +3,8 @@ package seedu.address.model.student;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import seedu.address.commons.util.StringUtil;
+
 /**
  * Represents a Student's name.
  * Guarantees: immutable; is valid as declared in {@link #isValidName(String)}
@@ -37,6 +39,16 @@ public class Name {
      */
     public static boolean isValidName(String test) {
         return test.matches(VALIDATION_REGEX);
+    }
+
+    /**
+     * Returns true if {@code other} is the same name, ignoring letter case and extra spaces.
+     * This decides whether two students are likely to be the same person. {@link #equals(Object)} stays exact, so
+     * that a change in letter case still counts as an edit.
+     */
+    public boolean isSameName(Name other) {
+        requireNonNull(other);
+        return StringUtil.toMatchingKey(fullName).equals(StringUtil.toMatchingKey(other.fullName));
     }
 
     @Override

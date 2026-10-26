@@ -52,4 +52,17 @@ public class NameTest {
         assertFalse(name.equals(5.0f));
         assertFalse(name.equals(new Name("Other Valid Name")));
     }
+
+    @Test
+    public void isSameName_differentCaseOrSpacing_returnsTrue() {
+        assertTrue(new Name("Alice Tan").isSameName(new Name("alice tan")));
+        assertTrue(new Name("Alice Tan").isSameName(new Name("Alice  Tan")));
+        assertTrue(new Name("José Tan").isSameName(new Name("JOSÉ TAN")));
+        assertFalse(new Name("Alice Tan").isSameName(new Name("Alice Tann")));
+    }
+
+    @Test
+    public void equals_differentCase_stillReturnsFalse() {
+        assertFalse(new Name("Alice Tan").equals(new Name("alice tan")));
+    }
 }
