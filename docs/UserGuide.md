@@ -332,7 +332,8 @@ Marks a student as paid for the current month using the student's ID. Use this c
 **Errors:**
 
 * A missing ID or extra text after the ID — the app displays `Invalid command format. Use: mark ID`.
-* A malformed, non-positive, or oversized ID — the app displays `ID must be a positive whole number.`
+* A malformed or non-positive ID — the app displays `ID must be a positive whole number.`
+* An ID above `2147483647` — the app displays `ID is too large. No student or lesson has an ID above 2147483647.`
 * No student has that ID — the app displays `No student found with ID 999.` (using the requested ID). An ID belonging only to a lesson does not match.
 * The student is already marked as paid for the current month — the app displays `Alice Tan is already marked as paid for the current month.` (using the student's name).
 

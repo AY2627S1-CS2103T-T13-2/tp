@@ -29,5 +29,6 @@ public class MarkCommandParserTest {
     public void parse_invalidId_throwsParseException() {
         assertParseFailure(parser, "zero", ParserUtil.MESSAGE_INVALID_ID);
         assertParseFailure(parser, "0", ParserUtil.MESSAGE_INVALID_ID);
+        assertParseFailure(parser, "2147483648", ParserUtil.MESSAGE_ID_TOO_LARGE);
     }
 }

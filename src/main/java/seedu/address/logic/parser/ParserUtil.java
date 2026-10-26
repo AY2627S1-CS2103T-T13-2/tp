@@ -24,6 +24,8 @@ import seedu.address.model.student.StudentId;
 public class ParserUtil {
 
     public static final String MESSAGE_INVALID_ID = "ID must be a positive whole number.";
+    public static final String MESSAGE_ID_TOO_LARGE =
+            "ID is too large. No student or lesson has an ID above " + Integer.MAX_VALUE + ".";
 
     private static final String DIGITS_ONLY = "\\d+";
 
@@ -62,7 +64,7 @@ public class ParserUtil {
         }
         BigInteger number = new BigInteger(id.trim());
         if (number.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) {
-            throw new ParseException(MESSAGE_INVALID_ID);
+            throw new ParseException(MESSAGE_ID_TOO_LARGE);
         }
         return number.intValue();
     }
