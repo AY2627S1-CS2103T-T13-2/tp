@@ -1,5 +1,7 @@
 package seedu.address.storage;
 
+import static seedu.address.storage.JsonFields.validated;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -42,19 +44,16 @@ class JsonAdaptedEnrollment {
      * @throws IllegalValueException if there were any data constraints violated in the adapted enrollment.
      */
     public Enrollment toModelType() throws IllegalValueException {
-        if (studentId == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "studentId"));
-        }
-        if (!StudentId.isValidId(studentId)) {
-            throw new IllegalValueException(StudentId.MESSAGE_CONSTRAINTS);
-        }
-        if (lessonId == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "lessonId"));
-        }
-        if (!LessonId.isValidId(lessonId)) {
-            throw new IllegalValueException(LessonId.MESSAGE_CONSTRAINTS);
-        }
-        return new Enrollment(new StudentId(studentId), new LessonId(lessonId));
+        StudentId modelStudentId = validated(required("studentId", studentId),
+                StudentId::isValidId, StudentId.MESSAGE_CONSTRAINTS, StudentId::new);
+        LessonId modelLessonId = validated(required("lessonId", lessonId),
+                LessonId::isValidId, LessonId.MESSAGE_CONSTRAINTS, LessonId::new);
+
+        return new Enrollment(modelStudentId, modelLessonId);
+    }
+
+    private static <T> T required(String fieldName, T value) throws IllegalValueException {
+        return JsonFields.required(value, MISSING_FIELD_MESSAGE_FORMAT, fieldName);
     }
 
 }

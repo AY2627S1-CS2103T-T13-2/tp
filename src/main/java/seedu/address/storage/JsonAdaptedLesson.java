@@ -1,5 +1,7 @@
 package seedu.address.storage;
 
+import static seedu.address.storage.JsonFields.validated;
+
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 
@@ -65,60 +67,33 @@ class JsonAdaptedLesson {
      * @throws IllegalValueException if there were any data constraints violated in the adapted lesson.
      */
     public Lesson toModelType() throws IllegalValueException {
-        if (id == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "id"));
-        }
-        if (!LessonId.isValidId(id)) {
-            throw new IllegalValueException(LessonId.MESSAGE_CONSTRAINTS);
-        }
-        final LessonId modelId = new LessonId(id);
+        LessonId modelId = validated(required("id", id),
+                LessonId::isValidId, LessonId.MESSAGE_CONSTRAINTS, LessonId::new);
+        Subject modelSubject = validated(required("subject", subject),
+                Subject::isValidSubject, Subject.MESSAGE_CONSTRAINTS, Subject::new);
+        Level modelLevel = validated(required("level", level),
+                Level::isValidLevel, Level.MESSAGE_CONSTRAINTS_LESSON, Level::new);
+        Timeslot modelTimeslot = toTimeslot();
+        Fee modelFee = validated(required("fee", fee), Fee::isValidFee, Fee.MESSAGE_CONSTRAINTS, Fee::new);
 
-        if (subject == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "subject"));
-        }
-        if (!Subject.isValidSubject(subject)) {
-            throw new IllegalValueException(Subject.MESSAGE_CONSTRAINTS);
-        }
-        final Subject modelSubject = new Subject(subject);
+        return new Lesson(modelId, modelSubject, modelLevel, modelTimeslot, modelFee);
+    }
 
-        if (level == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "level"));
-        }
-        if (!Level.isValidLevel(level)) {
-            throw new IllegalValueException(Level.MESSAGE_CONSTRAINTS_LESSON);
-        }
-        final Level modelLevel = new Level(level);
-
-        if (day == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "day"));
-        }
-        final DayOfWeek modelDay = Timeslot.parseDay(day)
+    private Timeslot toTimeslot() throws IllegalValueException {
+        DayOfWeek modelDay = Timeslot.parseDay(required("day", day))
                 .orElseThrow(() -> new IllegalValueException(Timeslot.MESSAGE_INVALID_DAY));
-
-        if (start == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "start"));
-        }
-        final LocalTime modelStart = Timeslot.parseTime(start)
+        LocalTime modelStart = Timeslot.parseTime(required("start", start))
                 .orElseThrow(() -> new IllegalValueException(Timeslot.MESSAGE_INVALID_START_TIME));
-
-        if (end == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "end"));
-        }
-        final LocalTime modelEnd = Timeslot.parseTime(end)
+        LocalTime modelEnd = Timeslot.parseTime(required("end", end))
                 .orElseThrow(() -> new IllegalValueException(Timeslot.MESSAGE_INVALID_END_TIME));
         if (!Timeslot.isValidTimeslot(modelStart, modelEnd)) {
             throw new IllegalValueException(Timeslot.MESSAGE_INVALID_END_TIME);
         }
+        return new Timeslot(modelDay, modelStart, modelEnd);
+    }
 
-        if (fee == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "fee"));
-        }
-        if (!Fee.isValidFee(fee)) {
-            throw new IllegalValueException(Fee.MESSAGE_CONSTRAINTS);
-        }
-
-        return new Lesson(modelId, modelSubject, modelLevel, new Timeslot(modelDay, modelStart, modelEnd),
-                new Fee(fee));
+    private static <T> T required(String fieldName, T value) throws IllegalValueException {
+        return JsonFields.required(value, MISSING_FIELD_MESSAGE_FORMAT, fieldName);
     }
 
 }
