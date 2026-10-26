@@ -13,8 +13,14 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -32,16 +38,21 @@ public class SchedulePanel extends UiPart<Region> {
 
     private static final String FXML = "SchedulePanel.fxml";
     private static final int HOURS_PER_DAY = 24;
+    private static final double PIXELS_PER_HOUR = 60;
     private static final int MINUTES_PER_HOUR = 60;
-    private static final int MINUTES_PER_DAY = HOURS_PER_DAY * MINUTES_PER_HOUR;
-    private static final double BASE_PIXELS_PER_MINUTE = 2.5;
-    private static final double MIN_CARD_HEIGHT = 140;
+    private static final int MINIMUM_BAR_MINUTES = 24;
+    private static final int SHORT_MARKER_LABEL_MINUTES = 20;
+    private static final double MINIMUM_LABEL_HEIGHT = 24;
+    private static final double SHORT_MARKER_LABEL_HEIGHT = 20;
+    private static final double TWO_LINE_HEIGHT = 40;
+    private static final double THREE_LINE_HEIGHT = 64;
     private static final double RULER_WIDTH = 50;
     private static final double CARD_WIDTH = 220;
     private static final double CARD_GAP = 8;
-    private static final double CARD_VERTICAL_INSET = 2;
+    private static final double END_OF_DAY_LABEL_SPACE = MINIMUM_LABEL_HEIGHT;
     private static final double DAY_CHROME_WIDTH = 36;
     private static final double PREFERRED_DAY_VIEWPORT_HEIGHT = 600;
+    private static final double TIMELINE_WIDTH = RULER_WIDTH + CARD_GAP + CARD_WIDTH + CARD_GAP;
 
     private final Logger logger = LogsCenter.getLogger(SchedulePanel.class);
     private final Logic logic;
@@ -63,7 +74,6 @@ public class SchedulePanel extends UiPart<Region> {
     public void refresh() {
         Map<DayOfWeek, List<Lesson>> byDay = ScheduleLayout.groupByDay(logic.getAllLessons());
         Set<LessonId> overlapping = ScheduleLayout.overlappingLessonIds(byDay);
-        double pixelsPerMinute = pixelsPerMinute(byDay);
 
         List<String> clashingDays = byDay.entrySet().stream()
                 .filter(entry -> entry.getValue().stream().anyMatch(lesson -> overlapping.contains(lesson.getId())))
@@ -72,7 +82,7 @@ public class SchedulePanel extends UiPart<Region> {
 
         List<VBox> dayColumns = new ArrayList<>();
         for (DayOfWeek day : DayOfWeek.values()) {
-            dayColumns.add(createDayColumn(day, byDay.get(day), overlapping, pixelsPerMinute));
+            dayColumns.add(createDayColumn(day, byDay.get(day), overlapping));
         }
         weekColumns.getChildren().setAll(dayColumns);
 
@@ -88,39 +98,24 @@ public class SchedulePanel extends UiPart<Region> {
         }
     }
 
-    /** Gives even the shortest lesson enough height to show its details. */
-    private double pixelsPerMinute(Map<DayOfWeek, List<Lesson>> byDay) {
-        double scale = BASE_PIXELS_PER_MINUTE;
-        for (List<Lesson> lessons : byDay.values()) {
-            for (Lesson lesson : lessons) {
-                Timeslot timeslot = lesson.getTimeslot();
-                double durationMinutes = minutesOfDay(timeslot.getEnd()) - minutesOfDay(timeslot.getStart());
-                scale = Math.max(scale, (MIN_CARD_HEIGHT + 2 * CARD_VERTICAL_INSET) / durationMinutes);
-            }
-        }
-        return scale;
-    }
-
-    private VBox createDayColumn(DayOfWeek day, List<Lesson> lessons, Set<LessonId> overlapping,
-            double pixelsPerMinute) {
+    private VBox createDayColumn(DayOfWeek day, List<Lesson> lessons, Set<LessonId> overlapping) {
         assert lessons.stream().allMatch(lesson -> lesson.getTimeslot().getDay() == day)
                 : "Lessons must be grouped by day";
-        List<ScheduleLayout.PlacedLesson> placements = ScheduleLayout.placeInLanes(lessons);
-        int laneCount = placements.stream().mapToInt(placement -> placement.lane() + 1).max().orElse(1);
-        double timelineWidth = RULER_WIDTH + CARD_GAP + laneCount * (CARD_WIDTH + CARD_GAP);
+        List<ScheduleLayout.DisplayGroup> groups = ScheduleLayout.groupForDisplay(lessons,
+                MINIMUM_BAR_MINUTES, SHORT_MARKER_LABEL_MINUTES);
 
         VBox column = new VBox(8);
         column.getStyleClass().add("schedule-day");
         if (day == LocalDate.now().getDayOfWeek()) {
             column.getStyleClass().add("schedule-today");
         }
-        column.setMinWidth(timelineWidth + DAY_CHROME_WIDTH);
-        column.setPrefWidth(timelineWidth + DAY_CHROME_WIDTH);
-        column.setMaxWidth(timelineWidth + DAY_CHROME_WIDTH);
+        column.setMinWidth(TIMELINE_WIDTH + DAY_CHROME_WIDTH);
+        column.setPrefWidth(TIMELINE_WIDTH + DAY_CHROME_WIDTH);
+        column.setMaxWidth(TIMELINE_WIDTH + DAY_CHROME_WIDTH);
 
         Label heading = new Label(Timeslot.dayName(day));
         heading.getStyleClass().add("schedule-day-heading");
-        Pane timeline = createTimeline(placements, overlapping, timelineWidth, pixelsPerMinute);
+        Pane timeline = createTimeline(groups, overlapping);
 
         if (lessons.isEmpty()) {
             Label empty = new Label("No lessons");
@@ -129,7 +124,7 @@ public class SchedulePanel extends UiPart<Region> {
             timeline.getChildren().add(empty);
         }
 
-        ScrollPane dayScroll = createDayScroll(timeline, timelineWidth);
+        ScrollPane dayScroll = createDayScroll(timeline, TIMELINE_WIDTH);
         column.getChildren().addAll(heading, dayScroll);
         return column;
     }
@@ -146,25 +141,25 @@ public class SchedulePanel extends UiPart<Region> {
         return dayScroll;
     }
 
-    private Pane createTimeline(List<ScheduleLayout.PlacedLesson> placements, Set<LessonId> overlapping,
-            double width, double pixelsPerMinute) {
-        double height = MINUTES_PER_DAY * pixelsPerMinute;
+    private Pane createTimeline(List<ScheduleLayout.DisplayGroup> groups, Set<LessonId> overlapping) {
+        double dayHeight = HOURS_PER_DAY * PIXELS_PER_HOUR;
+        double height = dayHeight + END_OF_DAY_LABEL_SPACE;
         Pane timeline = new Pane();
         timeline.getStyleClass().add("schedule-timeline");
-        timeline.setPrefSize(width, height);
-        timeline.setMinSize(width, height);
+        timeline.setPrefSize(TIMELINE_WIDTH, height);
+        timeline.setMinSize(TIMELINE_WIDTH, height);
 
-        addHourMarkers(timeline, width, height, pixelsPerMinute);
-        addLessonCards(timeline, placements, overlapping, pixelsPerMinute);
+        addHourMarkers(timeline, dayHeight);
+        addLessonGroups(timeline, groups, overlapping);
         return timeline;
     }
 
-    private void addHourMarkers(Pane timeline, double width, double height, double pixelsPerMinute) {
+    private void addHourMarkers(Pane timeline, double dayHeight) {
         for (int hour = 0; hour <= HOURS_PER_DAY; hour++) {
-            double y = hour * MINUTES_PER_HOUR * pixelsPerMinute;
+            double y = hour * PIXELS_PER_HOUR;
             Region line = new Region();
             line.getStyleClass().add("schedule-hour-line");
-            line.setPrefSize(width - RULER_WIDTH, 1);
+            line.setPrefSize(TIMELINE_WIDTH - RULER_WIDTH, 1);
             line.relocate(RULER_WIDTH, y);
             timeline.getChildren().add(line);
 
@@ -178,64 +173,144 @@ public class SchedulePanel extends UiPart<Region> {
 
         Label endOfDay = new Label("23:59");
         endOfDay.getStyleClass().add("schedule-hour-label");
-        endOfDay.relocate(4, height - 19);
+        endOfDay.relocate(4, dayHeight + 3);
         timeline.getChildren().add(endOfDay);
     }
 
-    private void addLessonCards(Pane timeline, List<ScheduleLayout.PlacedLesson> placements,
-            Set<LessonId> overlapping, double pixelsPerMinute) {
-        for (ScheduleLayout.PlacedLesson placement : placements) {
-            Lesson lesson = placement.lesson();
-            Timeslot timeslot = lesson.getTimeslot();
-            double x = RULER_WIDTH + CARD_GAP + placement.lane() * (CARD_WIDTH + CARD_GAP);
-            double y = minutesOfDay(timeslot.getStart()) * pixelsPerMinute + CARD_VERTICAL_INSET;
-            double cardHeight = (minutesOfDay(timeslot.getEnd()) - minutesOfDay(timeslot.getStart()))
-                    * pixelsPerMinute - 2 * CARD_VERTICAL_INSET;
-            ScrollPane card = createLessonCard(lesson, overlapping.contains(lesson.getId()), cardHeight);
-            card.relocate(x, y);
-            timeline.getChildren().add(card);
+    private void addLessonGroups(Pane timeline, List<ScheduleLayout.DisplayGroup> groups,
+            Set<LessonId> overlapping) {
+        for (ScheduleLayout.DisplayGroup group : groups) {
+            double startY = pixelsAtMinute(group.startMinute());
+            double height = pixelsAtMinute(group.endMinute() - group.startMinute());
+            boolean isShort = height < MINIMUM_LABEL_HEIGHT;
+            boolean hasClash = group.lessons().stream().anyMatch(lesson -> overlapping.contains(lesson.getId()));
+            Button button = createLessonButton(group, hasClash, isShort, height);
+            if (isShort) {
+                Region span = new Region();
+                span.getStyleClass().add("schedule-short-span");
+                if (hasClash) {
+                    span.getStyleClass().add("schedule-short-span-overlap");
+                }
+                span.relocate(RULER_WIDTH + CARD_GAP, startY);
+                span.setPrefSize(4, Math.max(1, height));
+                timeline.getChildren().add(span);
+            }
+            double labelY = isShort
+                    ? startY + (height - SHORT_MARKER_LABEL_HEIGHT) / 2
+                    : startY;
+            button.relocate(RULER_WIDTH + CARD_GAP + (isShort ? 7 : 0),
+                    Math.max(0, Math.min(labelY, HOURS_PER_DAY * PIXELS_PER_HOUR - SHORT_MARKER_LABEL_HEIGHT)));
+            timeline.getChildren().add(button);
         }
     }
 
-    private static double minutesOfDay(LocalTime time) {
-        return time.toSecondOfDay() / 60.0;
+    private static double pixelsAtMinute(int minute) {
+        return minute * PIXELS_PER_HOUR / MINUTES_PER_HOUR;
     }
 
-    private ScrollPane createLessonCard(Lesson lesson, boolean overlaps, double height) {
-        VBox content = new VBox(4);
-        content.getStyleClass().add("schedule-lesson-content");
+    private static String timeText(int minute) {
+        return Timeslot.timeText(LocalTime.of(minute / MINUTES_PER_HOUR, minute % MINUTES_PER_HOUR));
+    }
 
-        Timeslot timeslot = lesson.getTimeslot();
-        Label time = new Label(Timeslot.timeText(timeslot.getStart()) + "–"
-                + Timeslot.timeText(timeslot.getEnd()));
-        time.getStyleClass().add("schedule-lesson-time");
-        Label subject = new Label(lesson.getSubject() + " · " + lesson.getLevel());
-        subject.getStyleClass().add("schedule-lesson-subject");
-        subject.setWrapText(true);
-        Label id = new Label("Lesson ID: " + lesson.getId());
-        id.getStyleClass().add("schedule-lesson-detail");
+    private Button createLessonButton(ScheduleLayout.DisplayGroup group, boolean hasClash,
+            boolean isShort, double height) {
+        List<Lesson> lessons = group.lessons();
+        String range = timeText(group.startMinute()) + "–" + timeText(group.endMinute());
+        String label;
+        if (lessons.size() == 1) {
+            Lesson lesson = lessons.get(0);
+            label = range + "  " + lesson.getSubject();
+            if (!isShort && height >= TWO_LINE_HEIGHT) {
+                label = range + "\n" + lesson.getSubject() + " · " + lesson.getLevel();
+            }
+            if (!isShort && height >= THREE_LINE_HEIGHT) {
+                List<Student> students = logic.getStudentsIn(lesson.getId());
+                String studentSummary = students.isEmpty() ? "No students"
+                        : students.size() == 1 ? students.get(0).getName().toString()
+                        : students.size() + " students";
+                label += "\n" + studentSummary;
+            }
+        } else {
+            label = height >= TWO_LINE_HEIGHT
+                    ? range + "\n" + lessons.size() + " lessons"
+                    : range + "  " + lessons.size() + " lessons";
+        }
 
+        Button button = new Button(label);
+        button.getStyleClass().add("schedule-lesson");
+        if (isShort) {
+            button.getStyleClass().add("schedule-short-lesson");
+        }
+        if (hasClash) {
+            button.getStyleClass().add(isShort ? "schedule-short-overlap" : "schedule-overlap");
+        }
+        String description = lessons.size() == 1
+                ? "View details for " + lessons.get(0).getSubject() + " at " + range
+                : "View details for " + lessons.size() + " lessons between " + range;
+        button.setTooltip(new Tooltip(description));
+        button.setAccessibleText(description);
+        button.setOnAction(event -> showLessonDetails(group));
+        double buttonHeight = isShort ? SHORT_MARKER_LABEL_HEIGHT : height;
+        double buttonWidth = CARD_WIDTH - (isShort ? 7 : 0);
+        button.setPrefSize(buttonWidth, buttonHeight);
+        button.setMinSize(buttonWidth, buttonHeight);
+        button.setMaxSize(buttonWidth, buttonHeight);
+        return button;
+    }
+
+    private void showLessonDetails(ScheduleLayout.DisplayGroup group) {
+        List<Lesson> lessons = group.lessons();
+        VBox cards = new VBox(10);
+        cards.setPadding(new Insets(4));
+        for (Lesson lesson : lessons) {
+            cards.getChildren().add(createDetailCard(lesson));
+        }
+
+        ScrollPane detailsScroll = new ScrollPane(cards);
+        detailsScroll.getStyleClass().add("schedule-details-scroll");
+        detailsScroll.setFitToWidth(true);
+        detailsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        detailsScroll.setPrefViewportWidth(460);
+        detailsScroll.setPrefViewportHeight(380);
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.initOwner(getRoot().getScene().getWindow());
+        dialog.setTitle("Lesson details");
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.getStylesheets().addAll("view/DarkTheme.css", "view/Extensions.css");
+        dialogPane.getStyleClass().add("schedule-details-dialog");
+        dialogPane.getButtonTypes().add(ButtonType.CLOSE);
+
+        Label heading = new Label(lessons.size() + (lessons.size() == 1 ? " lesson" : " lessons")
+                + " · " + Timeslot.dayName(lessons.get(0).getTimeslot().getDay()) + " "
+                + timeText(group.startMinute()) + "–" + timeText(group.endMinute()));
+        heading.getStyleClass().add("schedule-details-heading");
+        VBox content = new VBox(10, heading, detailsScroll);
+        content.getStyleClass().add("schedule-details-content");
+        dialogPane.setContent(content);
+        dialog.showAndWait();
+    }
+
+    private VBox createDetailCard(Lesson lesson) {
         List<Student> students = logic.getStudentsIn(lesson.getId());
         String studentsText = students.isEmpty()
                 ? "No students"
                 : students.stream().map(student -> student.getName() + " (ID: " + student.getId() + ")")
                         .collect(Collectors.joining(", "));
-        Label attendees = new Label(studentsText);
-        attendees.getStyleClass().add("schedule-lesson-detail");
-        attendees.setWrapText(true);
 
-        content.getChildren().addAll(time, subject, id, attendees);
-        ScrollPane card = new ScrollPane(content);
-        card.getStyleClass().add("schedule-lesson");
-        if (overlaps) {
-            card.getStyleClass().add("schedule-overlap");
+        Label title = new Label(lesson.getSubject() + " · " + lesson.getLevel());
+        title.getStyleClass().add("schedule-details-card-title");
+        Label time = new Label(lesson.getTimeslot().toString());
+        Label idAndFee = new Label("Lesson ID: " + lesson.getId() + "    Fee per session: " + lesson.getFee());
+        Label attendees = new Label("Students: " + studentsText);
+        for (Label label : List.of(time, idAndFee, attendees)) {
+            label.getStyleClass().add("schedule-details-card-text");
+            label.setWrapText(true);
         }
-        card.setFitToWidth(true);
-        card.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        card.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        card.setPrefSize(CARD_WIDTH, height);
-        card.setMinSize(CARD_WIDTH, height);
-        card.setMaxSize(CARD_WIDTH, height);
+        title.setWrapText(true);
+
+        VBox card = new VBox(4, title, time, idAndFee, attendees);
+        card.getStyleClass().add("schedule-details-card");
         return card;
     }
 }
