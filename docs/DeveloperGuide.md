@@ -186,10 +186,12 @@ The parser works in this order, and reports the first problem it finds:
 
 1. The command is well formed: no text before the first parameter, and at least one parameter.
 2. No parameter is given more than once.
-3. Both `s/` and `l/` are given. Whether each is a whole number (an existing record) or not (a new one) decides everything after this.
-4. No parameter is given that does not belong to the form. For example, `c/` is not allowed with an existing student.
-5. No required parameter is missing, for example `c/` and `slv/` for a new student.
-6. Every value is valid, student first and then lesson, using the shared `ParserUtil` methods, which carry the exact error messages.
+3. No parameter is joined to another value without a space, such as the `slv/` in `c/92223333slv/Primary 6`. Without this check, the joined parameter would be reported as missing.
+4. Both `s/` and `l/` are given. Whether each is a whole number (an existing record) or not (a new one) decides everything after this.
+5. Neither `s/` nor `l/` is a number that is not a valid ID, such as `0`, `-1` or `1.5`, and neither is an ID larger than any record can have. Without this check, such a number would be read as the name of a new student or the subject of a new lesson.
+6. No parameter is given that does not belong to the form. For example, `c/` is not allowed with an existing student.
+7. No required parameter is missing, for example `c/` and `slv/` for a new student. The message also says which value was read as a new student or lesson, and suggests giving only the ID when the value is an ID followed by more text.
+8. Every value is valid, student first and then lesson, using the shared `ParserUtil` methods, which carry the exact error messages.
 
 #### Executing the command
 
@@ -199,7 +201,7 @@ The parser works in this order, and reports the first problem it finds:
 2. A new student is not a duplicate, a new lesson is not a duplicate, and the student is not already enrolled in the lesson. Duplicates are found with `Name#isSameName`, `Contact#isSameContact` and `Subject#isSameSubject`, which ignore letter case, extra spaces and (for contacts) everything but the digits. `equals` on these classes stays exact, so that `edit` can still change only the letter case of a value.
 3. A new lesson does not clash with an existing lesson.
 
-It then works out the notes for things that are probably mistakes but might be intended: a new student with the same name as an existing student, and a student whose level differs from the lesson's level. Notes do not stop the command; each one is added to the result on its own line.
+It then works out the notes for things that are probably mistakes but might be intended, in this order: a new student with the same name as an existing student, a student whose level differs from the lesson's level, and a new lesson whose fee is 0. Notes do not stop the command; each one is added to the result on its own line.
 
 Only then does it create what is new (`Model#addStudent`, `Model#addLesson`) and call `Model#enroll`. The IDs in the result message come from the objects that the `Model` returns.
 
@@ -692,10 +694,10 @@ Use case ends.
 * **Enrollment**: The link between a student and a lesson that the student attends. A student can be enrolled in many lessons, and a lesson can have many students.
 * **Lesson**: A weekly class conducted by the tutor, defined by its subject, level, day, start time, end time and fee.
 * **Lesson clash**: The situation where two lessons on the same day have overlapping timeslots, e.g., `15:00-16:30` and `16:00-17:00` on Monday. A lesson that starts exactly when another ends (e.g., `15:00-16:00` and `16:00-17:00`) does not clash with it.
-* **Lesson fee**: The amount charged for a lesson, which must be a positive amount with at most two decimal places.
+* **Lesson fee**: The amount charged for one session of a lesson: 0 or more, with at most two decimal places. A fee of 0 is for a free lesson.
 * **Lesson ID**: A unique positive integer assigned to a lesson when it is created. It never changes, and is used to refer to the lesson in commands.
 * **Level**: The education level of a student or lesson, e.g., `Primary 6` or `Secondary 2`. Levels are compared without considering letter case or extra spaces, so `Primary 6` and `primary   6` are the same level, but `P6` and `Primary 6` are different levels.
-* **Level matching**: The requirement that a student's level must be the same as a lesson's level before the student can be enrolled in that lesson.
+* **Level matching**: Comparing a student's level with a lesson's level when the student is enrolled. A student can join a lesson of another level, but `add` then adds a note naming both levels.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS.
 * **Parameter**: A value given after the command word to provide the details a command needs, e.g., the student ID `12` in `delete student 12`. Some parameters are written after a _prefix_.
 * **Payment status**: Whether a student has paid for the current month (_Paid_) or not (_Unpaid_). Every student's payment status is reset to _Unpaid_ at the start of each month.
