@@ -160,6 +160,11 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public Optional<Lesson> findClash(Timeslot timeslot) {
+        return tuiTracker.findClash(timeslot);
+    }
+
+    @Override
     public List<LessonId> getLessonIdsOf(StudentId studentId) {
         return tuiTracker.getLessonIdsOf(studentId);
     }

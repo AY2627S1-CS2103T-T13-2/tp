@@ -90,6 +90,11 @@ public class ModelStub implements Model {
     }
 
     @Override
+    public Optional<Lesson> findClash(Timeslot timeslot) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
     public List<LessonId> getLessonIdsOf(StudentId studentId) {
         throw new AssertionError("This method should not be called.");
     }

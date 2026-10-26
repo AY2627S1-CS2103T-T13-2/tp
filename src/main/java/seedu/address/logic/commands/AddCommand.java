@@ -47,7 +47,7 @@ public class AddCommand extends Command {
     public static final String MESSAGE_DUPLICATE_LESSON =
             "An identical lesson already exists (Lesson ID: %1$s). Use the existing lesson ID.";
     public static final String MESSAGE_ALREADY_ENROLLED = "The student is already enrolled in this lesson.";
-    public static final String MESSAGE_LESSON_CLASH = "Lesson clashes with an existing lesson.";
+    public static final String MESSAGE_LESSON_CLASH = "Lesson clashes with lesson %1$s (%2$s, %3$s).";
     public static final String MESSAGE_NOTE_SAME_NAME =
             "Note: another student named %1$s already exists (Student ID: %2$s).";
     public static final String MESSAGE_NOTE_LEVEL_MISMATCH =
@@ -155,11 +155,17 @@ public class AddCommand extends Command {
     }
 
     /**
-     * Throws if the lesson is new and its timeslot clashes with an existing lesson.
+     * Throws if the lesson is new and its timeslot clashes with an existing lesson. The message names that lesson.
      */
     private void checkForClash(Model model) throws CommandException {
-        if (lesson instanceof NewLesson newLesson && model.hasClash(newLesson.timeslot())) {
-            throw new CommandException(MESSAGE_LESSON_CLASH);
+        if (!(lesson instanceof NewLesson newLesson)) {
+            return;
+        }
+        Optional<Lesson> clash = model.findClash(newLesson.timeslot());
+        if (clash.isPresent()) {
+            Lesson other = clash.get();
+            throw new CommandException(String.format(MESSAGE_LESSON_CLASH, other.getId(), other.getSubject(),
+                    other.getTimeslot()));
         }
     }
 

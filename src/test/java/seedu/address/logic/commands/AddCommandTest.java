@@ -73,6 +73,10 @@ public class AddCommandTest {
     private static final LessonRef NEW_LESSON =
             new NewLesson(new Subject("Mathematics"), new Level("Primary 6"), MONDAY_AFTERNOON, new Fee("50.00"));
 
+    /** Every clash in these tests is with MATHEMATICS, on Monday from 15:00 to 16:30. */
+    private static final String CLASH_WITH_MATHEMATICS = String.format(MESSAGE_LESSON_CLASH, MATHEMATICS.getId(),
+            MATHEMATICS.getSubject(), MATHEMATICS.getTimeslot());
+
     /** A student who is not in the typical data: Daniel Koh, Primary 6. */
     private static final NewStudent DANIEL_DETAILS =
             new NewStudent(DANIEL.getName(), DANIEL.getContact(), DANIEL.getLevel());
@@ -421,17 +425,17 @@ public class AddCommandTest {
         NewLesson overlapping = newLesson("History", "Primary 6", DayOfWeek.MONDAY, 16, 0, 17, 0);
 
         assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), overlapping), typicalModel(),
-                MESSAGE_LESSON_CLASH);
+                CLASH_WITH_MATHEMATICS);
     }
 
     @Test
     public void execute_newLessonThatContainsOrIsInsideAnotherLesson_throwsCommandException() {
         assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()),
                 newLesson("History", "Primary 6", DayOfWeek.MONDAY, 14, 0, 18, 0)), typicalModel(),
-                MESSAGE_LESSON_CLASH);
+                CLASH_WITH_MATHEMATICS);
         assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()),
                 newLesson("History", "Primary 6", DayOfWeek.MONDAY, 15, 30, 16, 0)), typicalModel(),
-                MESSAGE_LESSON_CLASH);
+                CLASH_WITH_MATHEMATICS);
     }
 
     @Test
@@ -482,7 +486,7 @@ public class AddCommandTest {
         NewLesson primaryFour = newLesson("Art", "Primary 4", DayOfWeek.MONDAY, 15, 30, 16, 0);
 
         assertCommandFailure(new AddCommand(new ExistingStudent(CHLOE.getId()), primaryFour), typicalModel(),
-                MESSAGE_LESSON_CLASH);
+                CLASH_WITH_MATHEMATICS);
     }
 
     //// duplicates
@@ -521,7 +525,7 @@ public class AddCommandTest {
         NewLesson otherLevel = new NewLesson(MATHEMATICS.getSubject(), new Level("Primary 5"),
                 MATHEMATICS.getTimeslot(), MATHEMATICS.getFee());
 
-        assertCommandFailure(new AddCommand(primaryFive, otherLevel), typicalModel(), MESSAGE_LESSON_CLASH);
+        assertCommandFailure(new AddCommand(primaryFive, otherLevel), typicalModel(), CLASH_WITH_MATHEMATICS);
     }
 
     //// the order of the checks
@@ -569,7 +573,7 @@ public class AddCommandTest {
                 MATHEMATICS.getTimeslot(), new Fee("30"));
 
         assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), wrongLevelAndClashing),
-                typicalModel(), MESSAGE_LESSON_CLASH);
+                typicalModel(), CLASH_WITH_MATHEMATICS);
     }
 
     //// a failed command creates nothing
@@ -579,7 +583,7 @@ public class AddCommandTest {
         // assertCommandFailure compares the whole data, including the ID counters
         NewLesson clashing = newLesson("History", "Primary 6", DayOfWeek.MONDAY, 16, 0, 17, 0);
 
-        assertCommandFailure(new AddCommand(DANIEL_DETAILS, clashing), typicalModel(), MESSAGE_LESSON_CLASH);
+        assertCommandFailure(new AddCommand(DANIEL_DETAILS, clashing), typicalModel(), CLASH_WITH_MATHEMATICS);
     }
 
     @Test

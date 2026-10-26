@@ -430,4 +430,18 @@ public class TuiTrackerTest {
         assertEquals(Optional.of(ALICE), tracker.findStudentWithSameName(new Name("ALICE TAN")));
         assertEquals(Optional.empty(), tracker.findStudentWithSameName(new Name("Nobody Here")));
     }
+
+    @Test
+    public void findClash_overlapping_returnsLesson() {
+        Timeslot overlap = new Timeslot(MATHEMATICS.getTimeslot().getDay(),
+                MATHEMATICS.getTimeslot().getStart(), MATHEMATICS.getTimeslot().getEnd().plusMinutes(30));
+        assertEquals(Optional.of(MATHEMATICS), tracker.findClash(overlap));
+    }
+
+    @Test
+    public void findClash_touchingOnly_returnsEmpty() {
+        Timeslot afterMathematics = new Timeslot(MATHEMATICS.getTimeslot().getDay(),
+                MATHEMATICS.getTimeslot().getEnd(), MATHEMATICS.getTimeslot().getEnd().plusHours(1));
+        assertEquals(Optional.empty(), tracker.findClash(afterMathematics));
+    }
 }

@@ -94,6 +94,11 @@ public interface Model {
      */
     boolean hasClash(Timeslot timeslot);
 
+    /**
+     * Returns the existing lesson with the lowest ID that overlaps {@code timeslot}, if there is one.
+     */
+    Optional<Lesson> findClash(Timeslot timeslot);
+
     //// derived data
 
     /**

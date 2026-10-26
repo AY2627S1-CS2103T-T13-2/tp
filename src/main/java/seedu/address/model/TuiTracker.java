@@ -159,6 +159,17 @@ public class TuiTracker implements ReadOnlyTuiTracker {
     }
 
     /**
+     * Returns the lesson with the lowest ID whose timeslot overlaps {@code timeslot}, if there is one.
+     * A lesson that starts exactly when another ends does not clash with it.
+     */
+    public Optional<Lesson> findClash(Timeslot timeslot) {
+        requireNonNull(timeslot);
+        return lessons.asUnmodifiableObservableList().stream()
+                .filter(lesson -> lesson.getTimeslot().overlaps(timeslot))
+                .findFirst();
+    }
+
+    /**
      * Returns the IDs of the lessons the student is enrolled in, in ascending order.
      */
     public List<LessonId> getLessonIdsOf(StudentId studentId) {
