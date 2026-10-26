@@ -104,8 +104,9 @@ public class AddCommandParser implements Parser<AddCommand> {
         try {
             return parseArguments(args);
         } catch (ParseException e) {
-            // Only the error message is logged, never the input, because the input holds names and contact numbers.
-            logger.fine("Rejected add command: " + e.getMessage());
+            // Nothing about the input is logged: it holds names and contact numbers, and so can the error message,
+            // which repeats what was typed, such as "s/Daniel Koh was read as a new student".
+            logger.fine("Rejected add command because its arguments are invalid");
             throw e;
         }
     }

@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.commons.core.LogsCenter;
@@ -74,7 +75,27 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_commandWithPersonalDetails_logsNoNamesOrContactNumbers() throws Exception {
+    public void execute_commandWithPersonalDetails_logsNoNamesOrContactNumbers() throws Throwable {
+        List<String> logged = logsDuring(() -> logic.execute("add s/Zara Quinn c/91112222 slv/Primary 6 l/1"));
+
+        assertNoPersonalData(logged);
+    }
+
+    @Test
+    public void execute_rejectedCommandWithPersonalDetails_logsNoNamesOrContactNumbers() throws Throwable {
+        // these error messages repeat what was typed: the name read as a new student, and a number that is not an ID
+        List<String> logged = logsDuring(() -> {
+            assertThrows(ParseException.class, () -> logic.execute("add s/Zara Quinn slv/Primary 6 l/1"));
+            assertThrows(ParseException.class, () -> logic.execute("add s/+6591112222 l/1"));
+        });
+
+        assertNoPersonalData(logged);
+    }
+
+    /**
+     * Runs {@code action} and returns every message logged meanwhile, including those at FINE level.
+     */
+    private static List<String> logsDuring(Executable action) throws Throwable {
         List<String> logged = new ArrayList<>();
         Handler handler = new Handler() {
             @Override
@@ -89,13 +110,19 @@ public class LogicManagerTest {
             public void close() {}
         };
         Logger baseLogger = LogsCenter.getLogger(LogicManager.class).getParent();
+        java.util.logging.Level originalLevel = baseLogger.getLevel();
+        baseLogger.setLevel(java.util.logging.Level.FINE);
         baseLogger.addHandler(handler);
         try {
-            logic.execute("add s/Zara Quinn c/91112222 slv/Primary 6 l/1");
+            action.execute();
         } finally {
             baseLogger.removeHandler(handler);
+            baseLogger.setLevel(originalLevel);
         }
+        return logged;
+    }
 
+    private static void assertNoPersonalData(List<String> logged) {
         assertFalse(logged.isEmpty());
         for (String message : logged) {
             assertFalse(message.contains("Zara") || message.contains("91112222"),

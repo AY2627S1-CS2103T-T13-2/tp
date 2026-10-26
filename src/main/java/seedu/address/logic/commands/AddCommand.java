@@ -94,7 +94,7 @@ public class AddCommand extends Command {
             return checkAndEnroll(model);
         } catch (CommandException e) {
             // A rejected command is the user's mistake and not a fault, so it is logged at info and not warning.
-            // The messages only ever hold IDs, never names or contact numbers.
+            // These messages hold IDs, subjects and times, never names or contact numbers.
             logger.info("Rejected add command: " + e.getMessage());
             throw e;
         }

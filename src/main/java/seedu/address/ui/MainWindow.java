@@ -224,7 +224,8 @@ public class MainWindow extends UiPart<Stage> {
 
             return commandResult;
         } catch (CommandException | ParseException e) {
-            logger.info("A command could not be executed: " + e.getMessage());
+            // Only the kind of error is logged: an error message can repeat a name or contact number that was typed.
+            logger.info("A command could not be executed: " + e.getClass().getSimpleName());
             resultDisplay.setFeedbackToUser(e.getMessage());
             throw e;
         }
