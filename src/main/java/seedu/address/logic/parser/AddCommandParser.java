@@ -90,19 +90,10 @@ public class AddCommandParser implements Parser<AddCommand> {
 
     private AddCommand parseArguments(String args) throws ParseException {
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, ALL_PREFIXES);
-
-        boolean hasNoParameters = Stream.of(ALL_PREFIXES).noneMatch(prefix -> argMultimap.getValue(prefix).isPresent());
-        if (!argMultimap.getPreamble().isEmpty() || hasNoParameters) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
-        }
-
+        checkWellFormed(argMultimap);
         argMultimap.verifyNoDuplicatePrefixesFor(ALL_PREFIXES);
+        checkStudentAndLessonGiven(argMultimap);
 
-        // Whether each side is new or existing decides everything else, so both must be given first.
-        List<Prefix> missing = missingPrefixes(argMultimap, PREFIX_STUDENT, PREFIX_LESSON);
-        if (!missing.isEmpty()) {
-            throw missingParameter(missing);
-        }
         String studentValue = requiredValue(argMultimap, PREFIX_STUDENT);
         String lessonValue = requiredValue(argMultimap, PREFIX_LESSON);
         boolean isNewStudent = !ParserUtil.isId(studentValue);
@@ -110,27 +101,62 @@ public class AddCommandParser implements Parser<AddCommand> {
         logger.fine("Parsing add command: " + (isNewStudent ? "new" : "existing") + " student, "
                 + (isNewLesson ? "new" : "existing") + " lesson");
 
+        checkNoUnexpectedParameters(argMultimap, isNewStudent, isNewLesson);
+        checkNoMissingParameters(argMultimap, isNewStudent, isNewLesson);
+
+        StudentRef student = isNewStudent ? parseNewStudent(argMultimap) : parseExistingStudent(studentValue);
+        LessonRef lesson = isNewLesson ? parseNewLesson(argMultimap) : parseExistingLesson(lessonValue);
+        return new AddCommand(student, lesson);
+    }
+
+    /**
+     * Throws if there is text before the first parameter, or if there is no parameter at all.
+     */
+    private static void checkWellFormed(ArgumentMultimap argMultimap) throws ParseException {
+        if (!argMultimap.getPreamble().isEmpty() || !anyGiven(argMultimap, ALL_PREFIXES)) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
+        }
+    }
+
+    /**
+     * Throws if {@code s/} or {@code l/} is missing. Whether each side is new or existing decides everything else,
+     * so both must be given before anything else is checked.
+     */
+    private static void checkStudentAndLessonGiven(ArgumentMultimap argMultimap) throws ParseException {
+        List<Prefix> missing = missingPrefixes(argMultimap, PREFIX_STUDENT, PREFIX_LESSON);
+        if (!missing.isEmpty()) {
+            throw missingParameter(missing);
+        }
+    }
+
+    /**
+     * Throws if a parameter is given that only a new student or a new lesson has, for an existing one.
+     */
+    private static void checkNoUnexpectedParameters(ArgumentMultimap argMultimap, boolean isNewStudent,
+            boolean isNewLesson) throws ParseException {
         if (!isNewStudent && anyGiven(argMultimap, NEW_STUDENT_PREFIXES)) {
             throw new ParseException(MESSAGE_STUDENT_PARAMETERS_NOT_ALLOWED);
         }
         if (!isNewLesson && anyGiven(argMultimap, NEW_LESSON_PREFIXES)) {
             throw new ParseException(MESSAGE_LESSON_PARAMETERS_NOT_ALLOWED);
         }
+    }
 
-        List<Prefix> allMissing = new ArrayList<>();
+    /**
+     * Throws if a parameter that a new student or a new lesson needs is missing.
+     */
+    private static void checkNoMissingParameters(ArgumentMultimap argMultimap, boolean isNewStudent,
+            boolean isNewLesson) throws ParseException {
+        List<Prefix> missing = new ArrayList<>();
         if (isNewStudent) {
-            allMissing.addAll(missingPrefixes(argMultimap, NEW_STUDENT_PREFIXES));
+            missing.addAll(missingPrefixes(argMultimap, NEW_STUDENT_PREFIXES));
         }
         if (isNewLesson) {
-            allMissing.addAll(missingPrefixes(argMultimap, NEW_LESSON_PREFIXES));
+            missing.addAll(missingPrefixes(argMultimap, NEW_LESSON_PREFIXES));
         }
-        if (!allMissing.isEmpty()) {
-            throw missingParameter(allMissing);
+        if (!missing.isEmpty()) {
+            throw missingParameter(missing);
         }
-
-        StudentRef student = isNewStudent ? parseNewStudent(argMultimap) : parseExistingStudent(studentValue);
-        LessonRef lesson = isNewLesson ? parseNewLesson(argMultimap) : parseExistingLesson(lessonValue);
-        return new AddCommand(student, lesson);
     }
 
     private static StudentRef parseExistingStudent(String value) throws ParseException {

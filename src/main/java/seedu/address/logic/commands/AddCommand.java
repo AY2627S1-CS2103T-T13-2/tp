@@ -84,7 +84,7 @@ public class AddCommand extends Command {
         requireNonNull(model);
         logger.fine("Executing add command: " + describeReferences());
         try {
-            return enroll(model);
+            return checkAndEnroll(model);
         } catch (CommandException e) {
             // A rejected command is the user's mistake and not a fault, so it is logged at info and not warning.
             // The messages only ever hold IDs, never names or contact numbers.
@@ -93,7 +93,7 @@ public class AddCommand extends Command {
         }
     }
 
-    private CommandResult enroll(Model model) throws CommandException {
+    private CommandResult checkAndEnroll(Model model) throws CommandException {
         Optional<Student> existingStudent = findExistingStudent(model);
         Optional<Lesson> existingLesson = findExistingLesson(model);
         // A student or lesson is resolved exactly when it was referred to by ID; the steps below rely on this.
@@ -103,30 +103,65 @@ public class AddCommand extends Command {
                 : "An existing lesson must be found if, and only if, the lesson was given by ID";
 
         checkForDuplicates(model, existingStudent, existingLesson);
+        checkLevelsMatch(existingStudent, existingLesson);
+        checkForClash(model);
 
+        // The whole request is valid, so create what is new and enroll.
+        Student studentToEnroll = createStudentIfNew(model, existingStudent);
+        Lesson lessonToJoin = createLessonIfNew(model, existingLesson);
+        enroll(model, studentToEnroll, lessonToJoin);
+        return new CommandResult(successMessage(model, studentToEnroll, lessonToJoin));
+    }
+
+    /**
+     * Throws if the student's level is not the same as the lesson's level.
+     */
+    private void checkLevelsMatch(Optional<Student> existingStudent, Optional<Lesson> existingLesson)
+            throws CommandException {
         if (!levelOfStudent(existingStudent).equals(levelOfLesson(existingLesson))) {
             throw new CommandException(MESSAGE_LEVEL_MISMATCH);
         }
+    }
 
+    /**
+     * Throws if the lesson is new and its timeslot clashes with an existing lesson.
+     */
+    private void checkForClash(Model model) throws CommandException {
         if (lesson instanceof NewLesson newLesson && model.hasClash(newLesson.timeslot())) {
             throw new CommandException(MESSAGE_LESSON_CLASH);
         }
+    }
 
-        // The whole request is valid, so create what is new and enroll.
-        Student studentToEnroll = student instanceof NewStudent newStudent
-                ? model.addStudent(newStudent.name(), newStudent.contact(), newStudent.level())
-                : existingStudent.orElseThrow();
-        Lesson lessonToJoin = lesson instanceof NewLesson newLesson
-                ? model.addLesson(newLesson.subject(), newLesson.level(), newLesson.timeslot(), newLesson.fee())
-                : existingLesson.orElseThrow();
+    /**
+     * Returns the student to enroll: the existing student, or the new student created in {@code model}.
+     */
+    private Student createStudentIfNew(Model model, Optional<Student> existingStudent) {
+        if (student instanceof NewStudent newStudent) {
+            return model.addStudent(newStudent.name(), newStudent.contact(), newStudent.level());
+        }
+        return existingStudent.orElseThrow();
+    }
 
+    /**
+     * Returns the lesson to join: the existing lesson, or the new lesson created in {@code model}.
+     */
+    private Lesson createLessonIfNew(Model model, Optional<Lesson> existingLesson) {
+        if (lesson instanceof NewLesson newLesson) {
+            return model.addLesson(newLesson.subject(), newLesson.level(), newLesson.timeslot(), newLesson.fee());
+        }
+        return existingLesson.orElseThrow();
+    }
+
+    private void enroll(Model model, Student studentToEnroll, Lesson lessonToJoin) {
         model.enroll(studentToEnroll.getId(), lessonToJoin.getId());
         assert model.isEnrolled(studentToEnroll.getId(), lessonToJoin.getId())
                 : "Student " + studentToEnroll.getId() + " should be enrolled in lesson " + lessonToJoin.getId();
         logger.info("Enrolled student " + studentToEnroll.getId() + " in lesson " + lessonToJoin.getId());
-        return new CommandResult(String.format(MESSAGE_SUCCESS, studentToEnroll.getName(), studentToEnroll.getId(),
-                lessonToJoin.getSubject(), lessonToJoin.getId(),
-                model.isPaid(studentToEnroll.getId()) ? PAID : UNPAID));
+    }
+
+    private static String successMessage(Model model, Student enrolled, Lesson joined) {
+        return String.format(MESSAGE_SUCCESS, enrolled.getName(), enrolled.getId(), joined.getSubject(),
+                joined.getId(), model.isPaid(enrolled.getId()) ? PAID : UNPAID);
     }
 
     /**
@@ -171,19 +206,37 @@ public class AddCommand extends Command {
      */
     private void checkForDuplicates(Model model, Optional<Student> existingStudent, Optional<Lesson> existingLesson)
             throws CommandException {
-        if (student instanceof NewStudent newStudent) {
-            Optional<Student> duplicate = model.findDuplicateStudent(newStudent.name(), newStudent.contact());
-            if (duplicate.isPresent()) {
-                throw new CommandException(String.format(MESSAGE_DUPLICATE_STUDENT, duplicate.get().getId()));
-            }
+        checkNoDuplicateStudent(model);
+        checkNoDuplicateLesson(model);
+        checkNotAlreadyEnrolled(model, existingStudent, existingLesson);
+    }
+
+    private void checkNoDuplicateStudent(Model model) throws CommandException {
+        if (!(student instanceof NewStudent newStudent)) {
+            return;
         }
-        if (lesson instanceof NewLesson newLesson) {
-            Optional<Lesson> duplicate =
-                    model.findIdenticalLesson(newLesson.subject(), newLesson.level(), newLesson.timeslot());
-            if (duplicate.isPresent()) {
-                throw new CommandException(String.format(MESSAGE_DUPLICATE_LESSON, duplicate.get().getId()));
-            }
+        Optional<Student> duplicate = model.findDuplicateStudent(newStudent.name(), newStudent.contact());
+        if (duplicate.isPresent()) {
+            throw new CommandException(String.format(MESSAGE_DUPLICATE_STUDENT, duplicate.get().getId()));
         }
+    }
+
+    private void checkNoDuplicateLesson(Model model) throws CommandException {
+        if (!(lesson instanceof NewLesson newLesson)) {
+            return;
+        }
+        Optional<Lesson> duplicate =
+                model.findIdenticalLesson(newLesson.subject(), newLesson.level(), newLesson.timeslot());
+        if (duplicate.isPresent()) {
+            throw new CommandException(String.format(MESSAGE_DUPLICATE_LESSON, duplicate.get().getId()));
+        }
+    }
+
+    /**
+     * Throws if the student is already enrolled in the lesson, which is only possible when both already exist.
+     */
+    private void checkNotAlreadyEnrolled(Model model, Optional<Student> existingStudent,
+            Optional<Lesson> existingLesson) throws CommandException {
         if (existingStudent.isPresent() && existingLesson.isPresent()
                 && model.isEnrolled(existingStudent.get().getId(), existingLesson.get().getId())) {
             throw new CommandException(MESSAGE_ALREADY_ENROLLED);
