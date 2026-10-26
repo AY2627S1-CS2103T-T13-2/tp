@@ -38,10 +38,10 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_studentFields_returnsEditCommand() {
-        StudentEdit edit = new StudentEdit(new StudentId(3), Optional.of(new Name("Chloe Tan")),
-                Optional.of(new Contact("90001111")), Optional.of(new Level("Secondary 1")));
+        StudentEdit edit = new StudentEdit(new StudentId(3), Optional.of(new Name("Ravi s/o Kumar")),
+                Optional.of(new Contact("+65 (9123) 4567")), Optional.of(new Level("Secondary 1")));
 
-        assertParseSuccess(parser, " student 3 c/90001111 slv/Secondary 1 s/Chloe Tan",
+        assertParseSuccess(parser, " student 3 C/+65 (9123) 4567 SLV/Secondary 1 S/Ravi s/o Kumar",
                 new EditCommand(edit));
     }
 
@@ -49,11 +49,11 @@ public class EditCommandParserTest {
     public void parse_lessonFields_returnsEditCommand() {
         LessonEdit edit = new LessonEdit(new LessonId(2), Optional.of(new Subject("Physics")),
                 Optional.of(new Level("Primary 6")), Optional.of(DayOfWeek.FRIDAY),
-                Optional.of(LocalTime.of(14, 0)), Optional.of(LocalTime.of(15, 30)),
-                Optional.of(new Fee("55")));
+                Optional.of(LocalTime.of(9, 0)), Optional.of(LocalTime.of(15, 30)),
+                Optional.of(new Fee("0")));
 
         assertParseSuccess(parser,
-                " lesson 2 f/55 et/15:30 l/Physics d/friday st/14:00 llv/Primary 6",
+                " LESSON 2 F/0 ET/15:30 L/Physics D/Fri ST/9:00 LLV/Primary 6",
                 new EditCommand(edit));
     }
 
