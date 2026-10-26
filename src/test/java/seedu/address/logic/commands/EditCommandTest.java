@@ -1,6 +1,5 @@
 package seedu.address.logic.commands;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static seedu.address.logic.Messages.MESSAGE_LESSON_NOT_FOUND;
 import static seedu.address.logic.Messages.MESSAGE_STUDENT_NOT_FOUND;
@@ -9,11 +8,9 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_DUPLICATE_LESSON;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_DUPLICATE_STUDENT;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_LESSON_CLASH;
-import static seedu.address.logic.commands.EditCommand.MESSAGE_NOTE_FREE_LESSON;
-import static seedu.address.logic.commands.EditCommand.MESSAGE_NOTE_LEVEL_MISMATCH;
-import static seedu.address.logic.commands.EditCommand.MESSAGE_NOTE_SAME_NAME;
-import static seedu.address.logic.commands.EditCommand.MESSAGE_NOTE_STUDENT_LEVEL_MISMATCH;
+import static seedu.address.logic.commands.EditCommand.MESSAGE_LESSON_LEVEL_MISMATCH;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_NO_CHANGES;
+import static seedu.address.logic.commands.EditCommand.MESSAGE_STUDENT_LEVEL_MISMATCH;
 import static seedu.address.testutil.TypicalClock.CLOCK;
 import static seedu.address.testutil.TypicalLessons.MATHEMATICS;
 import static seedu.address.testutil.TypicalLessons.SCIENCE_P6;
@@ -104,19 +101,6 @@ public class EditCommandTest {
     }
 
     @Test
-    public void execute_studentEditedToExistingNameWithDifferentContact_addsNote() {
-        Model model = typicalModel();
-        Model expected = typicalModel();
-        Name editedName = new Name("bryan lim");
-        expected.editStudent(ALICE.getId(), editedName, ALICE.getContact(), ALICE.getLevel());
-        StudentEdit edit = new StudentEdit(ALICE.getId(), Optional.of(editedName), Optional.empty(), Optional.empty());
-        String expectedMessage = "Edited student: bryan lim (ID: 1).\n"
-                + String.format(MESSAGE_NOTE_SAME_NAME, BRYAN.getName(), BRYAN.getId());
-
-        assertCommandSuccess(new EditCommand(edit), model, expectedMessage, expected);
-    }
-
-    @Test
     public void execute_studentValuesAreUnchanged_reportsNoChanges() {
         Model model = typicalModel();
         StudentEdit edit = new StudentEdit(ALICE.getId(), Optional.of(ALICE.getName()),
@@ -137,38 +121,19 @@ public class EditCommandTest {
 
     @Test
     public void execute_studentBecomesDuplicate_throwsCommandException() {
-        StudentEdit edit = new StudentEdit(ALICE.getId(), Optional.of(new Name("bryan lim")),
-                Optional.of(new Contact("9876-5432")), Optional.empty());
+        StudentEdit edit = new StudentEdit(ALICE.getId(), Optional.of(BRYAN.getName()),
+                Optional.of(BRYAN.getContact()), Optional.empty());
 
         assertCommandFailure(new EditCommand(edit), typicalModel(),
                 String.format(MESSAGE_DUPLICATE_STUDENT, BRYAN.getId()));
     }
 
     @Test
-    public void execute_studentLevelConflictsWithEnrollments_editsAndAddsNoteForEachLesson() {
-        Model model = typicalModel();
-        Model expected = typicalModel();
-        Level editedLevel = new Level("Primary 4");
-        expected.editStudent(ALICE.getId(), ALICE.getName(), ALICE.getContact(), editedLevel);
-        StudentEdit edit = new StudentEdit(ALICE.getId(), Optional.empty(), Optional.empty(), Optional.of(editedLevel));
-        String expectedMessage = "Edited student: Alice Tan (ID: 1).\n"
-                + String.format(MESSAGE_NOTE_STUDENT_LEVEL_MISMATCH, ALICE.getName(), editedLevel,
-                        MATHEMATICS.getId(), MATHEMATICS.getLevel()) + "\n"
-                + String.format(MESSAGE_NOTE_STUDENT_LEVEL_MISMATCH, ALICE.getName(), editedLevel,
-                        SCIENCE_P6.getId(), SCIENCE_P6.getLevel());
+    public void execute_studentLevelConflictsWithEnrollment_throwsCommandException() {
+        StudentEdit edit = new StudentEdit(ALICE.getId(), Optional.empty(), Optional.empty(),
+                Optional.of(new Level("Primary 4")));
 
-        assertCommandSuccess(new EditCommand(edit), model, expectedMessage, expected);
-    }
-
-    @Test
-    public void execute_studentLevelChangesOnlyLetterCase_editsStoredLevel() throws Exception {
-        Model model = typicalModel();
-        Level editedLevel = new Level("primary 6");
-        StudentEdit edit = new StudentEdit(ALICE.getId(), Optional.empty(), Optional.empty(), Optional.of(editedLevel));
-
-        new EditCommand(edit).execute(model);
-
-        assertEquals("primary 6", model.findStudent(ALICE.getId()).orElseThrow().getLevel().toString());
+        assertCommandFailure(new EditCommand(edit), typicalModel(), MESSAGE_STUDENT_LEVEL_MISMATCH);
     }
 
     @Test
@@ -184,21 +149,6 @@ public class EditCommandTest {
 
         assertCommandSuccess(new EditCommand(edit), model,
                 "Edited lesson: Additional Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 1).", expected);
-    }
-
-    @Test
-    public void execute_lessonFeeChangedToZero_editsAndAddsNote() {
-        Model model = typicalModel();
-        Model expected = typicalModel();
-        Fee free = new Fee("0");
-        expected.editLesson(MATHEMATICS.getId(), MATHEMATICS.getSubject(), MATHEMATICS.getLevel(),
-                MATHEMATICS.getTimeslot(), free);
-        LessonEdit edit = new LessonEdit(MATHEMATICS.getId(), Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.of(free));
-        String expectedMessage = "Edited lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 1).\n"
-                + MESSAGE_NOTE_FREE_LESSON;
-
-        assertCommandSuccess(new EditCommand(edit), model, expectedMessage, expected);
     }
 
     @Test
@@ -236,7 +186,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_lessonBecomesDuplicate_throwsCommandException() {
-        LessonEdit edit = new LessonEdit(SCIENCE_P6.getId(), Optional.of(new Subject("mAtHeMaTiCs")),
+        LessonEdit edit = new LessonEdit(SCIENCE_P6.getId(), Optional.of(MATHEMATICS.getSubject()),
                 Optional.of(MATHEMATICS.getLevel()), Optional.of(MATHEMATICS.getTimeslot().getDay()),
                 Optional.of(MATHEMATICS.getTimeslot().getStart()),
                 Optional.of(MATHEMATICS.getTimeslot().getEnd()), Optional.empty());
@@ -246,32 +196,12 @@ public class EditCommandTest {
     }
 
     @Test
-    public void execute_lessonLevelConflictsWithEnrollment_editsAndAddsNote() {
-        Model model = typicalModel();
-        Model expected = typicalModel();
-        Level editedLevel = new Level("Secondary 2");
-        expected.editLesson(MATHEMATICS.getId(), MATHEMATICS.getSubject(), editedLevel,
-                MATHEMATICS.getTimeslot(), MATHEMATICS.getFee());
-        LessonEdit edit = new LessonEdit(MATHEMATICS.getId(), Optional.empty(), Optional.of(editedLevel),
-                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
-        String expectedMessage = "Edited lesson: Mathematics | Secondary 2 | Monday 15:00-16:30 (ID: 1).\n"
-                + String.format(MESSAGE_NOTE_LEVEL_MISMATCH, ALICE.getName(), ALICE.getLevel(), editedLevel);
+    public void execute_lessonLevelConflictsWithEnrollment_throwsCommandException() {
+        LessonEdit edit = new LessonEdit(MATHEMATICS.getId(), Optional.empty(),
+                Optional.of(new Level("Secondary 2")), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty());
 
-        assertCommandSuccess(new EditCommand(edit), model, expectedMessage, expected);
-    }
-
-    @Test
-    public void execute_lessonLevelChangesOnlyLetterCase_editsAndShowsNewSpelling() {
-        Model model = typicalModel();
-        Model expected = typicalModel();
-        Level editedLevel = new Level("primary 6");
-        expected.editLesson(MATHEMATICS.getId(), MATHEMATICS.getSubject(), editedLevel,
-                MATHEMATICS.getTimeslot(), MATHEMATICS.getFee());
-        LessonEdit edit = new LessonEdit(MATHEMATICS.getId(), Optional.empty(), Optional.of(editedLevel),
-                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
-
-        assertCommandSuccess(new EditCommand(edit), model,
-                "Edited lesson: Mathematics | primary 6 | Monday 15:00-16:30 (ID: 1).", expected);
+        assertCommandFailure(new EditCommand(edit), typicalModel(), MESSAGE_LESSON_LEVEL_MISMATCH);
     }
 
     @Test
@@ -280,9 +210,7 @@ public class EditCommandTest {
                 Optional.of(DayOfWeek.MONDAY), Optional.of(LocalTime.of(16, 0)),
                 Optional.of(LocalTime.of(17, 0)), Optional.empty());
 
-        String expectedMessage = String.format(MESSAGE_LESSON_CLASH, MATHEMATICS.getId(),
-                MATHEMATICS.getSubject(), MATHEMATICS.getTimeslot());
-        assertCommandFailure(new EditCommand(edit), typicalModel(), expectedMessage);
+        assertCommandFailure(new EditCommand(edit), typicalModel(), MESSAGE_LESSON_CLASH);
     }
 
     @Test

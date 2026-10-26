@@ -28,11 +28,6 @@ public class ListCommandTest {
     }
 
     @Test
-    public void constructor_scheduleView_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> new ListCommand(ListView.SCHEDULE));
-    }
-
-    @Test
     public void execute_nullModel_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new ListCommand(ListView.STUDENTS).execute(null));
     }
