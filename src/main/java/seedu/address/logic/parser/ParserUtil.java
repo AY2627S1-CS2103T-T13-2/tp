@@ -169,6 +169,9 @@ public class ParserUtil {
         }
         LocalTime end = Timeslot.parseTime(time)
                 .orElseThrow(() -> new ParseException(Timeslot.MESSAGE_INVALID_END_TIME));
+        if (end.isBefore(start)) {
+            throw new ParseException(Timeslot.MESSAGE_END_BEFORE_START);
+        }
         if (!Timeslot.isValidTimeslot(start, end)) {
             throw new ParseException(Timeslot.MESSAGE_INVALID_END_TIME);
         }

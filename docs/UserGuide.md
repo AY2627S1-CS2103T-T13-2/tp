@@ -147,7 +147,7 @@ Parameter | Meaning | Needed when | Rules
 `llv/` | The lesson's level, such as `Primary 6` | the lesson is new | The same as `slv/`.
 `d/` | The day of the week | the lesson is new | `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Letter case is ignored.
 `st/` | The start time | the lesson is new | In the 24-hour format, such as `9:00`, `09:00` or `14:30`.
-`et/` | The end time | the lesson is new | In the same format, and later than the start time. A lesson cannot end at `24:00`; to end at midnight, use `23:59`.
+`et/` | The end time | the lesson is new | In the same format, and later than the start time on the same day: a lesson cannot run past midnight. To end at midnight, use `23:59`. To teach past midnight, add two lessons, such as `23:00`-`23:59` and `00:00`-`01:00` the next day.
 `f/` | The fee for one session | the lesson is new | 0 or more, with at most two decimal places, such as `50` or `45.50`. A fee of `0` is accepted for a free lesson, and the result ends with a note asking you to check it.
 
 Using a parameter that does not belong, such as `c/` with an existing student, is an error.
@@ -186,6 +186,7 @@ Command | Message
 `add s/Daniel Koh c/92223333slv/Primary 6 l/1` | slv/ was found inside the value of c/. Separate parameters with a space.
 `add s/0 l/1` | s/0 is neither an ID nor a valid name. An ID is a positive whole number, such as s/3.
 `add s/2147483648 l/1` | ID is too large. No student or lesson has an ID above 2147483647.
+`add s/1 l/Art llv/Primary 6 d/Friday st/23:00 et/01:00 f/40` | Invalid end time. A lesson must end later on the same day it starts, so it cannot run past midnight. To teach past midnight, split it into two lessons, such as 23:00-23:59 and 00:00-01:00 the next day.
 `add s/1 l/1 c/91234567` | c/ and slv/ can only be used when adding a new student.
 `add s/1 l/1 d/Monday` | llv/, d/, st/, et/ and f/ can only be used when adding a new lesson.
 `add s/1 s/2 l/1` | A parameter can only be specified once.

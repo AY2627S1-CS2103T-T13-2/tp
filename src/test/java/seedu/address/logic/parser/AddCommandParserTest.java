@@ -288,8 +288,9 @@ public class AddCommandParserTest {
         assertParseFailure(parser, start + "24:00 et/16:30 f/50", Timeslot.MESSAGE_INVALID_START_TIME);
 
         assertParseFailure(parser, start + "15:00 et/15:00 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // not later
-        assertParseFailure(parser, start + "15:00 et/14:00 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // earlier
-        assertParseFailure(parser, start + "15:00 et/4:30 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // earlier
+        assertParseFailure(parser, start + "15:00 et/14:00 f/50", Timeslot.MESSAGE_END_BEFORE_START); // earlier
+        assertParseFailure(parser, start + "15:00 et/4:30 f/50", Timeslot.MESSAGE_END_BEFORE_START); // earlier
+        assertParseFailure(parser, start + "23:00 et/01:00 f/50", Timeslot.MESSAGE_END_BEFORE_START); // past midnight
     }
 
     @Test

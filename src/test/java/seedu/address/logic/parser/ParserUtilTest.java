@@ -160,8 +160,14 @@ public class ParserUtilTest {
 
         assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_END_TIME, () ->
             ParserUtil.parseEndTime("15:00", start));
-        assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_END_TIME, () ->
+        assertThrows(ParseException.class, Timeslot.MESSAGE_END_BEFORE_START, () ->
             ParserUtil.parseEndTime("14:59", start));
+    }
+
+    @Test
+    public void parseEndTime_afterMidnight_suggestsSplittingTheLesson() {
+        assertThrows(ParseException.class, Timeslot.MESSAGE_END_BEFORE_START, () ->
+            ParserUtil.parseEndTime("01:00", LocalTime.of(23, 0)));
     }
 
     @Test
@@ -169,7 +175,7 @@ public class ParserUtilTest {
         LocalTime start = LocalTime.of(15, 0);
 
         assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_END_TIME, () ->
-            ParserUtil.parseEndTime("4:30", start));
+            ParserUtil.parseEndTime("4:3", start));
         assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_END_TIME, () -> ParserUtil.parseEndTime("", start));
         assertThrows(NullPointerException.class, () -> ParserUtil.parseEndTime(null, start));
         assertThrows(NullPointerException.class, () -> ParserUtil.parseEndTime("16:00", null));
