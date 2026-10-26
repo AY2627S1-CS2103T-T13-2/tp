@@ -46,6 +46,14 @@ public class LessonListPanel extends UiPart<Region> {
      * Custom {@code ListCell} that displays the graphics of a {@code Lesson} using a {@code LessonCard}.
      */
     class LessonListViewCell extends ListCell<Lesson> {
+        /**
+         * Creates a cell that takes the width of the list, so that wrapped text in a card is measured against that
+         * width. Without this, a card with a long line is measured as if it were very narrow and becomes too tall.
+         */
+        LessonListViewCell() {
+            setPrefWidth(0);
+        }
+
         @Override
         protected void updateItem(Lesson lesson, boolean empty) {
             super.updateItem(lesson, empty);
