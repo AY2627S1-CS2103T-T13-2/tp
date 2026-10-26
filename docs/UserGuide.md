@@ -338,7 +338,8 @@ Marks a student as paid for the current month using the student's ID. Use this c
 **Errors:**
 
 * A missing ID or extra text after the ID — the app displays `Invalid command format. Use: mark ID`.
-* A malformed, non-positive, or oversized ID — the app displays `ID must be a positive whole number.`
+* A malformed or non-positive ID — the app displays `ID must be a positive whole number.`
+* An ID above `2147483647` — the app displays `ID is too large. No student or lesson has an ID above 2147483647.`
 * No student has that ID — the app displays `No student found with ID 999.` (using the requested ID). An ID belonging only to a lesson does not match.
 * The student is already marked as paid for the current month — the app displays `Alice Tan is already marked as paid for the current month.` (using the student's name).
 
@@ -372,11 +373,11 @@ Examples:
 
 ### Viewing the weekly schedule: `schedule`
 
-Shows all recurring lessons in a Monday-to-Sunday weekly timeline. Each day runs from 00:00 to 23:59, with lessons positioned at their scheduled times. Lesson cards show the subject, time, lesson ID, and enrolled students. A day with no lessons shows `No lessons`; a lesson with no students shows `No students`.
+Shows all recurring lessons in a Monday-to-Sunday weekly timeline. Each day runs from 00:00 to 23:59 at the same time scale. Lesson bars span their actual start and end times and show the time and subject; taller bars also show the level and a student summary. Short lessons have a thin duration mark beside a clickable label. Select a bar or label to open a scrollable details window with a separate card for each lesson, including its ID, fee, and enrolled students. A day with no lessons shows `No lessons`; a lesson with no students shows `No students` in its details.
 
 **Format:** `schedule`
 
-The schedule repeats each week because lessons are stored by weekday and time, without calendar dates. It includes all lessons even when a student or lesson filter is active. The current weekday is outlined. Scroll horizontally to see all seven day columns, and scroll within a day to move through its 24-hour timeline. Overlapping lessons appear side by side and are highlighted with a warning naming the affected day. Use `list` or `filter` to switch back to a student or lesson list.
+The schedule repeats each week because lessons are stored by weekday and time, without calendar dates. It includes all lessons even when a student or lesson filter is active. The current weekday is outlined. Scroll horizontally to see all seven day columns, and scroll within a day to move through its 24-hour timeline. Lessons whose labels would overlap are grouped into one clickable bar or marker; the details window keeps every lesson separate. A group does not necessarily mean a timetable clash. Actual overlapping times are highlighted, with a warning naming the affected day. Use `list` or `filter` to switch back to a student or lesson list.
 
 If there are no lessons, the result box shows `No lessons are scheduled for this week.` Any argument after `schedule` produces `Unknown parameter. Use: schedule`.
 

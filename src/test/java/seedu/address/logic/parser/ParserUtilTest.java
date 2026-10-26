@@ -3,6 +3,7 @@ package seedu.address.logic.parser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.logic.parser.ParserUtil.MESSAGE_ID_TOO_LARGE;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_ID;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -54,8 +55,12 @@ public class ParserUtilTest {
 
     @Test
     public void parseStudentId_tooLargeToBeAnId_throwsParseException() throws Exception {
-        assertThrows(ParseException.class, MESSAGE_INVALID_ID, () -> ParserUtil.parseStudentId("99999999999999999999"));
-        assertThrows(ParseException.class, MESSAGE_INVALID_ID, () -> ParserUtil.parseStudentId("2147483648"));
+        assertThrows(ParseException.class, MESSAGE_ID_TOO_LARGE, () ->
+                ParserUtil.parseStudentId("99999999999999999999"));
+        assertThrows(ParseException.class, MESSAGE_ID_TOO_LARGE, () ->
+                ParserUtil.parseStudentId("2147483648"));
+        assertThrows(ParseException.class, MESSAGE_ID_TOO_LARGE, () ->
+                ParserUtil.parseStudentId("0002147483648"));
         assertEquals(new StudentId(Integer.MAX_VALUE), ParserUtil.parseStudentId("2147483647"));
     }
 
@@ -71,7 +76,8 @@ public class ParserUtilTest {
     @Test
     public void parseLessonId() throws Exception {
         assertEquals(new LessonId(7), ParserUtil.parseLessonId(" 7 "));
-        assertThrows(ParseException.class, MESSAGE_INVALID_ID, () -> ParserUtil.parseLessonId("99999999999"));
+        assertThrows(ParseException.class, MESSAGE_ID_TOO_LARGE, () ->
+                ParserUtil.parseLessonId("99999999999"));
         assertThrows(ParseException.class, MESSAGE_INVALID_ID, () -> ParserUtil.parseLessonId("0"));
         assertThrows(ParseException.class, MESSAGE_INVALID_ID, () -> ParserUtil.parseLessonId("seven"));
     }

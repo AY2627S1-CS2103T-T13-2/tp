@@ -4,6 +4,7 @@ import static seedu.address.logic.Messages.MESSAGE_DUPLICATE_PARAMETER;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
+import static seedu.address.logic.parser.ParserUtil.MESSAGE_ID_TOO_LARGE;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_ID;
 
 import java.time.DayOfWeek;
@@ -102,6 +103,8 @@ public class FilterCommandParserTest {
     public void parse_invalidId_throwsParseException() {
         assertParseFailure(parser, "student abc", MESSAGE_INVALID_ID);
         assertParseFailure(parser, "lesson 0", MESSAGE_INVALID_ID);
+        assertParseFailure(parser, "student 2147483648", MESSAGE_ID_TOO_LARGE);
+        assertParseFailure(parser, "lesson 2147483648", MESSAGE_ID_TOO_LARGE);
     }
 
     @Test

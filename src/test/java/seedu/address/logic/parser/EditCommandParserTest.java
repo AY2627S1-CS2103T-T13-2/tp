@@ -8,6 +8,7 @@ import static seedu.address.logic.commands.EditCommand.MESSAGE_NO_FIELDS;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_STUDENT_PARAMETERS_NOT_ALLOWED;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
+import static seedu.address.logic.parser.ParserUtil.MESSAGE_ID_TOO_LARGE;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_ID;
 
 import java.time.DayOfWeek;
@@ -110,5 +111,7 @@ public class EditCommandParserTest {
         assertParseFailure(parser, " student 0 s/Alice", MESSAGE_INVALID_ID);
         assertParseFailure(parser, " student -1 s/Alice", MESSAGE_INVALID_ID);
         assertParseFailure(parser, " lesson 1.5 f/50", MESSAGE_INVALID_ID);
+        assertParseFailure(parser, " student 2147483648 s/Alice", MESSAGE_ID_TOO_LARGE);
+        assertParseFailure(parser, " lesson 2147483648 f/50", MESSAGE_ID_TOO_LARGE);
     }
 }

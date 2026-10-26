@@ -90,36 +90,86 @@
 .schedule-lesson {
     -fx-background-color: #314e60;
     -fx-background-radius: 5px;
-    -fx-padding: 0;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-alignment: top-left;
+    -fx-padding: 4px 6px;
+    -fx-cursor: hand;
 }
 
-.schedule-lesson .viewport {
-    -fx-background-color: #314e60;
+.schedule-lesson:hover,
+.schedule-lesson:focused {
+    -fx-background-color: #3e6479;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
 }
 
-.schedule-lesson-content {
-    -fx-padding: 9px;
+.schedule-short-lesson {
+    -fx-background-color: transparent;
+    -fx-padding: 2px 4px;
 }
 
-.schedule-overlap {
+.schedule-short-lesson:hover,
+.schedule-short-lesson:focused {
+    -fx-background-color: transparent;
+    -fx-underline: true;
+}
+
+.schedule-short-span {
+    -fx-background-color: #6db5d8;
+}
+
+.schedule-short-span-overlap {
+    -fx-background-color: #ffb25f;
+}
+
+.schedule-short-overlap {
+    -fx-text-fill: #ffcf93;
+}
+
+.schedule-overlap,
+.schedule-overlap:focused {
     -fx-border-color: #ffb25f;
     -fx-border-width: 2px;
     -fx-border-radius: 5px;
 }
 
-.schedule-lesson-time {
-    -fx-font-size: 13px;
+.schedule-details-dialog {
+    -fx-background-color: #292d32;
+}
+
+.schedule-details-content {
+    -fx-padding: 12px;
+}
+
+.schedule-details-heading {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f5f7fa;
+}
+
+.schedule-details-scroll,
+.schedule-details-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+.schedule-details-card {
+    -fx-background-color: #383e45;
+    -fx-background-radius: 6px;
+    -fx-padding: 12px;
+}
+
+.schedule-details-card-title {
+    -fx-font-size: 14px;
     -fx-font-weight: bold;
     -fx-text-fill: #ffffff;
 }
 
-.schedule-lesson-subject {
+.schedule-details-card-text {
     -fx-font-size: 12px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #ffffff;
-}
-
-.schedule-lesson-detail {
-    -fx-font-size: 11px;
     -fx-text-fill: #dce8ef;
 }
