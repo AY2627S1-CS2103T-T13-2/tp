@@ -70,6 +70,11 @@ public class ModelStub implements Model {
     }
 
     @Override
+    public Optional<Student> findStudentWithSameName(Name name) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
     public Optional<Lesson> findIdenticalLesson(Subject subject, Level level, Timeslot timeslot) {
         throw new AssertionError("This method should not be called.");
     }

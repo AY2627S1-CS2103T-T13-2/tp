@@ -152,6 +152,12 @@ Parameter | Meaning | Needed when | Rules
 
 Using a parameter that does not belong, such as `c/` with an existing student, is an error.
 
+#### How duplicates are detected
+
+* A new student is a duplicate of an existing one when both the name and the contact number match. Names are compared ignoring letter case and extra spaces, so `alice  TAN` matches `Alice Tan`. Contact numbers are compared by their digits only. A duplicate is an error that gives the existing student's ID.
+* A new student with the same name as an existing student but a different contact number is added, and the result ends with a line such as `Note: another student named Alice Tan already exists (Student ID: 1).` Check that this is really a different person.
+* A new lesson is a duplicate of an existing one when the subject, the level and the day and times all match. Subjects and levels are compared ignoring letter case and extra spaces. A duplicate is an error that gives the existing lesson's ID.
+
 #### Examples
 
 Each one is followed by the result you should see.

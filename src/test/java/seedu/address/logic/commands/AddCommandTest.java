@@ -11,6 +11,7 @@ import static seedu.address.logic.commands.AddCommand.MESSAGE_DUPLICATE_LESSON;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_DUPLICATE_STUDENT;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_LESSON_CLASH;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_LEVEL_MISMATCH;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_SAME_NAME;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -338,7 +339,8 @@ public class AddCommandTest {
         expectedModel.enroll(created.getId(), MATHEMATICS.getId());
 
         assertCommandSuccess(new AddCommand(sameNameOtherContact, new ExistingLesson(MATHEMATICS.getId())), model,
-                "Enrolled Alice Tan [Student ID: 5] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.",
+                "Enrolled Alice Tan [Student ID: 5] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.\n"
+                        + String.format(MESSAGE_NOTE_SAME_NAME, ALICE.getName(), ALICE.getId()),
                 expectedModel);
     }
 
@@ -612,5 +614,30 @@ public class AddCommandTest {
         return new NewLesson(new Subject(subject), new Level(level),
                 new Timeslot(day, LocalTime.of(startHour, startMinute), LocalTime.of(endHour, endMinute)),
                 new Fee("40.00"));
+    }
+
+    //// near-duplicates and notes
+
+    @Test
+    public void execute_newStudentSameNameDifferentCase_rejectedAsDuplicate() {
+        NewStudent lowerCase = new NewStudent(new Name("alice tan"), ALICE.getContact(), ALICE.getLevel());
+        assertCommandFailure(new AddCommand(lowerCase, new ExistingLesson(MATHEMATICS.getId())), typicalModel(),
+                String.format(MESSAGE_DUPLICATE_STUDENT, ALICE.getId()));
+    }
+
+    @Test
+    public void execute_newLessonSubjectDifferentCase_rejectedAsIdentical() {
+        NewLesson lowerCase = new NewLesson(new Subject("mathematics"), MATHEMATICS.getLevel(),
+                MATHEMATICS.getTimeslot(), MATHEMATICS.getFee());
+        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), lowerCase), typicalModel(),
+                String.format(MESSAGE_DUPLICATE_LESSON, MATHEMATICS.getId()));
+    }
+
+    @Test
+    public void execute_newStudentSameNameDifferentContact_enrollsWithNote() throws Exception {
+        NewStudent namesake = new NewStudent(ALICE.getName(), new Contact("99990000"), ALICE.getLevel());
+        String feedback = new AddCommand(namesake, new ExistingLesson(MATHEMATICS.getId()))
+                .execute(typicalModel()).getFeedbackToUser();
+        assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_SAME_NAME, ALICE.getName(), ALICE.getId())));
     }
 }

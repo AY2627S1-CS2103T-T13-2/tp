@@ -74,6 +74,11 @@ public interface Model {
     Optional<Student> findDuplicateStudent(Name name, Contact contact);
 
     /**
+     * Returns an existing student with the same name, ignoring letter case and extra spaces, if there is one.
+     */
+    Optional<Student> findStudentWithSameName(Name name);
+
+    /**
      * Returns an existing lesson with the same subject, level and timeslot, if there is one.
      */
     Optional<Lesson> findIdenticalLesson(Subject subject, Level level, Timeslot timeslot);

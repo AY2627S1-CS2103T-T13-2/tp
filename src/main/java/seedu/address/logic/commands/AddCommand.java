@@ -5,6 +5,8 @@ import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 import static seedu.address.logic.Messages.MESSAGE_LESSON_NOT_FOUND;
 import static seedu.address.logic.Messages.MESSAGE_STUDENT_NOT_FOUND;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -47,6 +49,8 @@ public class AddCommand extends Command {
     public static final String MESSAGE_ALREADY_ENROLLED = "The student is already enrolled in this lesson.";
     public static final String MESSAGE_LEVEL_MISMATCH = "Student level does not match lesson level.";
     public static final String MESSAGE_LESSON_CLASH = "Lesson clashes with an existing lesson.";
+    public static final String MESSAGE_NOTE_SAME_NAME =
+            "Note: another student named %1$s already exists (Student ID: %2$s).";
 
     private static final String PAID = "Paid";
     private static final String UNPAID = "Unpaid";
@@ -106,11 +110,28 @@ public class AddCommand extends Command {
         checkLevelsMatch(existingStudent, existingLesson);
         checkForClash(model);
 
+        // Notes point out what is probably a mistake but might be intended. They are worked out before anything is
+        // created, so that a new student is never reported as its own namesake.
+        List<String> notes = new ArrayList<>();
+        noteForNamesake(model).ifPresent(notes::add);
+
         // The whole request is valid, so create what is new and enroll.
         Student studentToEnroll = createStudentIfNew(model, existingStudent);
         Lesson lessonToJoin = createLessonIfNew(model, existingLesson);
         enroll(model, studentToEnroll, lessonToJoin);
-        return new CommandResult(successMessage(model, studentToEnroll, lessonToJoin));
+        return new CommandResult(successMessage(model, studentToEnroll, lessonToJoin, notes));
+    }
+
+    /**
+     * Returns a note if a new student has the same name as an existing student. The contact must differ, because a
+     * student with the same name and contact was already rejected as a duplicate.
+     */
+    private Optional<String> noteForNamesake(Model model) {
+        if (!(student instanceof NewStudent newStudent)) {
+            return Optional.empty();
+        }
+        return model.findStudentWithSameName(newStudent.name())
+                .map(namesake -> String.format(MESSAGE_NOTE_SAME_NAME, namesake.getName(), namesake.getId()));
     }
 
     /**
@@ -159,9 +180,16 @@ public class AddCommand extends Command {
         logger.info("Enrolled student " + studentToEnroll.getId() + " in lesson " + lessonToJoin.getId());
     }
 
-    private static String successMessage(Model model, Student enrolled, Lesson joined) {
-        return String.format(MESSAGE_SUCCESS, enrolled.getName(), enrolled.getId(), joined.getSubject(),
+    /**
+     * Returns the success message, followed by each note on its own line.
+     */
+    private static String successMessage(Model model, Student enrolled, Lesson joined, List<String> notes) {
+        String success = String.format(MESSAGE_SUCCESS, enrolled.getName(), enrolled.getId(), joined.getSubject(),
                 joined.getId(), model.isPaid(enrolled.getId()) ? PAID : UNPAID);
+        List<String> lines = new ArrayList<>();
+        lines.add(success);
+        lines.addAll(notes);
+        return String.join("\n", lines);
     }
 
     /**

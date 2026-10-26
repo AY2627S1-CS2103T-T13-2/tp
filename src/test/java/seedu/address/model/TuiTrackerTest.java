@@ -32,8 +32,10 @@ import org.junit.jupiter.api.Test;
 import seedu.address.model.enrollment.Enrollment;
 import seedu.address.model.lesson.Lesson;
 import seedu.address.model.lesson.LessonId;
+import seedu.address.model.lesson.Subject;
 import seedu.address.model.lesson.Timeslot;
 import seedu.address.model.lesson.exceptions.LessonNotFoundException;
+import seedu.address.model.student.Name;
 import seedu.address.model.student.Student;
 import seedu.address.model.student.StudentId;
 import seedu.address.model.student.exceptions.StudentNotFoundException;
@@ -410,5 +412,22 @@ public class TuiTrackerTest {
         assertTrue(built.getEnrollmentList().isEmpty());
         assertEquals(Collections.emptyList(), built.getEnrollmentList());
         assertEquals(new Enrollment(ALICE.getId(), MATHEMATICS.getId()), ALICE_MATHEMATICS);
+    }
+
+    @Test
+    public void findDuplicateStudent_differentCaseAndSpacing_findsStudent() {
+        assertEquals(Optional.of(ALICE), tracker.findDuplicateStudent(new Name("alice  TAN"), ALICE.getContact()));
+    }
+
+    @Test
+    public void findIdenticalLesson_differentCase_findsLesson() {
+        assertEquals(Optional.of(MATHEMATICS), tracker.findIdenticalLesson(new Subject("mathematics"),
+                MATHEMATICS.getLevel(), MATHEMATICS.getTimeslot()));
+    }
+
+    @Test
+    public void findStudentWithSameName_returnsLowestIdMatch() {
+        assertEquals(Optional.of(ALICE), tracker.findStudentWithSameName(new Name("ALICE TAN")));
+        assertEquals(Optional.empty(), tracker.findStudentWithSameName(new Name("Nobody Here")));
     }
 }

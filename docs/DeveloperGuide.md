@@ -196,7 +196,7 @@ The parser works in this order, and reports the first problem it finds:
 `AddCommand#execute(Model)` checks the whole request **before it creates or changes anything**, in this order, and reports the first problem it finds:
 
 1. The student exists, then the lesson exists (only for an existing student or lesson).
-2. A new student is not a duplicate, a new lesson is not a duplicate, and the student is not already enrolled in the lesson.
+2. A new student is not a duplicate, a new lesson is not a duplicate, and the student is not already enrolled in the lesson. Duplicates are found with `Name#isSameName`, `Contact#isSameContact` and `Subject#isSameSubject`, which ignore letter case, extra spaces and (for contacts) everything but the digits. `equals` on these classes stays exact, so that `edit` can still change only the letter case of a value.
 3. The student's level is the same as the lesson's level.
 4. A new lesson does not clash with an existing lesson.
 
