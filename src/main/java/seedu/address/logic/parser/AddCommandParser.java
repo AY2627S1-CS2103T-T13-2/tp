@@ -12,12 +12,15 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_START_TIME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_STUDENT;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_STUDENT_LEVEL;
 
+import java.math.BigInteger;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,8 +61,27 @@ public class AddCommandParser implements Parser<AddCommand> {
             "c/ and slv/ can only be used when adding a new student.";
     public static final String MESSAGE_LESSON_PARAMETERS_NOT_ALLOWED =
             "llv/, d/, st/, et/ and f/ can only be used when adding a new lesson.";
+    public static final String MESSAGE_PREFIX_INSIDE_VALUE =
+            "%1$s was found inside the value of %2$s. Separate parameters with a space.";
+    public static final String MESSAGE_NOT_AN_ID =
+            "%1$s%2$s is neither an ID nor a valid %3$s. An ID is a positive whole number, such as %1$s3.";
+    /** Added to a missing-parameter message, to say which value was read as a new student or lesson. */
+    public static final String MESSAGE_READ_AS_NEW = " %1$s%2$s was read as a new %3$s.";
+    /** Added after {@link #MESSAGE_READ_AS_NEW} when the value starts with an ID followed by more text. */
+    public static final String MESSAGE_USE_ID_ONLY = " To use an existing %1$s, give only its ID, such as %2$s%3$s.";
+    public static final String MESSAGE_ID_TOO_LARGE =
+            "ID is too large. No student or lesson has an ID above " + Integer.MAX_VALUE + ".";
 
     private static final Logger logger = LogsCenter.getLogger(AddCommandParser.class);
+
+    /** A number that is not a valid ID, such as {@code 0}, {@code -1}, {@code 1.5} or {@code #1}. */
+    private static final Pattern LOOKS_LIKE_A_NUMBER = Pattern.compile("^[#+-]?\\d+([.,]\\d+)?$");
+
+    /** The largest ID a student or lesson can have. */
+    private static final BigInteger MAX_ID = BigInteger.valueOf(Integer.MAX_VALUE);
+
+    /** An ID followed by a space and more text, such as {@code 2 extra words}. */
+    private static final Pattern ID_THEN_TEXT = Pattern.compile("^(\\d+)\\s+\\S.*$");
 
     private static final Prefix[] ALL_PREFIXES = {PREFIX_STUDENT, PREFIX_LESSON, PREFIX_CONTACT,
         PREFIX_STUDENT_LEVEL, PREFIX_LESSON_LEVEL, PREFIX_DAY, PREFIX_START_TIME, PREFIX_END_TIME, PREFIX_FEE};
@@ -92,10 +114,15 @@ public class AddCommandParser implements Parser<AddCommand> {
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, ALL_PREFIXES);
         checkWellFormed(argMultimap);
         argMultimap.verifyNoDuplicatePrefixesFor(ALL_PREFIXES);
+        checkNoPrefixInsideValues(argMultimap);
         checkStudentAndLessonGiven(argMultimap);
 
         String studentValue = requiredValue(argMultimap, PREFIX_STUDENT);
         String lessonValue = requiredValue(argMultimap, PREFIX_LESSON);
+        checkNumberIsAnId(PREFIX_STUDENT, studentValue, "name");
+        checkNumberIsAnId(PREFIX_LESSON, lessonValue, "subject");
+        checkIdNotTooLarge(studentValue);
+        checkIdNotTooLarge(lessonValue);
         boolean isNewStudent = !ParserUtil.isId(studentValue);
         boolean isNewLesson = !ParserUtil.isId(lessonValue);
         logger.fine("Parsing add command: " + (isNewStudent ? "new" : "existing") + " student, "
@@ -115,6 +142,57 @@ public class AddCommandParser implements Parser<AddCommand> {
     private static void checkWellFormed(ArgumentMultimap argMultimap) throws ParseException {
         if (!argMultimap.getPreamble().isEmpty() || !anyGiven(argMultimap, ALL_PREFIXES)) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
+        }
+    }
+
+    /**
+     * Throws if a parameter appears inside another parameter's value without a space before it, such as the
+     * {@code slv/} in {@code c/92223333slv/Primary 6}. Such a parameter would otherwise be reported as missing.
+     */
+    private static void checkNoPrefixInsideValues(ArgumentMultimap argMultimap) throws ParseException {
+        for (Prefix given : ALL_PREFIXES) {
+            Optional<String> value = argMultimap.getValue(given);
+            if (value.isEmpty()) {
+                continue;
+            }
+            for (Prefix inside : ALL_PREFIXES) {
+                if (containsGluedPrefix(value.get(), inside.getPrefix())) {
+                    throw new ParseException(String.format(MESSAGE_PREFIX_INSIDE_VALUE, inside, given));
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns true if {@code prefix} appears in {@code value}, ignoring letter case, somewhere other than right after
+     * whitespace.
+     */
+    private static boolean containsGluedPrefix(String value, String prefix) {
+        for (int i = 1; i + prefix.length() <= value.length(); i++) {
+            if (value.regionMatches(true, i, prefix, 0, prefix.length())
+                    && !Character.isWhitespace(value.charAt(i - 1))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Throws if {@code value} looks like a number but is not a valid ID, such as {@code 0} or {@code 1.5}. Without
+     * this check it would be read as the name of a new student or the subject of a new lesson.
+     */
+    private static void checkNumberIsAnId(Prefix prefix, String value, String kindOfName) throws ParseException {
+        if (LOOKS_LIKE_A_NUMBER.matcher(value).matches() && !ParserUtil.isId(value)) {
+            throw new ParseException(String.format(MESSAGE_NOT_AN_ID, prefix, value, kindOfName));
+        }
+    }
+
+    /**
+     * Throws if {@code value} is an ID that is too large for any student or lesson to have.
+     */
+    private static void checkIdNotTooLarge(String value) throws ParseException {
+        if (ParserUtil.isId(value) && new BigInteger(value.trim()).compareTo(MAX_ID) > 0) {
+            throw new ParseException(MESSAGE_ID_TOO_LARGE);
         }
     }
 
@@ -155,8 +233,29 @@ public class AddCommandParser implements Parser<AddCommand> {
             missing.addAll(missingPrefixes(argMultimap, NEW_LESSON_PREFIXES));
         }
         if (!missing.isEmpty()) {
-            throw missingParameter(missing);
+            String readAsNew = (isNewStudent && anyMissing(missing, NEW_STUDENT_PREFIXES)
+                    ? readAsNew(PREFIX_STUDENT, requiredValue(argMultimap, PREFIX_STUDENT), "student") : "")
+                    + (isNewLesson && anyMissing(missing, NEW_LESSON_PREFIXES)
+                    ? readAsNew(PREFIX_LESSON, requiredValue(argMultimap, PREFIX_LESSON), "lesson") : "");
+            throw new ParseException(missingParameter(missing).getMessage() + readAsNew);
         }
+    }
+
+    private static boolean anyMissing(List<Prefix> missing, Prefix... prefixes) {
+        return Stream.of(prefixes).anyMatch(missing::contains);
+    }
+
+    /**
+     * Returns the sentence that says {@code value} was read as a new student or lesson, with a hint to give only
+     * the ID when the value starts with an ID followed by more text.
+     */
+    private static String readAsNew(Prefix prefix, String value, String kind) {
+        String sentence = String.format(MESSAGE_READ_AS_NEW, prefix, value, kind);
+        Matcher idThenText = ID_THEN_TEXT.matcher(value);
+        if (idThenText.matches()) {
+            sentence += String.format(MESSAGE_USE_ID_ONLY, kind, prefix, idThenText.group(1));
+        }
+        return sentence;
     }
 
     private static StudentRef parseExistingStudent(String value) throws ParseException {
