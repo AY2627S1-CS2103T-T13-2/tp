@@ -64,6 +64,8 @@ With TuiTracker, you can view and update student and lesson details, manage enro
 * Parameters that start with a prefix, such as `s/` or `l/` in `add`, can be in any order.<br>
   For example, if the command specifies `s/STUDENT l/LESSON`, `l/LESSON s/STUDENT` is also acceptable.
 
+* Prefixes can be typed in any letter case, so `S/1 L/2` is the same as `s/1 l/2`. Each prefix must have a space before it.
+
 * Extraneous parameters for commands that take no parameters, such as `help` and `exit`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
 
