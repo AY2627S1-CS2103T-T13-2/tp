@@ -77,4 +77,10 @@ public class NameTest {
         assertFalse(Name.isValidName("Ravi/Kumar"));
         assertFalse(Name.isValidName("Ravis/o Kumar"));
     }
+
+    @Test
+    public void constraintsMessage_mentionsRelationWords() {
+        assertTrue(Name.MESSAGE_CONSTRAINTS.contains("s/o"));
+        assertTrue(Name.MESSAGE_CONSTRAINTS.contains("d/o"));
+    }
 }

@@ -17,7 +17,8 @@ public class Name {
 
     public static final String MESSAGE_CONSTRAINTS =
             "Invalid student name. A name has 1 to " + MAX_LENGTH + " characters: letters, numbers, spaces and "
-            + ". , ' - ( ) & @, with at least one letter. To refer to an existing student, use their ID.";
+            + ". , ' - ( ) & @, with at least one letter. The words s/o and d/o may be used, such as Ravi s/o Kumar. "
+            + "To refer to an existing student, use their ID.";
 
     /**
      * Must contain at least one letter, and may contain letters, numbers, spaces and the symbols . , ' - ( ) & @.

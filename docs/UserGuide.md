@@ -140,7 +140,7 @@ new | new | all of the above
 
 Parameter | Meaning | Needed when | Rules
 ----------|---------|-------------|------
-`s/` | The student: an ID, or the name of a new student | always | A name has at most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter.
+`s/` | The student: an ID, or the name of a new student | always | A name has at most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter. The words `s/o` and `d/o` can be part of a name, such as `Ravi s/o Kumar`; a name cannot start with the single word `O`.
 `l/` | The lesson: an ID, or the subject of a new lesson | always | A subject has at most 50 characters: letters, numbers, spaces and `.` `,` `-` `(` `)` `&` `@`, with at least one letter.
 `c/` | The student's contact number | the student is new | 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a `+` can start the number, such as `+65 (9123) 4567`. Duplicates are compared by the digits only.
 `slv/` | The student's level, such as `Primary 6` | the student is new | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
