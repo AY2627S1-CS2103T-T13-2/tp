@@ -1,5 +1,6 @@
 package seedu.address.model.student;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -55,5 +56,16 @@ public class ContactTest {
         assertFalse(contact.equals(null));
         assertFalse(contact.equals(5.0f));
         assertFalse(contact.equals(new Contact("995")));
+    }
+
+    @Test
+    public void digits_keepsOnlyDigits() {
+        assertEquals("92223333", new Contact("92223333").digits());
+    }
+
+    @Test
+    public void isSameContact_sameDigits_returnsTrue() {
+        assertTrue(new Contact("92223333").isSameContact(new Contact("92223333")));
+        assertFalse(new Contact("92223333").isSameContact(new Contact("92223334")));
     }
 }

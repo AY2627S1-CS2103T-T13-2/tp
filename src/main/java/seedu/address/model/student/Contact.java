@@ -38,6 +38,24 @@ public class Contact {
         return test.matches(VALIDATION_REGEX);
     }
 
+    /**
+     * Returns only the digits of this contact, in order. For example, {@code +65 9222-3333} gives
+     * {@code 6592223333}.
+     */
+    public String digits() {
+        return value.replaceAll("[^0-9]", "");
+    }
+
+    /**
+     * Returns true if {@code other} has the same digits, ignoring spaces and symbols.
+     * This decides whether two students are likely to be the same person. {@link #equals(Object)} stays exact, so
+     * that reformatting a number still counts as an edit.
+     */
+    public boolean isSameContact(Contact other) {
+        requireNonNull(other);
+        return digits().equals(other.digits());
+    }
+
     @Override
     public String toString() {
         return value;
