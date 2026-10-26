@@ -13,11 +13,18 @@ public class Contact {
     public static final int MIN_DIGITS = 3;
     public static final int MAX_DIGITS = 15;
 
-    public static final String MESSAGE_CONSTRAINTS = String.format("Invalid contact. Use %d to %d digits. "
-            + "Spaces, +, -, ( and ) are also allowed, such as +65 9123 4567.", MIN_DIGITS, MAX_DIGITS);
+    /** The most characters a contact may have, counting spaces and symbols. */
+    public static final int MAX_LENGTH = 25;
 
-    /** The characters a contact may contain: digits, spaces, plus signs, hyphens and brackets. */
-    public static final String VALIDATION_REGEX = "[0-9+()\\- ]+";
+    public static final String MESSAGE_CONSTRAINTS = String.format("Invalid contact. Use %d to %d digits, at most %d "
+            + "characters in all. Groups of digits can be separated by one space or hyphen, a group can be in "
+            + "brackets, and a + can start the number, such as +65 (9123) 4567.", MIN_DIGITS, MAX_DIGITS, MAX_LENGTH);
+
+    /**
+     * An optional plus sign, then groups of digits separated by at most one space or hyphen, where a group may be in
+     * brackets, such as {@code +65 (9123) 4567} or {@code 9123-4567}.
+     */
+    public static final String VALIDATION_REGEX = "\\+?(\\(\\d+\\)|\\d+)([ -]?(\\(\\d+\\)|\\d+))*";
 
     public final String value;
 
@@ -33,12 +40,12 @@ public class Contact {
     }
 
     /**
-     * Returns true if a given string is a valid contact number: only the characters allowed by
-     * {@link #VALIDATION_REGEX}, with between {@link #MIN_DIGITS} and {@link #MAX_DIGITS} digits. Other characters
+     * Returns true if a given string is a valid contact number: in the form of {@link #VALIDATION_REGEX}, at most
+     * {@link #MAX_LENGTH} characters, with between {@link #MIN_DIGITS} and {@link #MAX_DIGITS} digits. Other characters
      * are not counted, so {@code +65 9123 4567} has 10 digits.
      */
     public static boolean isValidContact(String test) {
-        if (!test.matches(VALIDATION_REGEX)) {
+        if (test.length() > MAX_LENGTH || !test.matches(VALIDATION_REGEX)) {
             return false;
         }
         long digitCount = test.chars().filter(Character::isDigit).count();
