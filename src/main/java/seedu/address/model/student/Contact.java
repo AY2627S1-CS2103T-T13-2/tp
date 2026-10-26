@@ -13,10 +13,11 @@ public class Contact {
     public static final int MIN_DIGITS = 3;
     public static final int MAX_DIGITS = 15;
 
-    public static final String MESSAGE_CONSTRAINTS = String.format(
-            "Invalid contact. Contact must contain between %d and %d digits.", MIN_DIGITS, MAX_DIGITS);
+    public static final String MESSAGE_CONSTRAINTS = String.format("Invalid contact. Use %d to %d digits. "
+            + "Spaces, +, -, ( and ) are also allowed, such as +65 9123 4567.", MIN_DIGITS, MAX_DIGITS);
 
-    public static final String VALIDATION_REGEX = "\\d{" + MIN_DIGITS + "," + MAX_DIGITS + "}";
+    /** The characters a contact may contain: digits, spaces, plus signs, hyphens and brackets. */
+    public static final String VALIDATION_REGEX = "[0-9+()\\- ]+";
 
     public final String value;
 
@@ -32,10 +33,16 @@ public class Contact {
     }
 
     /**
-     * Returns true if a given string is a valid contact number.
+     * Returns true if a given string is a valid contact number: only the characters allowed by
+     * {@link #VALIDATION_REGEX}, with between {@link #MIN_DIGITS} and {@link #MAX_DIGITS} digits. Other characters
+     * are not counted, so {@code +65 9123 4567} has 10 digits.
      */
     public static boolean isValidContact(String test) {
-        return test.matches(VALIDATION_REGEX);
+        if (!test.matches(VALIDATION_REGEX)) {
+            return false;
+        }
+        long digitCount = test.chars().filter(Character::isDigit).count();
+        return digitCount >= MIN_DIGITS && digitCount <= MAX_DIGITS;
     }
 
     /**

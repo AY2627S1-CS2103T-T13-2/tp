@@ -312,4 +312,11 @@ public class AddCommandParserTest {
     private static String missing(String prefixes) {
         return String.format(MESSAGE_MISSING_PARAMETER_FORMAT, prefixes);
     }
+
+    @Test
+    public void parse_formattedContact_keptAsTyped() {
+        assertParseSuccess(parser, " s/Daniel Koh c/9222 3333 slv/Primary 6" + EXISTING_LESSON,
+                new AddCommand(new NewStudent(new Name("Daniel Koh"), new Contact("9222 3333"), new Level("Primary 6")),
+                        EXISTING_LESSON_REF));
+    }
 }

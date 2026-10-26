@@ -142,7 +142,7 @@ Parameter | Meaning | Needed when | Rules
 ----------|---------|-------------|------
 `s/` | The student: an ID, or the name of a new student | always | A name has at most 100 characters: letters, numbers, spaces, apostrophes and hyphens, with at least one letter.
 `l/` | The lesson: an ID, or the subject of a new lesson | always | A subject has at most 50 characters: letters, numbers, spaces and hyphens, with at least one letter.
-`c/` | The student's contact number | the student is new | Digits only, from 3 to 15 digits.
+`c/` | The student's contact number | the student is new | 3 to 15 digits. Spaces, `+`, `-`, `(` and `)` are also allowed, such as `+65 9123 4567`. Duplicates are compared by the digits only.
 `slv/` | The student's level, such as `Primary 6` | the student is new | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
 `llv/` | The lesson's level, such as `Primary 6` | the lesson is new | The same as `slv/`.
 `d/` | The day of the week | the lesson is new | `Monday` to `Sunday`, in any letter case.
@@ -185,7 +185,7 @@ Command | Message
 `add s/1 l/1 c/91234567` | c/ and slv/ can only be used when adding a new student.
 `add s/1 l/1 d/Monday` | llv/, d/, st/, et/ and f/ can only be used when adding a new lesson.
 `add s/1 s/2 l/1` | A parameter can only be specified once.
-`add s/Daniel Koh c/12 slv/Primary 6 l/1` | Invalid contact. Contact must contain between 3 and 15 digits.
+`add s/Daniel Koh c/12 slv/Primary 6 l/1` | Invalid contact. Use 3 to 15 digits. Spaces, +, -, ( and ) are also allowed, such as +65 9123 4567.
 `add s/1 l/History llv/Primary 6 d/Monday st/9:00 et/10:00 f/35` | Invalid start time. Use the 24-hour format HH:mm.
 `add` | Invalid command format. Use: add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
 

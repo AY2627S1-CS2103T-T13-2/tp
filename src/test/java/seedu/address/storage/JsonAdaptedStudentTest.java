@@ -97,4 +97,10 @@ public class JsonAdaptedStudentTest {
                 "October 2026");
         assertThrows(IllegalValueException.class, INVALID_MONTH_MESSAGE, student::toModelType);
     }
+
+    @Test
+    public void toModelType_formattedContact_keptAsTyped() throws Exception {
+        JsonAdaptedStudent student = new JsonAdaptedStudent(VALID_ID, VALID_NAME, "9222 3333", VALID_LEVEL, null);
+        assertEquals("9222 3333", student.toModelType().getContact().value);
+    }
 }

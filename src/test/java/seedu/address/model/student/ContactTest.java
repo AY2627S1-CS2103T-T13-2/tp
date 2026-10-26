@@ -31,9 +31,6 @@ public class ContactTest {
         assertFalse(Contact.isValidContact("1".repeat(Contact.MAX_DIGITS + 1))); // too long
         assertFalse(Contact.isValidContact("phone")); // letters
         assertFalse(Contact.isValidContact("9011p041")); // letters within digits
-        assertFalse(Contact.isValidContact("9312 1534")); // spaces within digits
-        assertFalse(Contact.isValidContact("+6591234567")); // a plus sign
-        assertFalse(Contact.isValidContact("9123-4567")); // a hyphen
 
         // valid contacts
         assertTrue(Contact.isValidContact("1".repeat(Contact.MIN_DIGITS))); // shortest allowed
@@ -67,5 +64,22 @@ public class ContactTest {
     public void isSameContact_sameDigits_returnsTrue() {
         assertTrue(new Contact("92223333").isSameContact(new Contact("92223333")));
         assertFalse(new Contact("92223333").isSameContact(new Contact("92223334")));
+    }
+
+    @Test
+    public void isValidContact_formattedNumbers() {
+        assertTrue(Contact.isValidContact("9222 3333"));
+        assertTrue(Contact.isValidContact("+65 (9222) 3333"));
+        assertTrue(Contact.isValidContact("9222-3333"));
+        assertTrue(Contact.isValidContact("1-2-3"));
+        assertFalse(Contact.isValidContact("+-()"));
+        assertFalse(Contact.isValidContact("92 22 33 33 92 22 33 33")); // 16 digits
+        assertFalse(Contact.isValidContact("9222 3333 (HP)"));
+    }
+
+    @Test
+    public void isSameContact_differentFormatting_returnsTrue() {
+        assertTrue(new Contact("9222 3333").isSameContact(new Contact("92223333")));
+        assertTrue(new Contact("+65 9222-3333").isSameContact(new Contact("6592223333")));
     }
 }
