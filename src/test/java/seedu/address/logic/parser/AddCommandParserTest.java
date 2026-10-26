@@ -378,4 +378,14 @@ public class AddCommandParserTest {
         assertParseFailure(parser, " s/2147483648 l/2", MESSAGE_ID_TOO_LARGE);
         assertParseFailure(parser, " s/1 l/99999999999", MESSAGE_ID_TOO_LARGE);
     }
+
+    @Test
+    public void parse_relationWordsInName_success() {
+        assertParseSuccess(parser, " s/Ravi S/O Kumar c/90000004 slv/Primary 6 l/1",
+                new AddCommand(new NewStudent(new Name("Ravi S/O Kumar"), new Contact("90000004"),
+                        new Level("Primary 6")), new ExistingLesson(new LessonId(1))));
+        assertParseSuccess(parser, " s/Priya d/o Raj c/90000005 slv/Primary 6 l/1",
+                new AddCommand(new NewStudent(new Name("Priya d/o Raj"), new Contact("90000005"),
+                        new Level("Primary 6")), new ExistingLesson(new LessonId(1))));
+    }
 }
