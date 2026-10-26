@@ -111,4 +111,32 @@ public class TimeslotTest {
         assertEquals(Optional.of(DayOfWeek.SUNDAY), Timeslot.parseDay("Sun"));
         assertEquals(Optional.empty(), Timeslot.parseDay("Tu"));
     }
+
+    @Test
+    public void messageForInvalidEnd_endAtMidnight_suggests2359() {
+        assertEquals(Timeslot.MESSAGE_MIDNIGHT_END,
+                Timeslot.messageForInvalidEnd(LocalTime.of(22, 0), LocalTime.MIDNIGHT));
+        assertEquals(Timeslot.MESSAGE_MIDNIGHT_END,
+                Timeslot.messageForInvalidEnd(LocalTime.of(15, 0), LocalTime.MIDNIGHT));
+    }
+
+    @Test
+    public void messageForInvalidEnd_shortLessonPastMidnight_suggestsSplittingTheLesson() {
+        assertEquals(Timeslot.MESSAGE_END_BEFORE_START,
+                Timeslot.messageForInvalidEnd(LocalTime.of(23, 0), LocalTime.of(0, 59))); // 1 hour 59 minutes
+        assertEquals(Timeslot.MESSAGE_END_BEFORE_START,
+                Timeslot.messageForInvalidEnd(LocalTime.of(18, 30), LocalTime.of(0, 30))); // exactly 6 hours
+    }
+
+    @Test
+    public void messageForInvalidEnd_otherEndTimes_asksForALaterEndTime() {
+        assertEquals(Timeslot.MESSAGE_INVALID_END_TIME,
+                Timeslot.messageForInvalidEnd(LocalTime.of(18, 29), LocalTime.of(0, 30))); // 6 hours 1 minute
+        assertEquals(Timeslot.MESSAGE_INVALID_END_TIME,
+                Timeslot.messageForInvalidEnd(LocalTime.of(17, 0), LocalTime.of(16, 30))); // a moved start time
+        assertEquals(Timeslot.MESSAGE_INVALID_END_TIME,
+                Timeslot.messageForInvalidEnd(LocalTime.of(15, 0), LocalTime.of(15, 0))); // same time
+        assertEquals(Timeslot.MESSAGE_INVALID_END_TIME,
+                Timeslot.messageForInvalidEnd(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT));
+    }
 }
