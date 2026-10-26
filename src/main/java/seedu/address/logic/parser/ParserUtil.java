@@ -158,7 +158,9 @@ public class ParserUtil {
     }
 
     /**
-     * Parses a {@code String time} written exactly as {@code HH:mm} into the end time of a lesson.
+     * Parses a {@code String time} in the 24-hour format into the end time of a lesson.
+     * An end time that is not later than {@code start} gets the message from
+     * {@link Timeslot#messageForInvalidEnd(LocalTime, LocalTime)}, and {@code 24:00} gets one suggesting 23:59.
      *
      * @param start The start time of the same lesson, which the end time must be later than.
      * @throws ParseException if the given {@code time} is not in that format or is not later than {@code start}.
@@ -171,11 +173,8 @@ public class ParserUtil {
         }
         LocalTime end = Timeslot.parseTime(time)
                 .orElseThrow(() -> new ParseException(Timeslot.MESSAGE_INVALID_END_TIME));
-        if (end.isBefore(start)) {
-            throw new ParseException(Timeslot.MESSAGE_END_BEFORE_START);
-        }
         if (!Timeslot.isValidTimeslot(start, end)) {
-            throw new ParseException(Timeslot.MESSAGE_INVALID_END_TIME);
+            throw new ParseException(Timeslot.messageForInvalidEnd(start, end));
         }
         return end;
     }

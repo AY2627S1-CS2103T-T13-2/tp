@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
@@ -26,7 +27,8 @@ public class Timeslot {
     public static final String MESSAGE_INVALID_END_TIME =
             "Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start "
             + "time.";
-    public static final String MESSAGE_MIDNIGHT_END = "A lesson cannot end at 24:00. To end at midnight, use 23:59.";
+    public static final String MESSAGE_MIDNIGHT_END =
+            "A lesson cannot end at 24:00 or 00:00. To end at midnight, use 23:59.";
     public static final String MESSAGE_END_BEFORE_START = "Invalid end time. A lesson must end later on the same day "
             + "it starts, so it cannot run past midnight. To teach past midnight, split it into two lessons, such as "
             + "23:00-23:59 and 00:00-01:00 the next day.";
@@ -41,6 +43,8 @@ public class Timeslot {
             "thurs", DayOfWeek.THURSDAY, "fri", DayOfWeek.FRIDAY, "sat", DayOfWeek.SATURDAY,
             "sun", DayOfWeek.SUNDAY);
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
+    /** The longest lesson that an end time earlier than the start is taken to mean, by running past midnight. */
+    private static final Duration LONGEST_LESSON_PAST_MIDNIGHT = Duration.ofHours(6);
 
     private final DayOfWeek day;
     private final LocalTime start;
@@ -68,6 +72,31 @@ public class Timeslot {
      */
     public static boolean isValidTimeslot(LocalTime start, LocalTime end) {
         return end.isAfter(start);
+    }
+
+    /**
+     * Returns the message explaining why a lesson from {@code start} to {@code end} is not valid.
+     * An end of midnight gets a message suggesting 23:59. An end before the start gets a message about lessons
+     * past midnight only when running past midnight would make the lesson 6 hours or shorter; otherwise it is
+     * treated as a typing mistake.
+     */
+    public static String messageForInvalidEnd(LocalTime start, LocalTime end) {
+        requireNonNull(start);
+        requireNonNull(end);
+        assert !isValidTimeslot(start, end) : "Only an invalid timeslot has a message";
+        if (end.equals(LocalTime.MIDNIGHT) && !start.equals(LocalTime.MIDNIGHT)) {
+            return MESSAGE_MIDNIGHT_END;
+        }
+        if (end.isBefore(start) && looksLikePastMidnight(start, end)) {
+            return MESSAGE_END_BEFORE_START;
+        }
+        return MESSAGE_INVALID_END_TIME;
+    }
+
+    /** Returns true if a lesson from {@code start} to an earlier {@code end} probably runs past midnight. */
+    private static boolean looksLikePastMidnight(LocalTime start, LocalTime end) {
+        Duration lengthPastMidnight = Duration.ofDays(1).minus(Duration.between(end, start));
+        return lengthPastMidnight.compareTo(LONGEST_LESSON_PAST_MIDNIGHT) <= 0;
     }
 
     /**
