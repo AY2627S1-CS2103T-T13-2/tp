@@ -68,11 +68,33 @@ public class ArgumentTokenizer {
      * occurrences of "p/" with whitespace before it. However, if
      * {@code argsString} = "e/hi p/900", {@code prefix} = "p/" and
      * {@code fromIndex} = 0, this method returns 5.
+     *
+     * Letter case is ignored, so "P/" is also found. The words "s/o" (son of) and "d/o" (daughter of) are not
+     * prefixes, because they are part of many legal names: "s/" or "d/" followed by "o" and then a space or the
+     * end of {@code argsString} is skipped.
      */
     private static int findPrefixPosition(String argsString, String prefix, int fromIndex) {
-        int prefixIndex = argsString.indexOf(" " + prefix, fromIndex);
-        return prefixIndex == -1 ? -1
-                : prefixIndex + 1; // +1 as offset for whitespace
+        for (int space = argsString.indexOf(' ', fromIndex); space != -1; space = argsString.indexOf(' ', space + 1)) {
+            int candidate = space + 1; // the prefix starts after the whitespace
+            if (argsString.regionMatches(true, candidate, prefix, 0, prefix.length())
+                    && !isRelationWord(argsString, candidate, prefix)) {
+                return candidate;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Returns true if the {@code prefix} found at {@code position} is really the start of the word "s/o" or "d/o".
+     */
+    private static boolean isRelationWord(String argsString, int position, String prefix) {
+        boolean isStudentOrDay = prefix.equalsIgnoreCase("s/") || prefix.equalsIgnoreCase("d/");
+        int letterO = position + prefix.length();
+        int afterWord = letterO + 1;
+        return isStudentOrDay
+                && letterO < argsString.length()
+                && Character.toLowerCase(argsString.charAt(letterO)) == 'o'
+                && (afterWord == argsString.length() || Character.isWhitespace(argsString.charAt(afterWord)));
     }
 
     /**

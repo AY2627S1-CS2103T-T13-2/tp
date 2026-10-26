@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import seedu.address.commons.exceptions.IllegalValueException;
+import seedu.address.model.IdGenerator;
 import seedu.address.model.ReadOnlyTuiTracker;
 import seedu.address.model.TuiTracker;
 import seedu.address.model.enrollment.Enrollment;
@@ -92,8 +93,9 @@ class JsonSerializableTuiTracker {
             modelEnrollments.add(enrollment.toModelType());
         }
 
-        LoadedData loaded = new LoadedData(nextStudentId == null ? 1 : nextStudentId,
-                nextLessonId == null ? 1 : nextLessonId, modelStudents, modelLessons, modelEnrollments);
+        LoadedData loaded = new LoadedData(nextStudentId == null ? IdGenerator.FIRST_ID : nextStudentId,
+                nextLessonId == null ? IdGenerator.FIRST_ID : nextLessonId, modelStudents, modelLessons,
+                modelEnrollments);
         try {
             return new TuiTracker(loaded);
         } catch (IllegalArgumentException e) {
@@ -113,8 +115,8 @@ class JsonSerializableTuiTracker {
 
         LoadedData(int nextStudentId, int nextLessonId, List<Student> students, List<Lesson> lessons,
                 List<Enrollment> enrollments) {
-            this.nextStudentId = Math.max(1, nextStudentId);
-            this.nextLessonId = Math.max(1, nextLessonId);
+            this.nextStudentId = Math.max(IdGenerator.FIRST_ID, nextStudentId);
+            this.nextLessonId = Math.max(IdGenerator.FIRST_ID, nextLessonId);
             this.students = FXCollections.observableArrayList(students);
             this.lessons = FXCollections.observableArrayList(lessons);
             this.enrollments = enrollments;

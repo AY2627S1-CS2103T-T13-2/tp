@@ -32,8 +32,10 @@ import org.junit.jupiter.api.Test;
 import seedu.address.model.enrollment.Enrollment;
 import seedu.address.model.lesson.Lesson;
 import seedu.address.model.lesson.LessonId;
+import seedu.address.model.lesson.Subject;
 import seedu.address.model.lesson.Timeslot;
 import seedu.address.model.lesson.exceptions.LessonNotFoundException;
+import seedu.address.model.student.Name;
 import seedu.address.model.student.Student;
 import seedu.address.model.student.StudentId;
 import seedu.address.model.student.exceptions.StudentNotFoundException;
@@ -305,6 +307,30 @@ public class TuiTrackerTest {
     }
 
     @Test
+    public void addStudent_nullArgument_throwsNullPointerExceptionAndUsesNoId() {
+        int nextStudentId = tracker.getNextStudentId();
+
+        assertThrows(NullPointerException.class, () ->
+                tracker.addStudent(null, DANIEL.getContact(), DANIEL.getLevel()));
+        assertEquals(nextStudentId, tracker.getNextStudentId());
+    }
+
+    @Test
+    public void addLesson_nullArgument_throwsNullPointerExceptionAndUsesNoId() {
+        int nextLessonId = tracker.getNextLessonId();
+
+        assertThrows(NullPointerException.class, () ->
+                tracker.addLesson(null, MATHEMATICS.getLevel(), MATHEMATICS.getTimeslot(), MATHEMATICS.getFee()));
+        assertEquals(nextLessonId, tracker.getNextLessonId());
+    }
+
+    @Test
+    public void delete_nullId_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> tracker.deleteStudent(null));
+        assertThrows(NullPointerException.class, () -> tracker.deleteLesson(null));
+    }
+
+    @Test
     public void delete_missingRecord_throwsNotFoundException() {
         assertThrows(StudentNotFoundException.class, () -> tracker.deleteStudent(DANIEL.getId()));
         assertThrows(LessonNotFoundException.class, () -> tracker.deleteLesson(HISTORY.getId()));
@@ -386,5 +412,36 @@ public class TuiTrackerTest {
         assertTrue(built.getEnrollmentList().isEmpty());
         assertEquals(Collections.emptyList(), built.getEnrollmentList());
         assertEquals(new Enrollment(ALICE.getId(), MATHEMATICS.getId()), ALICE_MATHEMATICS);
+    }
+
+    @Test
+    public void findDuplicateStudent_differentCaseAndSpacing_findsStudent() {
+        assertEquals(Optional.of(ALICE), tracker.findDuplicateStudent(new Name("alice  TAN"), ALICE.getContact()));
+    }
+
+    @Test
+    public void findIdenticalLesson_differentCase_findsLesson() {
+        assertEquals(Optional.of(MATHEMATICS), tracker.findIdenticalLesson(new Subject("mathematics"),
+                MATHEMATICS.getLevel(), MATHEMATICS.getTimeslot()));
+    }
+
+    @Test
+    public void findStudentWithSameName_returnsLowestIdMatch() {
+        assertEquals(Optional.of(ALICE), tracker.findStudentWithSameName(new Name("ALICE TAN")));
+        assertEquals(Optional.empty(), tracker.findStudentWithSameName(new Name("Nobody Here")));
+    }
+
+    @Test
+    public void findClash_overlapping_returnsLesson() {
+        Timeslot overlap = new Timeslot(MATHEMATICS.getTimeslot().getDay(),
+                MATHEMATICS.getTimeslot().getStart(), MATHEMATICS.getTimeslot().getEnd().plusMinutes(30));
+        assertEquals(Optional.of(MATHEMATICS), tracker.findClash(overlap));
+    }
+
+    @Test
+    public void findClash_touchingOnly_returnsEmpty() {
+        Timeslot afterMathematics = new Timeslot(MATHEMATICS.getTimeslot().getDay(),
+                MATHEMATICS.getTimeslot().getEnd(), MATHEMATICS.getTimeslot().getEnd().plusHours(1));
+        assertEquals(Optional.empty(), tracker.findClash(afterMathematics));
     }
 }

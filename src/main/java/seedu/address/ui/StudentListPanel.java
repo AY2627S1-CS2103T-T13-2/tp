@@ -46,6 +46,14 @@ public class StudentListPanel extends UiPart<Region> {
      * Custom {@code ListCell} that displays the graphics of a {@code Student} using a {@code StudentCard}.
      */
     class StudentListViewCell extends ListCell<Student> {
+        /**
+         * Creates a cell that takes the width of the list, so that wrapped text in a card is measured against that
+         * width. Without this, a card with a long line is measured as if it were very narrow and becomes too tall.
+         */
+        StudentListViewCell() {
+            setPrefWidth(0);
+        }
+
         @Override
         protected void updateItem(Student student, boolean empty) {
             super.updateItem(student, empty);

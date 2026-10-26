@@ -1,5 +1,6 @@
 package seedu.address.commons.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -140,4 +141,11 @@ public class StringUtilTest {
         assertThrows(NullPointerException.class, () -> StringUtil.getDetails(null));
     }
 
+    //---------------- Tests for toMatchingKey --------------------------------------
+
+    @Test
+    public void toMatchingKey_ignoresCaseAndSpacing() {
+        assertEquals("alice tan", StringUtil.toMatchingKey("  Alice   TAN "));
+        assertEquals("josé tan", StringUtil.toMatchingKey("JOSÉ\tTan"));
+    }
 }

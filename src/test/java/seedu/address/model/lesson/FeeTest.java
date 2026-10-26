@@ -16,7 +16,7 @@ public class FeeTest {
 
     @Test
     public void constructor_invalidFee_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> new Fee("0"));
+        assertThrows(IllegalArgumentException.class, () -> new Fee("-1"));
     }
 
     @Test
@@ -27,8 +27,6 @@ public class FeeTest {
         // invalid fees
         assertFalse(Fee.isValidFee("")); // empty string
         assertFalse(Fee.isValidFee(" ")); // spaces only
-        assertFalse(Fee.isValidFee("0")); // zero
-        assertFalse(Fee.isValidFee("0.00")); // zero
         assertFalse(Fee.isValidFee("-5")); // negative
         assertFalse(Fee.isValidFee("50.001")); // three decimal places
         assertFalse(Fee.isValidFee("$50")); // currency symbol
@@ -41,7 +39,9 @@ public class FeeTest {
         assertTrue(Fee.isValidFee("50"));
         assertTrue(Fee.isValidFee("50.5"));
         assertTrue(Fee.isValidFee("50.00"));
-        assertTrue(Fee.isValidFee("0.01")); // smallest allowed
+        assertTrue(Fee.isValidFee("0")); // a free lesson
+        assertTrue(Fee.isValidFee("0.00")); // a free lesson
+        assertTrue(Fee.isValidFee("0.01"));
         assertTrue(Fee.isValidFee("1234567.89"));
     }
 
@@ -68,5 +68,12 @@ public class FeeTest {
         assertFalse(fee.equals(5.0f));
         assertFalse(fee.equals(new Fee("50.01")));
         assertEquals(fee.hashCode(), new Fee("50").hashCode());
+    }
+
+    @Test
+    public void isFree() {
+        assertTrue(new Fee("0").isFree());
+        assertTrue(new Fee("0.00").isFree());
+        assertFalse(new Fee("0.01").isFree());
     }
 }

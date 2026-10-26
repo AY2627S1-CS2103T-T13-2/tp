@@ -7,9 +7,11 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javafx.collections.ObservableList;
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.common.Level;
 import seedu.address.model.enrollment.Enrollment;
@@ -40,6 +42,8 @@ public class TuiTracker implements ReadOnlyTuiTracker {
 
     public static final String MESSAGE_DANGLING_ENROLLMENT =
             "An enrollment refers to a student or lesson that does not exist.";
+
+    private static final Logger logger = LogsCenter.getLogger(TuiTracker.class);
 
     private final UniqueStudentList students = new UniqueStudentList();
     private final UniqueLessonList lessons = new UniqueLessonList();
@@ -81,6 +85,9 @@ public class TuiTracker implements ReadOnlyTuiTracker {
         int highestLessonId = newData.getLessonList().stream().mapToInt(l -> l.getId().value).max().orElse(0);
         idGenerator.reset(Math.max(newData.getNextStudentId(), highestStudentId + 1),
                 Math.max(newData.getNextLessonId(), highestLessonId + 1));
+        logger.fine("Replaced all data: " + newData.getStudentList().size() + " students, "
+                + newData.getLessonList().size() + " lessons, " + newData.getEnrollmentList().size()
+                + " enrollments");
     }
 
     //// queries
@@ -101,21 +108,34 @@ public class TuiTracker implements ReadOnlyTuiTracker {
 
     /**
      * Returns the student with the lowest ID who has the same name and contact, if there is one.
+     * Names are compared ignoring letter case and extra spaces, and contacts by their digits only.
      */
     public Optional<Student> findDuplicateStudent(Name name, Contact contact) {
         requireAllNonNull(name, contact);
         return students.asUnmodifiableObservableList().stream()
-                .filter(student -> student.getName().equals(name) && student.getContact().equals(contact))
+                .filter(student -> student.getName().isSameName(name) && student.getContact().isSameContact(contact))
+                .findFirst();
+    }
+
+    /**
+     * Returns the student with the lowest ID who has the same name, ignoring letter case and extra spaces, if there
+     * is one. Unlike {@link #findDuplicateStudent(Name, Contact)}, the contact is not compared.
+     */
+    public Optional<Student> findStudentWithSameName(Name name) {
+        requireNonNull(name);
+        return students.asUnmodifiableObservableList().stream()
+                .filter(student -> student.getName().isSameName(name))
                 .findFirst();
     }
 
     /**
      * Returns the lesson with the lowest ID that has the same subject, level and timeslot, if there is one.
+     * Subjects are compared ignoring letter case and extra spaces.
      */
     public Optional<Lesson> findIdenticalLesson(Subject subject, Level level, Timeslot timeslot) {
         requireAllNonNull(subject, level, timeslot);
         return lessons.asUnmodifiableObservableList().stream()
-                .filter(lesson -> lesson.getSubject().equals(subject)
+                .filter(lesson -> lesson.getSubject().isSameSubject(subject)
                         && lesson.getLevel().equals(level)
                         && lesson.getTimeslot().equals(timeslot))
                 .findFirst();
@@ -139,6 +159,17 @@ public class TuiTracker implements ReadOnlyTuiTracker {
     }
 
     /**
+     * Returns the lesson with the lowest ID whose timeslot overlaps {@code timeslot}, if there is one.
+     * A lesson that starts exactly when another ends does not clash with it.
+     */
+    public Optional<Lesson> findClash(Timeslot timeslot) {
+        requireNonNull(timeslot);
+        return lessons.asUnmodifiableObservableList().stream()
+                .filter(lesson -> lesson.getTimeslot().overlaps(timeslot))
+                .findFirst();
+    }
+
+    /**
      * Returns the IDs of the lessons the student is enrolled in, in ascending order.
      */
     public List<LessonId> getLessonIdsOf(StudentId studentId) {
@@ -150,7 +181,7 @@ public class TuiTracker implements ReadOnlyTuiTracker {
      */
     public List<Student> getStudentsIn(LessonId lessonId) {
         return enrollments.studentIdsIn(lessonId).stream()
-                .map(id -> students.find(id).orElseThrow(StudentNotFoundException::new))
+                .map(id -> students.find(id).orElseThrow(() -> new IllegalStateException(MESSAGE_DANGLING_ENROLLMENT)))
                 .collect(Collectors.toList());
     }
 
@@ -160,8 +191,11 @@ public class TuiTracker implements ReadOnlyTuiTracker {
      * Creates a student with a new ID, who has not been marked as paid, and returns the student.
      */
     public Student addStudent(Name name, Contact contact, Level level) {
+        requireAllNonNull(name, contact, level);
         Student student = new Student(idGenerator.newStudentId(), name, contact, level);
         students.add(student);
+        assert students.contains(student.getId()) : "A student that was just added must be in the list";
+        logger.fine("Added student " + student.getId());
         return student;
     }
 
@@ -169,8 +203,11 @@ public class TuiTracker implements ReadOnlyTuiTracker {
      * Creates a lesson with a new ID and returns the lesson.
      */
     public Lesson addLesson(Subject subject, Level level, Timeslot timeslot, Fee fee) {
+        requireAllNonNull(subject, level, timeslot, fee);
         Lesson lesson = new Lesson(idGenerator.newLessonId(), subject, level, timeslot, fee);
         lessons.add(lesson);
+        assert lessons.contains(lesson.getId()) : "A lesson that was just added must be in the list";
+        logger.fine("Added lesson " + lesson.getId());
         return lesson;
     }
 
@@ -185,6 +222,7 @@ public class TuiTracker implements ReadOnlyTuiTracker {
         Student edited = new Student(studentId, name, contact, level,
                 original.getLastPaidMonth().orElse(null));
         students.replace(original, edited);
+        logger.fine("Edited student " + studentId);
         return edited;
     }
 
@@ -198,6 +236,7 @@ public class TuiTracker implements ReadOnlyTuiTracker {
         Lesson original = lessons.find(lessonId).orElseThrow(LessonNotFoundException::new);
         Lesson edited = new Lesson(lessonId, subject, level, timeslot, fee);
         lessons.replace(original, edited);
+        logger.fine("Edited lesson " + lessonId);
         return edited;
     }
 
@@ -217,6 +256,7 @@ public class TuiTracker implements ReadOnlyTuiTracker {
             throw new LessonNotFoundException();
         }
         enrollments.add(new Enrollment(studentId, lessonId));
+        logger.fine("Enrolled student " + studentId + " in lesson " + lessonId);
     }
 
     /**
@@ -225,8 +265,11 @@ public class TuiTracker implements ReadOnlyTuiTracker {
      * @throws StudentNotFoundException if there is no such student.
      */
     public Student deleteStudent(StudentId studentId) {
+        requireNonNull(studentId);
         Student deleted = students.remove(studentId);
         enrollments.removeAllOfStudent(studentId);
+        assert enrollments.lessonIdsOf(studentId).isEmpty() : "A deleted student must have no enrollments left";
+        logger.fine("Deleted student " + studentId);
         return deleted;
     }
 
@@ -236,8 +279,11 @@ public class TuiTracker implements ReadOnlyTuiTracker {
      * @throws LessonNotFoundException if there is no such lesson.
      */
     public Lesson deleteLesson(LessonId lessonId) {
+        requireNonNull(lessonId);
         Lesson deleted = lessons.remove(lessonId);
         enrollments.removeAllOfLesson(lessonId);
+        assert enrollments.studentIdsIn(lessonId).isEmpty() : "A deleted lesson must have no enrollments left";
+        logger.fine("Deleted lesson " + lessonId);
         return deleted;
     }
 
@@ -251,6 +297,7 @@ public class TuiTracker implements ReadOnlyTuiTracker {
         Student original = students.find(studentId).orElseThrow(StudentNotFoundException::new);
         Student updated = original.markPaid(month);
         students.replace(original, updated);
+        logger.fine("Marked student " + studentId + " as paid for " + month);
         return updated;
     }
 

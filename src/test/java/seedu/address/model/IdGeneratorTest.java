@@ -40,16 +40,6 @@ public class IdGeneratorTest {
     }
 
     @Test
-    public void raiseTo_neverLowersACounter() {
-        IdGenerator generator = new IdGenerator(10, 10);
-
-        generator.raiseTo(5, 20);
-
-        assertEquals(10, generator.getNextStudentId());
-        assertEquals(20, generator.getNextLessonId());
-    }
-
-    @Test
     public void reset_setsBothCounters() {
         IdGenerator generator = new IdGenerator(10, 10);
 

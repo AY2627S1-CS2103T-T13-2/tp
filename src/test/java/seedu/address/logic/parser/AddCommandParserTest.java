@@ -2,8 +2,12 @@ package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_DUPLICATE_PARAMETER;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.parser.AddCommandParser.MESSAGE_ID_TOO_LARGE;
 import static seedu.address.logic.parser.AddCommandParser.MESSAGE_LESSON_PARAMETERS_NOT_ALLOWED;
 import static seedu.address.logic.parser.AddCommandParser.MESSAGE_MISSING_PARAMETER_FORMAT;
+import static seedu.address.logic.parser.AddCommandParser.MESSAGE_NOT_AN_ID;
+import static seedu.address.logic.parser.AddCommandParser.MESSAGE_PREFIX_INSIDE_VALUE;
+import static seedu.address.logic.parser.AddCommandParser.MESSAGE_READ_AS_NEW;
 import static seedu.address.logic.parser.AddCommandParser.MESSAGE_STUDENT_PARAMETERS_NOT_ALLOWED;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
@@ -172,14 +176,18 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_newStudentWithMissingParameters_throwsParseException() {
-        assertParseFailure(parser, " s/Alice Tan" + EXISTING_LESSON, missing("c/, slv/"));
-        assertParseFailure(parser, " s/Alice Tan slv/Primary 6" + EXISTING_LESSON, missing("c/"));
-        assertParseFailure(parser, " s/Alice Tan c/91234567" + EXISTING_LESSON, missing("slv/"));
+        assertParseFailure(parser, " s/Alice Tan" + EXISTING_LESSON,
+                missing("c/, slv/") + readAsNewStudent("Alice Tan"));
+        assertParseFailure(parser, " s/Alice Tan slv/Primary 6" + EXISTING_LESSON,
+                missing("c/") + readAsNewStudent("Alice Tan"));
+        assertParseFailure(parser, " s/Alice Tan c/91234567" + EXISTING_LESSON,
+                missing("slv/") + readAsNewStudent("Alice Tan"));
     }
 
     @Test
     public void parse_newLessonWithMissingParameters_throwsParseException() {
-        assertParseFailure(parser, EXISTING_STUDENT + " l/Mathematics", missing("llv/, d/, st/, et/, f/"));
+        assertParseFailure(parser, EXISTING_STUDENT + " l/Mathematics",
+                missing("llv/, d/, st/, et/, f/") + readAsNewLesson("Mathematics"));
 
         String[] lessonParameters = {" llv/Primary 6", " d/Monday", " st/15:00", " et/16:30", " f/50.00"};
         String[] prefixes = {"llv/", "d/", "st/", "et/", "f/"};
@@ -190,15 +198,17 @@ public class AddCommandParserTest {
                     input.append(lessonParameters[i]);
                 }
             }
-            assertParseFailure(parser, input.toString(), missing(prefixes[omitted]));
+            assertParseFailure(parser, input.toString(),
+                    missing(prefixes[omitted]) + readAsNewLesson("Mathematics"));
         }
     }
 
     @Test
     public void parse_newStudentAndNewLessonWithMissingParameters_listsAllInOrder() {
-        assertParseFailure(parser, " s/Alice Tan l/Mathematics", missing("c/, slv/, llv/, d/, st/, et/, f/"));
+        assertParseFailure(parser, " s/Alice Tan l/Mathematics", missing("c/, slv/, llv/, d/, st/, et/, f/")
+                + readAsNewStudent("Alice Tan") + readAsNewLesson("Mathematics"));
         assertParseFailure(parser, " s/Alice Tan c/91234567 l/Mathematics llv/Primary 6 d/Monday st/15:00",
-                missing("slv/, et/, f/"));
+                missing("slv/, et/, f/") + readAsNewStudent("Alice Tan") + readAsNewLesson("Mathematics"));
     }
 
     //// parameters that do not belong
@@ -238,10 +248,10 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_invalidStudentValues_throwsParseException() {
-        assertParseFailure(parser, " s/R@chel c/91234567 slv/Primary 6" + EXISTING_LESSON,
+        assertParseFailure(parser, " s/R#chel c/91234567 slv/Primary 6" + EXISTING_LESSON,
                 Name.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " s/0 c/91234567 slv/Primary 6" + EXISTING_LESSON,
-                Name.MESSAGE_CONSTRAINTS); // zero is not an ID, and it has no letter to be a name
+                String.format(MESSAGE_NOT_AN_ID, "s/", "0", "name")); // zero is not an ID, and it has no letter
         assertParseFailure(parser, " s/" + "a".repeat(101) + " c/91234567 slv/Primary 6" + EXISTING_LESSON,
                 Name.MESSAGE_CONSTRAINTS);
 
@@ -266,7 +276,7 @@ public class AddCommandParserTest {
 
         assertParseFailure(parser, EXISTING_STUDENT + " l/Mathematics llv/--- d/Monday st/15:00 et/16:30 f/50",
                 Level.MESSAGE_CONSTRAINTS_LESSON);
-        assertParseFailure(parser, EXISTING_STUDENT + " l/Mathematics llv/Primary 6 d/Mon st/15:00 et/16:30 f/50",
+        assertParseFailure(parser, EXISTING_STUDENT + " l/Mathematics llv/Primary 6 d/Mo st/15:00 et/16:30 f/50",
                 Timeslot.MESSAGE_INVALID_DAY);
     }
 
@@ -274,19 +284,20 @@ public class AddCommandParserTest {
     public void parse_invalidTimes_throwsParseException() {
         String start = EXISTING_STUDENT + " l/Mathematics llv/Primary 6 d/Monday st/";
 
-        assertParseFailure(parser, start + "9:00 et/16:30 f/50", Timeslot.MESSAGE_INVALID_START_TIME);
+        assertParseFailure(parser, start + "9:60 et/16:30 f/50", Timeslot.MESSAGE_INVALID_START_TIME);
         assertParseFailure(parser, start + "24:00 et/16:30 f/50", Timeslot.MESSAGE_INVALID_START_TIME);
 
         assertParseFailure(parser, start + "15:00 et/15:00 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // not later
-        assertParseFailure(parser, start + "15:00 et/14:00 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // earlier
-        assertParseFailure(parser, start + "15:00 et/4:30 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // wrong format
+        assertParseFailure(parser, start + "15:00 et/14:00 f/50", Timeslot.MESSAGE_END_BEFORE_START); // earlier
+        assertParseFailure(parser, start + "15:00 et/4:30 f/50", Timeslot.MESSAGE_END_BEFORE_START); // earlier
+        assertParseFailure(parser, start + "23:00 et/01:00 f/50", Timeslot.MESSAGE_END_BEFORE_START); // past midnight
     }
 
     @Test
     public void parse_invalidFee_throwsParseException() {
         String lesson = EXISTING_STUDENT + " l/Mathematics llv/Primary 6 d/Monday st/15:00 et/16:30 f/";
 
-        assertParseFailure(parser, lesson + "0", Fee.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, lesson + "free", Fee.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, lesson + "50.001", Fee.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, lesson + "$50", Fee.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, lesson + "-5", Fee.MESSAGE_CONSTRAINTS);
@@ -299,7 +310,7 @@ public class AddCommandParserTest {
                 + "et/16:30 f/0", Contact.MESSAGE_CONSTRAINTS);
 
         // an invalid student name and an invalid subject: the student comes first
-        assertParseFailure(parser, " s/R@chel c/91234567 slv/Primary 6 l/Maths! llv/Primary 6 d/Monday st/15:00 "
+        assertParseFailure(parser, " s/R#chel c/91234567 slv/Primary 6 l/Maths! llv/Primary 6 d/Monday st/15:00 "
                 + "et/16:30 f/50", Name.MESSAGE_CONSTRAINTS);
     }
 
@@ -311,5 +322,60 @@ public class AddCommandParserTest {
 
     private static String missing(String prefixes) {
         return String.format(MESSAGE_MISSING_PARAMETER_FORMAT, prefixes);
+    }
+
+    private static String readAsNewStudent(String name) {
+        return String.format(MESSAGE_READ_AS_NEW, "s/", name, "student");
+    }
+
+    private static String readAsNewLesson(String subject) {
+        return String.format(MESSAGE_READ_AS_NEW, "l/", subject, "lesson");
+    }
+
+    @Test
+    public void parse_formattedContact_keptAsTyped() {
+        assertParseSuccess(parser, " s/Daniel Koh c/9222 3333 slv/Primary 6" + EXISTING_LESSON,
+                new AddCommand(new NewStudent(new Name("Daniel Koh"), new Contact("9222 3333"), new Level("Primary 6")),
+                        EXISTING_LESSON_REF));
+    }
+
+    @Test
+    public void parse_nameWithFullStops_success() {
+        assertParseSuccess(parser, " s/J. K. Rowling c/90000007 slv/Primary 6" + EXISTING_LESSON,
+                new AddCommand(new NewStudent(new Name("J. K. Rowling"), new Contact("90000007"),
+                        new Level("Primary 6")), EXISTING_LESSON_REF));
+    }
+
+    //// messages that name the real problem
+
+    @Test
+    public void parse_prefixInsideAValue_saysSeparateWithASpace() {
+        assertParseFailure(parser, " s/Daniel Koh c/92223333slv/Primary 6 l/1",
+                String.format(MESSAGE_PREFIX_INSIDE_VALUE, "slv/", "c/"));
+        assertParseFailure(parser, " s/Daniel Kohc/92223333 slv/Primary 6 l/1",
+                String.format(MESSAGE_PREFIX_INSIDE_VALUE, "c/", "s/"));
+    }
+
+    @Test
+    public void parse_numberThatIsNotAnId_saysSo() {
+        assertParseFailure(parser, " s/0 l/2", String.format(MESSAGE_NOT_AN_ID, "s/", "0", "name"));
+        assertParseFailure(parser, " s/1.5 l/2", String.format(MESSAGE_NOT_AN_ID, "s/", "1.5", "name"));
+        assertParseFailure(parser, " s/#1 l/2", String.format(MESSAGE_NOT_AN_ID, "s/", "#1", "name"));
+        assertParseFailure(parser, " s/1 l/-3", String.format(MESSAGE_NOT_AN_ID, "l/", "-3", "subject"));
+    }
+
+    @Test
+    public void parse_missingParameters_saysWhatWasReadAsNew() {
+        assertParseFailure(parser, " s/Daniel Koh c/92223333 slv/Primary 6 l/Art",
+                "Missing required parameter: llv/, d/, st/, et/, f/. l/Art was read as a new lesson.");
+        assertParseFailure(parser, " s/1 l/2 extra words",
+                "Missing required parameter: llv/, d/, st/, et/, f/. l/2 extra words was read as a new lesson."
+                + " To use an existing lesson, give only its ID, such as l/2.");
+    }
+
+    @Test
+    public void parse_idTooLarge_saysSo() {
+        assertParseFailure(parser, " s/2147483648 l/2", MESSAGE_ID_TOO_LARGE);
+        assertParseFailure(parser, " s/1 l/99999999999", MESSAGE_ID_TOO_LARGE);
     }
 }

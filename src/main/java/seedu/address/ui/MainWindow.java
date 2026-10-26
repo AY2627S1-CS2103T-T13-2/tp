@@ -206,7 +206,7 @@ public class MainWindow extends UiPart<Stage> {
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         try {
             CommandResult commandResult = logic.execute(commandText);
-            logger.info("Result: " + commandResult.getFeedbackToUser());
+            logger.info("Command executed successfully");
             studentListPanel.refresh();
             lessonListPanel.refresh();
             if (logic.listViewProperty().get() == ListView.SCHEDULE) {
@@ -224,7 +224,8 @@ public class MainWindow extends UiPart<Stage> {
 
             return commandResult;
         } catch (CommandException | ParseException e) {
-            logger.info("An error occurred while executing command: " + commandText);
+            // Only the kind of error is logged: an error message can repeat a name or contact number that was typed.
+            logger.info("A command could not be executed: " + e.getClass().getSimpleName());
             resultDisplay.setFeedbackToUser(e.getMessage());
             throw e;
         }

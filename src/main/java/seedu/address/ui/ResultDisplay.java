@@ -16,8 +16,13 @@ public class ResultDisplay extends UiPart<Region> {
     @FXML
     private TextArea resultDisplay;
 
+    /**
+     * Creates the result display. Long messages wrap onto more lines.
+     */
     public ResultDisplay() {
         super(FXML);
+        // Long messages, such as a long name or a note, wrap onto more lines instead of running off the side.
+        resultDisplay.setWrapText(true);
     }
 
     public void setFeedbackToUser(String feedbackToUser) {

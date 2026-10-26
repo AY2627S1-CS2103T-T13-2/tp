@@ -6,6 +6,7 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * Helper functions for handling strings.
@@ -64,5 +65,15 @@ public class StringUtil {
         } catch (NumberFormatException nfe) {
             return false;
         }
+    }
+
+    /**
+     * Returns {@code text} in the form used to decide whether two values mean the same thing: leading and trailing
+     * whitespace removed, every run of whitespace collapsed into one space, and all letters in lower case.
+     * For example, {@code "  Alice   TAN "} becomes {@code "alice tan"}.
+     */
+    public static String toMatchingKey(String text) {
+        requireNonNull(text);
+        return text.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 }

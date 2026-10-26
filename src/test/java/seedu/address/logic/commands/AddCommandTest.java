@@ -10,7 +10,9 @@ import static seedu.address.logic.commands.AddCommand.MESSAGE_ALREADY_ENROLLED;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_DUPLICATE_LESSON;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_DUPLICATE_STUDENT;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_LESSON_CLASH;
-import static seedu.address.logic.commands.AddCommand.MESSAGE_LEVEL_MISMATCH;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_FREE_LESSON;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_LEVEL_MISMATCH;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_SAME_NAME;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -39,6 +41,7 @@ import seedu.address.logic.commands.AddCommand.LessonRef;
 import seedu.address.logic.commands.AddCommand.NewLesson;
 import seedu.address.logic.commands.AddCommand.NewStudent;
 import seedu.address.logic.commands.AddCommand.StudentRef;
+import seedu.address.logic.parser.AddCommandParser;
 import seedu.address.model.ListView;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
@@ -69,6 +72,10 @@ public class AddCommandTest {
             new Timeslot(DayOfWeek.MONDAY, LocalTime.of(15, 0), LocalTime.of(16, 30));
     private static final LessonRef NEW_LESSON =
             new NewLesson(new Subject("Mathematics"), new Level("Primary 6"), MONDAY_AFTERNOON, new Fee("50.00"));
+
+    /** Every clash in these tests is with MATHEMATICS, on Monday from 15:00 to 16:30. */
+    private static final String CLASH_WITH_MATHEMATICS = String.format(MESSAGE_LESSON_CLASH, MATHEMATICS.getId(),
+            MATHEMATICS.getSubject(), MATHEMATICS.getTimeslot());
 
     /** A student who is not in the typical data: Daniel Koh, Primary 6. */
     private static final NewStudent DANIEL_DETAILS =
@@ -263,21 +270,27 @@ public class AddCommandTest {
     }
 
     @Test
-    public void execute_levelsDoNotMatch_throwsCommandException() {
+    public void execute_levelsDoNotMatch_enrollsWithNote() throws Exception {
         Model model = modelWith(List.of(), List.of());
 
         // ALICE is Primary 6 and ENGLISH is Primary 4
-        assertCommandFailure(enroll(ALICE.getId().value, ENGLISH.getId().value), model, MESSAGE_LEVEL_MISMATCH);
+        String feedback = enroll(ALICE.getId().value, ENGLISH.getId().value).execute(model).getFeedbackToUser();
+
+        assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_LEVEL_MISMATCH, ALICE.getName(),
+                ALICE.getLevel(), ENGLISH.getLevel())));
+        assertTrue(model.isEnrolled(ALICE.getId(), ENGLISH.getId()));
     }
 
     @Test
-    public void execute_abbreviatedLevel_isADifferentLevel() {
+    public void execute_abbreviatedLevel_isADifferentLevel() throws Exception {
         Student abbreviated = new StudentBuilder(ALICE).withId(5).withName("Eve Ong").withContact("90001111")
                 .withLevel("P6").build();
         Model model = modelWith(List.of(abbreviated), List.of(HISTORY)); // HISTORY is "Primary 6"
 
-        assertCommandFailure(enroll(abbreviated.getId().value, HISTORY.getId().value), model,
-                MESSAGE_LEVEL_MISMATCH);
+        String feedback = enroll(abbreviated.getId().value, HISTORY.getId().value).execute(model).getFeedbackToUser();
+
+        assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_LEVEL_MISMATCH, "Eve Ong", "P6",
+                HISTORY.getLevel())));
     }
 
     @Test
@@ -338,7 +351,8 @@ public class AddCommandTest {
         expectedModel.enroll(created.getId(), MATHEMATICS.getId());
 
         assertCommandSuccess(new AddCommand(sameNameOtherContact, new ExistingLesson(MATHEMATICS.getId())), model,
-                "Enrolled Alice Tan [Student ID: 5] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.",
+                "Enrolled Alice Tan [Student ID: 5] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.\n"
+                        + String.format(MESSAGE_NOTE_SAME_NAME, ALICE.getName(), ALICE.getId()),
                 expectedModel);
     }
 
@@ -411,17 +425,17 @@ public class AddCommandTest {
         NewLesson overlapping = newLesson("History", "Primary 6", DayOfWeek.MONDAY, 16, 0, 17, 0);
 
         assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), overlapping), typicalModel(),
-                MESSAGE_LESSON_CLASH);
+                CLASH_WITH_MATHEMATICS);
     }
 
     @Test
     public void execute_newLessonThatContainsOrIsInsideAnotherLesson_throwsCommandException() {
         assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()),
                 newLesson("History", "Primary 6", DayOfWeek.MONDAY, 14, 0, 18, 0)), typicalModel(),
-                MESSAGE_LESSON_CLASH);
+                CLASH_WITH_MATHEMATICS);
         assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()),
                 newLesson("History", "Primary 6", DayOfWeek.MONDAY, 15, 30, 16, 0)), typicalModel(),
-                MESSAGE_LESSON_CLASH);
+                CLASH_WITH_MATHEMATICS);
     }
 
     @Test
@@ -472,7 +486,7 @@ public class AddCommandTest {
         NewLesson primaryFour = newLesson("Art", "Primary 4", DayOfWeek.MONDAY, 15, 30, 16, 0);
 
         assertCommandFailure(new AddCommand(new ExistingStudent(CHLOE.getId()), primaryFour), typicalModel(),
-                MESSAGE_LESSON_CLASH);
+                CLASH_WITH_MATHEMATICS);
     }
 
     //// duplicates
@@ -511,7 +525,7 @@ public class AddCommandTest {
         NewLesson otherLevel = new NewLesson(MATHEMATICS.getSubject(), new Level("Primary 5"),
                 MATHEMATICS.getTimeslot(), MATHEMATICS.getFee());
 
-        assertCommandFailure(new AddCommand(primaryFive, otherLevel), typicalModel(), MESSAGE_LESSON_CLASH);
+        assertCommandFailure(new AddCommand(primaryFive, otherLevel), typicalModel(), CLASH_WITH_MATHEMATICS);
     }
 
     //// the order of the checks
@@ -553,13 +567,13 @@ public class AddCommandTest {
     }
 
     @Test
-    public void execute_levelMismatchIsReportedBeforeAClash() {
-        // a Primary 4 lesson at the same time as MATHEMATICS, for a Primary 6 student
+    public void execute_levelMismatchAndClash_reportsTheClash() {
+        // a Primary 4 lesson at the same time as MATHEMATICS, for a Primary 6 student: the level only gives a note
         NewLesson wrongLevelAndClashing = new NewLesson(new Subject("Art"), new Level("Primary 4"),
                 MATHEMATICS.getTimeslot(), new Fee("30"));
 
         assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), wrongLevelAndClashing),
-                typicalModel(), MESSAGE_LEVEL_MISMATCH);
+                typicalModel(), CLASH_WITH_MATHEMATICS);
     }
 
     //// a failed command creates nothing
@@ -569,14 +583,19 @@ public class AddCommandTest {
         // assertCommandFailure compares the whole data, including the ID counters
         NewLesson clashing = newLesson("History", "Primary 6", DayOfWeek.MONDAY, 16, 0, 17, 0);
 
-        assertCommandFailure(new AddCommand(DANIEL_DETAILS, clashing), typicalModel(), MESSAGE_LESSON_CLASH);
+        assertCommandFailure(new AddCommand(DANIEL_DETAILS, clashing), typicalModel(), CLASH_WITH_MATHEMATICS);
     }
 
     @Test
-    public void execute_newStudentAndNewLessonOfDifferentLevels_createsNeitherAndUsesNoId() {
+    public void execute_newStudentAndNewLessonOfDifferentLevels_createsBothWithNote() throws Exception {
         NewLesson primaryFour = newLesson("Art", "Primary 4", DayOfWeek.TUESDAY, 10, 0, 11, 0);
+        Model model = typicalModel();
 
-        assertCommandFailure(new AddCommand(DANIEL_DETAILS, primaryFour), typicalModel(), MESSAGE_LEVEL_MISMATCH);
+        String feedback = new AddCommand(DANIEL_DETAILS, primaryFour).execute(model).getFeedbackToUser();
+
+        assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_LEVEL_MISMATCH, DANIEL.getName(),
+                DANIEL.getLevel(), "Primary 4")));
+        assertTrue(model.findStudentWithSameName(DANIEL.getName()).isPresent());
     }
 
     @Test
@@ -586,21 +605,29 @@ public class AddCommandTest {
     }
 
     @Test
-    public void execute_newStudentAndExistingLessonOfAnotherLevel_createsNoStudent() {
-        // a Primary 4 student cannot join MATHEMATICS, which is Primary 6
+    public void execute_levelMismatch_enrollsWithNote() throws Exception {
+        // a Primary 4 student joins MATHEMATICS, which is Primary 6
         NewStudent primaryFour = new NewStudent(DANIEL.getName(), DANIEL.getContact(), new Level("Primary 4"));
+        Model model = typicalModel();
 
-        assertCommandFailure(new AddCommand(primaryFour, new ExistingLesson(MATHEMATICS.getId())), typicalModel(),
-                MESSAGE_LEVEL_MISMATCH);
+        String feedback = new AddCommand(primaryFour, new ExistingLesson(MATHEMATICS.getId())).execute(model)
+                .getFeedbackToUser();
+
+        assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_LEVEL_MISMATCH,
+                DANIEL.getName(), "Primary 4", MATHEMATICS.getLevel())));
+        assertTrue(model.findStudentWithSameName(DANIEL.getName()).isPresent());
     }
 
     @Test
-    public void execute_newLessonAndMismatchedExistingStudent_createsNoLesson() {
+    public void execute_newLessonAndMismatchedExistingStudent_createsLessonWithNote() throws Exception {
         // ALICE is Primary 6; the new lesson is Primary 4
         NewLesson primaryFour = newLesson("Art", "Primary 4", DayOfWeek.TUESDAY, 10, 0, 11, 0);
 
-        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), primaryFour), typicalModel(),
-                MESSAGE_LEVEL_MISMATCH);
+        String feedback = new AddCommand(new ExistingStudent(ALICE.getId()), primaryFour).execute(typicalModel())
+                .getFeedbackToUser();
+
+        assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_LEVEL_MISMATCH, ALICE.getName(),
+                ALICE.getLevel(), "Primary 4")));
     }
 
     private static Model typicalModel() {
@@ -612,5 +639,62 @@ public class AddCommandTest {
         return new NewLesson(new Subject(subject), new Level(level),
                 new Timeslot(day, LocalTime.of(startHour, startMinute), LocalTime.of(endHour, endMinute)),
                 new Fee("40.00"));
+    }
+
+    //// near-duplicates and notes
+
+    @Test
+    public void execute_newStudentSameNameDifferentCase_rejectedAsDuplicate() {
+        NewStudent lowerCase = new NewStudent(new Name("alice tan"), ALICE.getContact(), ALICE.getLevel());
+        assertCommandFailure(new AddCommand(lowerCase, new ExistingLesson(MATHEMATICS.getId())), typicalModel(),
+                String.format(MESSAGE_DUPLICATE_STUDENT, ALICE.getId()));
+    }
+
+    @Test
+    public void execute_newLessonSubjectDifferentCase_rejectedAsIdentical() {
+        NewLesson lowerCase = new NewLesson(new Subject("mathematics"), MATHEMATICS.getLevel(),
+                MATHEMATICS.getTimeslot(), MATHEMATICS.getFee());
+        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), lowerCase), typicalModel(),
+                String.format(MESSAGE_DUPLICATE_LESSON, MATHEMATICS.getId()));
+    }
+
+    @Test
+    public void execute_newStudentSameNameDifferentContact_enrollsWithNote() throws Exception {
+        NewStudent namesake = new NewStudent(ALICE.getName(), new Contact("99990000"), ALICE.getLevel());
+        String feedback = new AddCommand(namesake, new ExistingLesson(MATHEMATICS.getId()))
+                .execute(typicalModel()).getFeedbackToUser();
+        assertTrue(feedback.endsWith("\n" + String.format(MESSAGE_NOTE_SAME_NAME, ALICE.getName(), ALICE.getId())));
+    }
+
+    @Test
+    public void execute_oneDigitHourSameAsExisting_rejectedAsIdentical() throws Exception {
+        Model model = typicalModel();
+        Lesson morning = model.addLesson(new Subject("Art"), new Level("Primary 6"),
+                new Timeslot(DayOfWeek.SUNDAY, LocalTime.of(9, 0), LocalTime.of(10, 0)), new Fee("40"));
+        AddCommand command = new AddCommandParser()
+                .parse(" s/1 l/Art llv/Primary 6 d/Sunday st/9:00 et/10:00 f/40");
+
+        assertCommandFailure(command, model, String.format(MESSAGE_DUPLICATE_LESSON, morning.getId()));
+    }
+
+    @Test
+    public void execute_severalNotes_eachOnItsOwnLineInOrder() throws Exception {
+        // a new Primary 4 student named like ALICE, but with another contact, joins a new free Primary 6 lesson on
+        // Sunday, when the typical data has no lesson
+        String feedback = new AddCommand(
+                new NewStudent(ALICE.getName(), new Contact("99990000"), new Level("Primary 4")),
+                newFreeLesson("Art", "Primary 6", DayOfWeek.SUNDAY))
+                .execute(typicalModel()).getFeedbackToUser();
+
+        String[] lines = feedback.split("\n");
+        assertEquals(4, lines.length);
+        assertTrue(lines[1].startsWith("Note: another student named"));
+        assertTrue(lines[2].contains("differs from the lesson's level"));
+        assertEquals(MESSAGE_NOTE_FREE_LESSON, lines[3]);
+    }
+
+    private static NewLesson newFreeLesson(String subject, String level, DayOfWeek day) {
+        return new NewLesson(new Subject(subject), new Level(level),
+                new Timeslot(day, LocalTime.of(10, 0), LocalTime.of(11, 0)), new Fee("0"));
     }
 }

@@ -7,6 +7,8 @@ import static seedu.address.testutil.Assert.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.model.lesson.LessonId;
+
 public class StudentIdTest {
 
     @Test
@@ -40,6 +42,12 @@ public class StudentIdTest {
         assertFalse(id.equals(12)); // an int is not a StudentId
         assertFalse(id.equals(new StudentId(13)));
         assertEquals(id.hashCode(), new StudentId(12).hashCode());
+    }
+
+    @Test
+    public void equals_idOfAnotherKindWithTheSameNumber_returnsFalse() {
+        assertFalse(new StudentId(12).equals(new LessonId(12)));
+        assertFalse(new LessonId(12).equals(new StudentId(12)));
     }
 
     @Test

@@ -72,7 +72,8 @@ public class ModelManager implements Model {
     public ModelManager(ReadOnlyTuiTracker tuiTracker, ReadOnlyUserPrefs userPrefs, Clock clock) {
         requireAllNonNull(tuiTracker, userPrefs, clock);
 
-        logger.fine("Initializing with TuiTracker: " + tuiTracker + " and user prefs " + userPrefs);
+        logger.fine("Initializing with " + tuiTracker.getStudentList().size() + " students, "
+                + tuiTracker.getLessonList().size() + " lessons and user prefs " + userPrefs);
 
         this.tuiTracker = new TuiTracker(tuiTracker);
         this.userPrefs = new UserPrefs(userPrefs);
@@ -139,6 +140,11 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public Optional<Student> findStudentWithSameName(Name name) {
+        return tuiTracker.findStudentWithSameName(name);
+    }
+
+    @Override
     public Optional<Lesson> findIdenticalLesson(Subject subject, Level level, Timeslot timeslot) {
         return tuiTracker.findIdenticalLesson(subject, level, timeslot);
     }
@@ -151,6 +157,11 @@ public class ModelManager implements Model {
     @Override
     public boolean hasClash(Timeslot timeslot) {
         return tuiTracker.hasClash(timeslot);
+    }
+
+    @Override
+    public Optional<Lesson> findClash(Timeslot timeslot) {
+        return tuiTracker.findClash(timeslot);
     }
 
     @Override
