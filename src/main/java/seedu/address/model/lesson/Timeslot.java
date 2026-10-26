@@ -26,7 +26,8 @@ public class Timeslot {
     public static final String MESSAGE_INVALID_END_TIME =
             "Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start "
             + "time.";
-    public static final String MESSAGE_MIDNIGHT_END = "A lesson cannot end at 24:00. To end at midnight, use 23:59.";
+    public static final String MESSAGE_MIDNIGHT_END =
+            "A lesson cannot end at 24:00 or 00:00. To end at midnight, use 23:59.";
     public static final String MESSAGE_END_BEFORE_START = "Invalid end time. A lesson must end later on the same day "
             + "it starts, so it cannot run past midnight. To teach past midnight, split it into two lessons, such as "
             + "23:00-23:59 and 00:00-01:00 the next day.";

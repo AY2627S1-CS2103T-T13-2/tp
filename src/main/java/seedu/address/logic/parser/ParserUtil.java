@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.math.BigInteger;
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalTime;
 
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -26,6 +27,8 @@ public class ParserUtil {
     public static final String MESSAGE_INVALID_ID = "ID must be a positive whole number.";
 
     private static final String DIGITS_ONLY = "\\d+";
+    /** The longest lesson that an end time earlier than the start is taken to mean, by running past midnight. */
+    private static final Duration LONGEST_LESSON_PAST_MIDNIGHT = Duration.ofHours(6);
 
     /**
      * Returns true if {@code test} has the syntax of an ID: digits only, no sign or decimal point, and not zero.
@@ -156,7 +159,10 @@ public class ParserUtil {
     }
 
     /**
-     * Parses a {@code String time} written exactly as {@code HH:mm} into the end time of a lesson.
+     * Parses a {@code String time} in the 24-hour format into the end time of a lesson.
+     * An end time of {@code 24:00} or {@code 00:00} gets a message suggesting {@code 23:59}.
+     * An end time before {@code start} gets a message about lessons past midnight only when running past
+     * midnight would make the lesson 6 hours or shorter; otherwise it is treated as a typing mistake.
      *
      * @param start The start time of the same lesson, which the end time must be later than.
      * @throws ParseException if the given {@code time} is not in that format or is not later than {@code start}.
@@ -169,13 +175,22 @@ public class ParserUtil {
         }
         LocalTime end = Timeslot.parseTime(time)
                 .orElseThrow(() -> new ParseException(Timeslot.MESSAGE_INVALID_END_TIME));
-        if (end.isBefore(start)) {
+        if (end.equals(LocalTime.MIDNIGHT) && !start.equals(LocalTime.MIDNIGHT)) {
+            throw new ParseException(Timeslot.MESSAGE_MIDNIGHT_END);
+        }
+        if (end.isBefore(start) && looksLikePastMidnight(start, end)) {
             throw new ParseException(Timeslot.MESSAGE_END_BEFORE_START);
         }
         if (!Timeslot.isValidTimeslot(start, end)) {
             throw new ParseException(Timeslot.MESSAGE_INVALID_END_TIME);
         }
         return end;
+    }
+
+    /** Returns true if a lesson from {@code start} to an earlier {@code end} probably runs past midnight. */
+    private static boolean looksLikePastMidnight(LocalTime start, LocalTime end) {
+        Duration lengthPastMidnight = Duration.ofDays(1).minus(Duration.between(end, start));
+        return lengthPastMidnight.compareTo(LONGEST_LESSON_PAST_MIDNIGHT) <= 0;
     }
 
     /**
