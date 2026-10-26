@@ -2,6 +2,8 @@ package seedu.address.model;
 
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.util.Objects;
+
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.lesson.LessonId;
 import seedu.address.model.student.StudentId;
@@ -13,6 +15,9 @@ import seedu.address.model.student.StudentId;
  */
 public class IdGenerator {
 
+    /** The ID of the first student and of the first lesson. */
+    public static final int FIRST_ID = 1;
+
     private int nextStudentId;
     private int nextLessonId;
 
@@ -20,7 +25,7 @@ public class IdGenerator {
      * Creates a generator whose first student ID and first lesson ID are both 1.
      */
     public IdGenerator() {
-        this(1, 1);
+        this(FIRST_ID, FIRST_ID);
     }
 
     /**
@@ -56,14 +61,6 @@ public class IdGenerator {
     }
 
     /**
-     * Sets both counters, without ever lowering one below its current value.
-     */
-    public void raiseTo(int minimumNextStudentId, int minimumNextLessonId) {
-        nextStudentId = Math.max(nextStudentId, minimumNextStudentId);
-        nextLessonId = Math.max(nextLessonId, minimumNextLessonId);
-    }
-
-    /**
      * Sets both counters to exactly the given values.
      */
     public void reset(int nextStudentId, int nextLessonId) {
@@ -89,7 +86,7 @@ public class IdGenerator {
 
     @Override
     public int hashCode() {
-        return 31 * Integer.hashCode(nextStudentId) + Integer.hashCode(nextLessonId);
+        return Objects.hash(nextStudentId, nextLessonId);
     }
 
     @Override
