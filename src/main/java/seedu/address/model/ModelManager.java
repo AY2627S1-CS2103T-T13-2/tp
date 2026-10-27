@@ -64,6 +64,7 @@ public class ModelManager implements Model {
     private DayOfWeek filteredByDay;
     private Subject filteredBySubject;
     private Level filteredByLevel;
+    private Boolean filteredByPaid;
 
     /**
      * Initializes a ModelManager with the given tuiTracker, userPrefs and clock.
@@ -264,6 +265,13 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public void filterStudentsByPaymentStatus(boolean paid) {
+        clearFilterFields();
+        filteredByPaid = paid;
+        refreshFilters();
+    }
+
+    @Override
     public void filterLessonsByDay(DayOfWeek day) {
         requireNonNull(day);
         clearFilterFields();
@@ -292,6 +300,7 @@ public class ModelManager implements Model {
         filteredByDay = null;
         filteredBySubject = null;
         filteredByLevel = null;
+        filteredByPaid = null;
     }
 
     /**
@@ -304,10 +313,16 @@ public class ModelManager implements Model {
         final DayOfWeek dayFilter = filteredByDay;
         final Subject subjectFilter = filteredBySubject;
         final Level levelFilter = filteredByLevel;
+        final Boolean paidFilter = filteredByPaid;
 
-        Predicate<Student> studentPredicate = lessonFilter == null
-                ? student -> true
-                : student -> tuiTracker.isEnrolled(student.getId(), lessonFilter);
+        Predicate<Student> studentPredicate;
+        if (lessonFilter != null) {
+            studentPredicate = student -> tuiTracker.isEnrolled(student.getId(), lessonFilter);
+        } else if (paidFilter != null) {
+            studentPredicate = student -> student.isPaid(currentMonth()) == paidFilter;
+        } else {
+            studentPredicate = student -> true;
+        }
         Predicate<Lesson> lessonPredicate;
         if (studentFilter != null) {
             lessonPredicate = lesson -> tuiTracker.isEnrolled(studentFilter, lesson.getId());

@@ -186,6 +186,11 @@ public interface Model {
     void filterStudentsByLesson(LessonId lessonId);
 
     /**
+     * Shows only students whose current-month payment status matches {@code paid}.
+     */
+    void filterStudentsByPaymentStatus(boolean paid);
+
+    /**
      * Shows only the lessons on the given day, replacing any earlier filter. The student list is unaffected.
      */
     void filterLessonsByDay(DayOfWeek day);

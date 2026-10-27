@@ -122,6 +122,18 @@ public class FilterCommandTest {
     }
 
     @Test
+    public void execute_unpaidGiven_showsUnpaidStudents() {
+        FilterCommand filterCommand = new FilterCommand(false);
+        Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+        expectedModel.filterStudentsByPaymentStatus(false);
+        expectedModel.setListView(ListView.STUDENTS);
+
+        String expectedMessage = String.format(FilterCommand.MESSAGE_SHOWING_PAYMENT_STATUS,
+                expectedModel.getStudentList().size(), "unpaid");
+        assertCommandSuccess(filterCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
     public void execute_studentIdNotFound_throwsCommandException() {
         StudentId missingId = new StudentId(999);
         FilterCommand filterCommand = new FilterCommand(missingId);
@@ -147,6 +159,8 @@ public class FilterCommandTest {
         FilterCommand filterByScience = new FilterCommand(new Subject("Science"), null);
         FilterCommand filterByPrimary6 = new FilterCommand(null, new Level("Primary 6"));
         FilterCommand filterByScienceP6 = new FilterCommand(new Subject("Science"), new Level("Primary 6"));
+        FilterCommand filterByPaid = new FilterCommand(true);
+        FilterCommand filterByUnpaid = new FilterCommand(false);
 
         // same object -> returns true
         assertTrue(filterByAlice.equals(filterByAlice));
@@ -174,6 +188,8 @@ public class FilterCommandTest {
         assertFalse(filterByScience.equals(filterByPrimary6));
         assertFalse(filterByScience.equals(filterByScienceP6));
         assertFalse(filterByPrimary6.equals(filterByScienceP6));
+        assertTrue(filterByPaid.equals(new FilterCommand(true)));
+        assertFalse(filterByPaid.equals(filterByUnpaid));
 
         // null -> returns false
         assertFalse(filterByAlice.equals(null));

@@ -214,6 +214,16 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void filterStudentsByPaymentStatus_showsMatchingStudents() {
+        modelManager.filterStudentsByPaymentStatus(true);
+        assertEquals(Collections.singletonList(BRYAN), modelManager.getStudentList());
+
+        modelManager.filterStudentsByPaymentStatus(false);
+        assertEquals(Arrays.asList(ALICE, CHLOE), modelManager.getStudentList());
+        assertEquals(4, modelManager.getLessonList().size());
+    }
+
+    @Test
     public void filterLessonsBySubjectAndLevel_subjectOnly_ignoresLetterCase() {
         modelManager.filterLessonsBySubjectAndLevel(new Subject("science"), null);
 

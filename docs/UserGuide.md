@@ -356,6 +356,7 @@ Format: `filter student|lesson ID`, `filter day DAY` or `filter [l/SUBJECT] [llv
 * Shows a student's lessons: `filter student ID`.
 * Shows a lesson's students: `filter lesson ID`.
 * Shows a day's lessons: `filter day DAY`.
+* Shows students by current-month payment status: `filter paid` or `filter unpaid`.
 * Shows lessons by subject, level, or both: `filter l/SUBJECT`, `filter llv/LESSON_LEVEL` or `filter l/SUBJECT llv/LESSON_LEVEL`. At least one of `l/` and `llv/` must be given, and they can be in any order. When both are given, only lessons matching both are shown.
 * `SUBJECT` and `LESSON_LEVEL` must match the lesson's subject and level exactly; letter case is ignored. For example, `l/mathematics` matches `Mathematics` but `l/Math` does not.
 * The `ID` refers to the student ID or lesson ID shown in the displayed list, not its position in the list.
@@ -368,6 +369,7 @@ Format: `filter student|lesson ID`, `filter day DAY` or `filter [l/SUBJECT] [llv
 Examples:
 * `filter student 1` shows only the lessons that the student with ID `1` is enrolled in.
 * `filter lesson 2` shows only the students enrolled in the lesson with ID `2`.
+* `filter unpaid` shows only students who have not been marked as paid for the current month.
 * `filter day Monday` shows only the lessons that take place on Monday.
 * `filter l/Mathematics` shows only the Mathematics lessons.
 * `filter llv/Primary 6` shows only the Primary 6 lessons.

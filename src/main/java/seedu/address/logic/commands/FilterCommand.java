@@ -29,7 +29,7 @@ public class FilterCommand extends Command {
     public static final String COMMAND_WORD = "filter";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + " student|lesson ID or " + COMMAND_WORD + " day DAY or "
-            + COMMAND_WORD + " [l/SUBJECT] [llv/LESSON_LEVEL]";
+            + COMMAND_WORD + " paid|unpaid or " + COMMAND_WORD + " [l/SUBJECT] [llv/LESSON_LEVEL]";
 
     public static final String MESSAGE_SHOWING_LESSONS = "Showing %1$d lesson(s) for student ID %2$s.";
 
@@ -38,6 +38,7 @@ public class FilterCommand extends Command {
     public static final String MESSAGE_SHOWING_LESSONS_ON_DAY = "Showing %1$d lesson(s) on %2$s.";
 
     public static final String MESSAGE_SHOWING_LESSONS_MATCHING = "Showing %1$d lesson(s) with %2$s.";
+    public static final String MESSAGE_SHOWING_PAYMENT_STATUS = "Showing %1$d %2$s student(s).";
 
     /**
      * Only one kind of filter is set: the student, the lesson, the day, or the subject and level.
@@ -48,6 +49,7 @@ public class FilterCommand extends Command {
     private final DayOfWeek day;
     private final Subject subject;
     private final Level level;
+    private final Boolean paid;
 
     /**
      * Creates a command that shows only the lessons the given student is enrolled in.
@@ -58,6 +60,7 @@ public class FilterCommand extends Command {
         this.day = null;
         this.subject = null;
         this.level = null;
+        this.paid = null;
     }
 
     /**
@@ -69,6 +72,7 @@ public class FilterCommand extends Command {
         this.day = null;
         this.subject = null;
         this.level = null;
+        this.paid = null;
     }
 
     /**
@@ -80,6 +84,7 @@ public class FilterCommand extends Command {
         this.day = requireNonNull(day);
         this.subject = null;
         this.level = null;
+        this.paid = null;
     }
 
     /**
@@ -93,6 +98,17 @@ public class FilterCommand extends Command {
         this.day = null;
         this.subject = subject;
         this.level = level;
+        this.paid = null;
+    }
+
+    /** Creates a command that shows students matching the current-month payment status. */
+    public FilterCommand(boolean paid) {
+        this.studentId = null;
+        this.lessonId = null;
+        this.day = null;
+        this.subject = null;
+        this.level = null;
+        this.paid = paid;
     }
 
     @Override
@@ -126,6 +142,13 @@ public class FilterCommand extends Command {
             model.setListView(ListView.LESSONS);
             return new CommandResult(String.format(MESSAGE_SHOWING_LESSONS_ON_DAY, model.getLessonList().size(),
                     Timeslot.dayName(day)));
+        }
+
+        if (paid != null) {
+            model.filterStudentsByPaymentStatus(paid);
+            model.setListView(ListView.STUDENTS);
+            return new CommandResult(String.format(MESSAGE_SHOWING_PAYMENT_STATUS, model.getStudentList().size(),
+                    paid ? "paid" : "unpaid"));
         }
 
         model.filterLessonsBySubjectAndLevel(subject, level);
@@ -163,12 +186,13 @@ public class FilterCommand extends Command {
                 && Objects.equals(lessonId, otherFilterCommand.lessonId)
                 && Objects.equals(day, otherFilterCommand.day)
                 && Objects.equals(subject, otherFilterCommand.subject)
-                && Objects.equals(level, otherFilterCommand.level);
+                && Objects.equals(level, otherFilterCommand.level)
+                && Objects.equals(paid, otherFilterCommand.paid);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(studentId, lessonId, day, subject, level);
+        return Objects.hash(studentId, lessonId, day, subject, level, paid);
     }
 
     @Override
@@ -179,6 +203,7 @@ public class FilterCommand extends Command {
                 .add("day", day)
                 .add("subject", subject)
                 .add("level", level)
+                .add("paid", paid)
                 .toString();
     }
 }

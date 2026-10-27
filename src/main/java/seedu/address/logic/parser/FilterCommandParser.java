@@ -29,6 +29,8 @@ public class FilterCommandParser implements Parser<FilterCommand> {
     private static final String KEYWORD_STUDENT = "student";
     private static final String KEYWORD_LESSON = "lesson";
     private static final String KEYWORD_DAY = "day";
+    private static final String KEYWORD_PAID = "paid";
+    private static final String KEYWORD_UNPAID = "unpaid";
 
     /**
      * Parses the given {@code String} of arguments in the context of the FilterCommand
@@ -45,7 +47,15 @@ public class FilterCommandParser implements Parser<FilterCommand> {
             return parseSubjectAndLevel(argMultimap);
         }
 
-        String[] parts = args.trim().split("\\s+");
+        String trimmedArgs = args.trim();
+        if (trimmedArgs.equals(KEYWORD_PAID)) {
+            return new FilterCommand(true);
+        }
+        if (trimmedArgs.equals(KEYWORD_UNPAID)) {
+            return new FilterCommand(false);
+        }
+
+        String[] parts = trimmedArgs.split("\\s+");
 
         if (parts.length != 2 || parts[0].isEmpty()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, FilterCommand.MESSAGE_USAGE));

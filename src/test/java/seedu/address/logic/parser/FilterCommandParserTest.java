@@ -47,6 +47,13 @@ public class FilterCommandParserTest {
     }
 
     @Test
+    public void parse_paymentStatus_returnsFilterCommand() {
+        assertParseSuccess(parser, "paid", new FilterCommand(true));
+        assertParseSuccess(parser, "unpaid", new FilterCommand(false));
+        assertParseSuccess(parser, "  unpaid  ", new FilterCommand(false));
+    }
+
+    @Test
     public void parse_validSubjectAndLevelArgs_returnsFilterCommand() {
         Subject subject = new Subject("Additional Mathematics");
         Level level = new Level("Secondary 3");
