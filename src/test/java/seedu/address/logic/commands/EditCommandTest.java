@@ -286,7 +286,23 @@ public class EditCommandTest {
     }
 
     @Test
-    public void execute_partialTimeMakesEndNotLaterThanStart_throwsCommandException() {
+    public void execute_endAtMidnight_throwsCommandExceptionSuggesting2359() {
+        LessonEdit edit = new LessonEdit(MATHEMATICS.getId(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.of(LocalTime.MIDNIGHT), Optional.empty());
+
+        assertCommandFailure(new EditCommand(edit), typicalModel(), Timeslot.MESSAGE_MIDNIGHT_END);
+    }
+
+    @Test
+    public void execute_shortLessonPastMidnight_throwsCommandExceptionSuggestingSplit() {
+        LessonEdit edit = new LessonEdit(MATHEMATICS.getId(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.of(LocalTime.of(23, 0)), Optional.of(LocalTime.of(0, 59)), Optional.empty());
+
+        assertCommandFailure(new EditCommand(edit), typicalModel(), Timeslot.MESSAGE_END_BEFORE_START);
+    }
+
+    @Test
+    public void execute_movedStartAfterStoredEnd_throwsCommandExceptionAskingForLaterEnd() {
         LessonEdit edit = new LessonEdit(MATHEMATICS.getId(), Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.of(LocalTime.of(17, 0)), Optional.empty(), Optional.empty());
 
