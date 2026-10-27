@@ -419,11 +419,27 @@ Examples:
 
 Shows all recurring lessons in a Monday-to-Sunday weekly timeline. Each day runs from 00:00 to 23:59 at the same time scale. Lesson bars span their actual start and end times and show the time and subject; taller bars also show the level and a student summary. Short lessons have a thin duration mark beside a clickable label. Select a bar or label to open a scrollable details window with a separate card for each lesson, including its ID, fee, and enrolled students. A day with no lessons shows `No lessons`; a lesson with no students shows `No students` in its details.
 
-**Format:** `schedule`
+**Format:** `schedule [student ID]`
 
-The schedule repeats each week because lessons are stored by weekday and time, without calendar dates. It includes all lessons even when a student or lesson filter is active. The current weekday is outlined. Scroll horizontally to see all seven day columns, and scroll within a day to move through its 24-hour timeline. Lessons whose labels would overlap are grouped into one clickable bar or marker; the details window keeps every lesson separate. A group does not necessarily mean a timetable clash. Actual overlapping times are highlighted, with a warning naming the affected day. Use `list` or `filter` to switch back to a student or lesson list.
+Use `schedule` to show all lessons, or `schedule student 1` to show only the lessons attended by student `1`. The `student` keyword ignores letter case. The ID must be a positive whole number belonging to an existing student. An empty schedule for an existing student still shows all seven days with `No lessons`. Neither form changes an active list filter; entering plain `schedule` removes any earlier student selection from the schedule.
 
-If there are no lessons, the result box shows `No lessons are scheduled for this week.` Any argument after `schedule` produces `Unknown parameter. Use: schedule`.
+The schedule repeats each week because lessons are stored by weekday and time, without calendar dates. The current weekday is outlined. Scroll horizontally to see all seven day columns, and scroll within a day to move through its 24-hour timeline. Lessons whose labels would overlap are grouped into one clickable bar or marker; the details window keeps every lesson separate. A group does not necessarily mean a timetable clash. Actual overlapping times are highlighted, with a warning naming the affected day. Use `list` or `filter` to switch back to a student or lesson list.
+
+The schedule can be explored entirely from the keyboard:
+
+| Key | Action |
+|-----|--------|
+| `F6` | Move focus from the command box to Monday in the schedule. |
+| `Left` / `Right` | Move to the previous or next day. |
+| `Up` / `Down` | Move between that day's lesson bars or markers. On an empty day, scroll by one hour. |
+| `Enter` / `Space` | From a day heading, select its first lesson; from a lesson, open its details. |
+| `Page Up` / `Page Down`, `Home` / `End` | Scroll the focused day through its 24-hour timeline. |
+| `Tab` | Move through the details window's scrollable cards and Close button. |
+| `Esc` | Close the details window; press it again to return to the command box. |
+
+When focus moves to a day or lesson, the schedule scrolls to keep it visible. The focused heading or lesson is highlighted.
+
+If there are no lessons, the result box shows `No lessons are scheduled for this week.` An ID with no matching student shows `No student found with ID 999.` (using the entered ID). A missing ID or extra text shows `Invalid command format. Use: schedule [student ID]`; an unknown keyword shows `Unknown parameter. Use: schedule [student ID]`. Invalid IDs use the same ID error messages as other commands.
 
 ### Exiting the program: `exit`
 
@@ -476,6 +492,7 @@ Action     | Format, Examples
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
 **Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
 **Unmark** | `unmark ID` <br> e.g., `unmark 1`, `unmark 0012`
-**Schedule** | `schedule` <br> Shows recurring lessons from Monday to Sunday
+**Schedule** | `schedule [student ID]` <br> e.g., `schedule`, `schedule student 1`; shows recurring lessons from Monday to Sunday
+**Sort** | `sort student name\|payment [asc\|desc]` or `sort lesson subject\|fee\|time [asc\|desc]` <br> e.g., `sort student name`, `sort lesson fee desc`
 **Help**   | `help`
 **Exit**   | `exit`

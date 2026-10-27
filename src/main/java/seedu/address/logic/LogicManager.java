@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -117,6 +118,11 @@ public class LogicManager implements Logic {
     }
 
     @Override
+    public Optional<StudentId> getScheduleStudentId() {
+        return model.getScheduleStudentId();
+    }
+
+    @Override
     public ReadOnlyObjectProperty<ListView> listViewProperty() {
         return model.listViewProperty();
     }
@@ -134,6 +140,11 @@ public class LogicManager implements Logic {
     @Override
     public boolean isPaid(StudentId studentId) {
         return model.isPaid(studentId);
+    }
+
+    @Override
+    public void refreshPaymentStatus() {
+        model.refreshPaymentStatus();
     }
 
     @Override

@@ -247,24 +247,6 @@ The activity diagram summarizes format validation, lookup, deletion, enrollment 
 
 <puml src="diagrams/DeleteActivityDiagram.puml" alt="Activity Diagram for Deleting a Student or Lesson" />
 
-### Schedule feature
-
-`schedule` displays recurring lessons from Monday to Sunday. There is no date or `/week` parameter because a lesson stores a weekday and timeslot rather than a calendar date. `ScheduleCommandParser` accepts only whitespace after the command word; other arguments cause `Unknown parameter. Use: schedule` without switching the displayed panel.
-
-`ScheduleCommand` checks whether the complete lesson collection is empty, selects `ListView.SCHEDULE`, and returns either `Showing weekly schedule.` or `No lessons are scheduled for this week.` It does not clear an active filter. `MainWindow` observes the view change and displays its dedicated `SchedulePanel`. As with other successful commands, `LogicManager` passes the current tracker to `Storage` before returning the result, although `schedule` changes no student, lesson or enrollment data.
-
-The command sequence is separated from panel rendering to keep each diagram readable. The first shows parsing and execution of `schedule`; the second shows how the panel builds the seven-day view after the command returns. The invalid-argument path appears in the activity diagram.
-
-<puml src="diagrams/ScheduleCommandSequenceDiagram.puml" alt="Parsing and executing the schedule command" />
-
-`SchedulePanel#refresh()` requests **all** lessons through `Logic#getAllLessons()`, so a list filter cannot hide lessons from the schedule. `ScheduleLayout` initializes all seven days, sorts each day's lessons by start time and ID, detects overlaps, and assigns simultaneous lessons separate horizontal lanes. The panel uses each lesson's start and end times to position its card on the 00:00–23:59 timeline, increasing its vertical scale when needed to keep short lesson cards readable. It reads enrolled students through `Logic#getStudentsIn(LessonId)`; empty days show `No lessons`, and empty lessons show `No students`. The current weekday is outlined, day timelines scroll vertically, individual cards scroll when their details need more space, and the full week scrolls horizontally. If overlaps are present, the affected cards remain visible and the panel shows a warning naming the days.
-
-<puml src="diagrams/ScheduleRenderingSequenceDiagram.puml" alt="Building the weekly schedule panel" />
-
-The activity diagram covers both invalid arguments and the populated or empty weekly view. Its decision diamonds are blank, with conditions on the outgoing flows.
-
-<puml src="diagrams/ScheduleActivityDiagram.puml" alt="Activity diagram for showing the weekly schedule" />
-
 ### List feature
 
 The `list` command clears any active filter and switches the interface to the requested student or lesson list. If no view is supplied, `ListCommandParser` defaults to the student list.
@@ -298,26 +280,26 @@ The sequence diagram below shows the help window being opened by `executeCommand
 
 ### Filter feature
 
-The `filter` command narrows the displayed list down to one student's lessons, one lesson's students, or the lessons on one day of the week. Unlike `add`, it never creates or changes data — it only changes what `Model` currently shows, so its implementation is much smaller.
+The `filter` command narrows the displayed list to one student's lessons, one lesson's students, lessons matching a day, subject or level, or students with a selected payment status. It changes the displayed view without changing saved data.
 
 #### Parsing the arguments
 
-`FilterCommandParser` expects exactly two tokens: a keyword (`student`, `lesson` or `day`) and a value.
+`FilterCommandParser` accepts `student ID`, `lesson ID`, `day DAY`, the bare `paid` or `unpaid` keyword, or one or both of `l/SUBJECT` and `llv/LESSON_LEVEL`.
 
-1. The arguments split into exactly two whitespace-separated tokens; any other shape is rejected with `FilterCommand.MESSAGE_USAGE`.
-2. The first token must be exactly `student`, `lesson` or `day`; any other keyword is rejected the same way.
-3. The second token is parsed using the shared `ParserUtil` methods, which carry the exact error messages: `parseStudentId`/`parseLessonId` for the first two forms, `parseDay` (letter case ignored) for `day`.
+1. The `student`, `lesson` and `day` forms require exactly two whitespace-separated tokens. The payment forms require one token. The subject and level forms use their command prefixes and may be combined.
+2. An incomplete, unknown, mixed or repeated form raises a `ParseException` with a specific message before the view changes.
+3. IDs and days use the shared `ParserUtil` methods. Subject and level values are parsed with the corresponding domain parsers.
 
-The parser builds the matching `FilterCommand` directly — `FilterCommand(StudentId)`, `FilterCommand(LessonId)` or `FilterCommand(DayOfWeek)` — there is no intermediate "reference" object like `AddCommand.StudentRef`/`LessonRef`, because a filter only ever needs an ID or a day, never new details.
+The parser builds the corresponding `FilterCommand` directly. A filter selects existing records and never creates new ones.
 
 #### Executing the command
 
-`FilterCommand#execute(Model)` branches on which of its three fields is set (`studentId`, `lessonId` or `day` — exactly one is non-null):
+`FilterCommand#execute(Model)` branches on the selected filter kind:
 
 1. For `studentId`/`lessonId`, it first confirms the ID refers to an existing student or lesson, otherwise throws a `CommandException` (`MESSAGE_STUDENT_NOT_FOUND` / `MESSAGE_LESSON_NOT_FOUND`). A `DayOfWeek` needs no such check — unlike an ID, every value the parser can produce already refers to something real, so there is nothing to look up or fail to find.
-2. It then delegates to `Model#filterLessonsByStudent(StudentId)`, `Model#filterStudentsByLesson(LessonId)` or `Model#filterLessonsByDay(DayOfWeek)`, and calls `Model#setListView(ListView)` so the UI switches to the list that was just filtered — `LESSONS` for both the student and the day filter, `STUDENTS` for the lesson filter.
+2. It delegates to the matching `Model` filter method and selects the relevant list: `LESSONS` for student, day, subject and level filters; `STUDENTS` for lesson and payment-status filters.
 
-Inside `ModelManager`, at most one of `filteredByStudent` / `filteredByLesson` / `filteredByDay` is ever set — setting one clears the other two, which is what makes all three filters mutually exclusive. The actual filtering is done by `refreshFilters()`, which rebuilds the `Predicate` for both `FilteredList`s from scratch and re-applies it. The day filter only narrows the lesson list (`lesson.getTimeslot().getDay() == dayFilter`) — there is no sensible equivalent predicate for students, since a student has no day of their own, only through the lessons they're enrolled in, so the student list is left unfiltered when filtering by day. `refreshFilters()` is also called after every mutating operation (`addStudent`, `addLesson`, `enroll`, `deleteStudent`, `deleteLesson`), which is why an active filter stays correct even as enrollments change after it was set — the predicate re-checks `Model#isEnrolled` live rather than capturing a snapshot.
+Inside `ModelManager`, setting one filter clears the earlier filter fields. `refreshFilters()` then rebuilds the predicates for both `FilteredList`s. A day, subject or level filter narrows only lessons; payment status narrows only students. Mutating operations reapply the predicates. Payment changes and the month-boundary refresh also re-evaluate the current payment filter and payment sort.
 
 The sequence diagram below shows `execute("filter student 1")`.
 
@@ -327,10 +309,10 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 **Aspect: how the active filter is stored**
 
-* **Alternative 1 (current choice):** three nullable fields in `ModelManager` (`filteredByStudent`, `filteredByLesson`, `filteredByDay`), each clearing the other two when set.
-  * Pros: Simple; `resetFilters()` and the delete commands just null all three fields out.
-  * Cons: The "at most one is set" invariant is enforced by convention (every setter must remember to clear the other two), not by the type system. Adding a filter kind multiplies this by one more field each time.
-* **Alternative 2:** a small sealed type, similar to `AddCommand.StudentRef`/`LessonRef`, representing "no filter / filtered by student / filtered by lesson / filtered by day".
+* **Alternative 1 (current choice):** six nullable fields in `ModelManager`, one each for student, lesson, day, subject, level and paid status. The subject and level fields may be set together; every other filter setter clears the previous fields.
+  * Pros: Each predicate can read the fields it needs, and `resetFilters()` clears them in one place.
+  * Cons: The valid combinations are enforced by the setters rather than the type system, so a new filter setter must clear the previous fields correctly.
+* **Alternative 2:** a sealed type representing each filter form, including the combined subject and level form.
   * Pros: The compiler guarantees exactly one state at a time, and scales to more filter kinds without more fields.
   * Cons: More machinery for a feature this small; `ModelManager` would need to unwrap the sealed type everywhere `refreshFilters()` uses it.
 
@@ -354,11 +336,43 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 **Aspect: clearing the filter when its target is deleted**
 
-`deleteStudent`/`deleteLesson` check whether the ID being deleted is the one currently filtered on, and clear the filter if so, before calling `refreshFilters()`. This was a deliberate choice over leaving the filter as-is: an active filter pointing at a now-deleted ID would otherwise just show an empty list with no indication why, which would confuse the user more than falling back to the full list. The day filter needs no such check, since a day is never deleted.
+`deleteStudent` and `deleteLesson` call `refreshFilters()` without clearing the active filter. If the deleted record was the filter target, the relevant list becomes empty until the user runs another `filter` or `list`. This keeps deletion from changing the user's selected filter.
 
 #### Testing
 
-`FilterCommandParserTest` covers the valid `student`/`lesson`/`day` forms, malformed argument counts, an unknown keyword, an invalid ID and an invalid day name. `FilterCommandTest` covers all three successful filters (checking the resulting model and list view), both not-found cases, and `equals()`.
+`FilterCommandParserTest` covers the student, lesson, day, payment, subject and level forms, including malformed arguments. `FilterCommandTest` checks the resulting model and list view, missing IDs and command equality. `ModelManagerTest` checks that payment filters update after payment changes and a month rollover.
+
+### Schedule feature
+
+The `schedule` command shows all recurring lessons, while `schedule student ID` limits the same weekly view to lessons attended by that student. Both forms keep the active list filter unchanged.
+
+Lessons recur by weekday and time, so the schedule has no calendar date or `/week` option. `LogicManager` treats the command as read-only and does not save the tracker when it runs.
+
+`ScheduleCommandParser` accepts either no arguments or exactly two tokens: the case-insensitive keyword `student` and an ID parsed by `ParserUtil.parseStudentId`. It throws a `ParseException` for a missing ID, extra tokens, an unknown keyword, or an invalid ID. The shared ID parser supplies the invalid and oversized ID messages.
+
+`ScheduleCommand#execute` checks `Model#findStudent` before changing view state. A missing student causes a `CommandException` with `MESSAGE_STUDENT_NOT_FOUND`; the existing view and schedule selection remain unchanged. For a valid command, it sets the optional schedule student ID in `ModelManager`, then switches to `ListView.SCHEDULE`. The ID is transient view state and does not change stored students, lessons, enrollments, or list filters. Plain `schedule` clears this schedule selection and shows every lesson.
+
+The first sequence diagram shows parsing and execution for `schedule student 1`. The rendering sequence and activity diagram below cover the panel and error paths separately to keep each diagram readable.
+
+<puml src="diagrams/ScheduleCommandSequenceDiagram.puml" alt="Parsing and executing the student schedule command" />
+
+`SchedulePanel#refresh` starts with all lessons. If a student is selected, it keeps only lessons whose IDs appear in `Model#getLessonIdsOf(StudentId)`, then passes them to the existing weekday layout. This keeps the seven-day timeline, empty-day labels, grouping, details cards, and overlap warnings consistent with the lessons currently shown. A student with no enrollments gets an empty weekly view.
+
+`ScheduleLayout` sorts each day's lessons by start time and ID and detects actual time overlaps. The panel groups bars or markers whose labels would collide, and each group opens a scrollable details dialog with a separate card for every lesson. The timeline uses one fixed scale from 00:00 to 23:59; each day scrolls vertically and the week scrolls horizontally. No lessons are hidden when a list filter is active.
+
+<puml src="diagrams/ScheduleRenderingSequenceDiagram.puml" alt="Building the weekly schedule panel" />
+
+The activity diagram uses blank decision diamonds with guards on their outgoing flows.
+
+<puml src="diagrams/ScheduleActivityDiagram.puml" alt="Activity diagram for showing the weekly schedule" />
+
+#### Keyboard navigation
+
+`MainWindow` captures `F6` when the schedule is visible and focuses Monday's heading. Each day heading is a focusable button, including on empty days. `SchedulePanel` handles arrow keys within its own view: Left/Right chooses a day, Up/Down chooses the previous or next lesson, and Page Up/Page Down and Home/End scroll the focused day. The panel adjusts horizontal and vertical scroll positions when focus moves so the focused control stays visible. Pressing Enter or Space uses the button's normal action to enter a day or open lesson details. Escape returns focus to the command box.
+
+The lesson details dialog starts with its scroll area focused. Its cards can be reached with Tab, Escape closes it, and focus returns to the lesson button that opened it. The key handler is attached to the schedule panel, so it does not consume arrow keys while the user is typing a command. Focused headings, lessons, and detail cards have visible highlights.
+
+`ScheduleCommandParserTest` covers accepted and malformed arguments. `ScheduleCommandTest` checks student selection, empty and missing students, unchanged list filters, and resetting to the full schedule.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -494,6 +508,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
 | `* * *` | tutor | list my students with their contact details, levels, lessons, monthly fees, and payment statuses | review my roster and outstanding payments |
 | `* * *` | tutor | list my lessons with their timeslots, fees, and enrolled students | review my teaching schedule |
+| `* * *` | tutor | view the weekly schedule for one student | see when that student's lessons take place |
 | `* * *` | tutor | delete a student and their associated enrollments | remove a student who no longer attends lessons without leaving obsolete enrollments |
 | `* * *` | tutor | delete a lesson and its associated enrollments | remove a cancelled lesson without leaving obsolete enrollments |
 | `* * *` | tutor | mark a student as paid for the current month | track which students have paid |
@@ -764,6 +779,32 @@ _To be written by the owner of `mark`._
 ### Showing a student's lessons or a lesson's students
 
 _To be written by the owner of `filter`._
+
+### Viewing the weekly schedule
+
+1. Enter `schedule student 1` with the sample data.<br>
+   Expected: The weekly schedule shows only student 1's enrolled lessons, while retaining all seven days. The result names the student and ID.
+
+1. Enter `schedule`.<br>
+   Expected: The same weekly view now shows all lessons again.
+
+1. Enter `schedule student 999`.<br>
+   Expected: `No student found with ID 999.` The displayed schedule is unchanged.
+
+1. Enter `schedule student`, `schedule student abc`, and `schedule student 1 extra` separately.<br>
+   Expected: Each command is rejected with a format or ID error. The displayed schedule is unchanged.
+
+1. Create a student who is not enrolled in any lesson, then enter `schedule student ID` using their assigned ID.<br>
+   Expected: All seven days say `No lessons`; the result names the student and says no lessons are scheduled for them.
+
+1. Enter `schedule`, then press `F6` without using the mouse.<br>
+   Expected: Monday's heading receives a visible focus highlight. Use Left/Right to reach Sunday, and Enter or Space on a day with lessons to focus its first lesson.
+
+1. Use Up/Down to move between lessons, then press Enter.<br>
+   Expected: Focus and scrolling follow the selected lesson, and its details window opens. Use Tab to reach each card and the Close button. Press Escape to close it; focus returns to that lesson. Press Escape again to focus the command box.
+
+1. Focus an empty day and use Page Down, Page Up, Home, and End.<br>
+   Expected: Its timeline can be scrolled from 00:00 to 23:59 without using the mouse. Other day columns keep their own scroll positions.
 
 ### Saving data
 

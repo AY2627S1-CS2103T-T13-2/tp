@@ -30,10 +30,16 @@ public class SortCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) {
+        requireNonNull(model);
         model.sort(field, ascending);
         model.setListView(entity.equals("student") ? ListView.STUDENTS : ListView.LESSONS);
         return new CommandResult(String.format(MESSAGE_SUCCESS, entity + "s", fieldName,
                 ascending ? "ascending" : "descending"));
+    }
+
+    @Override
+    public boolean isDataMutating() {
+        return false;
     }
 
     @Override

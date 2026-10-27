@@ -8,12 +8,14 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
@@ -21,6 +23,8 @@ import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -32,6 +36,7 @@ import seedu.address.model.lesson.Lesson;
 import seedu.address.model.lesson.LessonId;
 import seedu.address.model.lesson.Timeslot;
 import seedu.address.model.student.Student;
+import seedu.address.model.student.StudentId;
 
 /** A seven-column view of the recurring weekly lesson schedule. */
 public class SchedulePanel extends UiPart<Region> {
@@ -53,26 +58,49 @@ public class SchedulePanel extends UiPart<Region> {
     private static final double DAY_CHROME_WIDTH = 36;
     private static final double PREFERRED_DAY_VIEWPORT_HEIGHT = 600;
     private static final double TIMELINE_WIDTH = RULER_WIDTH + CARD_GAP + CARD_WIDTH + CARD_GAP;
+    private static final double PAGE_SCROLL_FRACTION = 0.8;
 
     private final Logger logger = LogsCenter.getLogger(SchedulePanel.class);
     private final Logic logic;
+    private final Runnable focusCommandBox;
+    private List<DayColumn> days = List.of();
+
+    private record DayColumn(VBox root, Button heading, ScrollPane scroll, List<Button> lessons) { }
 
     @FXML
     private HBox weekColumns;
 
     @FXML
+    private ScrollPane weekScroll;
+
+    @FXML
+    private Label subtitle;
+
+    @FXML
     private Label warningLabel;
 
     /** Creates a schedule panel backed by the current lesson and enrollment data. */
-    public SchedulePanel(Logic logic) {
+    public SchedulePanel(Logic logic, Runnable focusCommandBox) {
         super(FXML);
         this.logic = requireNonNull(logic);
+        this.focusCommandBox = requireNonNull(focusCommandBox);
+        getRoot().addEventFilter(KeyEvent.KEY_PRESSED, this::handleKeyPressed);
         refresh();
     }
 
     /** Rebuilds each weekday column after a command may have changed lessons or enrollments. */
     public void refresh() {
-        Map<DayOfWeek, List<Lesson>> byDay = ScheduleLayout.groupByDay(logic.getAllLessons());
+        Optional<StudentId> selectedStudent = logic.getScheduleStudentId();
+        List<Lesson> lessons = logic.getAllLessons();
+        if (selectedStudent.isPresent()) {
+            Set<LessonId> enrolledLessonIds = Set.copyOf(logic.getLessonIdsOf(selectedStudent.get()));
+            lessons = lessons.stream().filter(lesson -> enrolledLessonIds.contains(lesson.getId())).toList();
+        }
+        subtitle.setText(selectedStudent.map(id -> "Lessons for student ID " + id
+                        + ", Monday to Sunday · Select a bar or marker for details")
+                .orElse("Recurring lessons, Monday to Sunday · Select a bar or marker for details"));
+
+        Map<DayOfWeek, List<Lesson>> byDay = ScheduleLayout.groupByDay(lessons);
         Set<LessonId> overlapping = ScheduleLayout.overlappingLessonIds(byDay);
 
         List<String> clashingDays = byDay.entrySet().stream()
@@ -80,11 +108,12 @@ public class SchedulePanel extends UiPart<Region> {
                 .map(entry -> Timeslot.dayName(entry.getKey()))
                 .collect(Collectors.toList());
 
-        List<VBox> dayColumns = new ArrayList<>();
+        List<DayColumn> dayColumns = new ArrayList<>();
         for (DayOfWeek day : DayOfWeek.values()) {
             dayColumns.add(createDayColumn(day, byDay.get(day), overlapping));
         }
-        weekColumns.getChildren().setAll(dayColumns);
+        days = List.copyOf(dayColumns);
+        weekColumns.getChildren().setAll(days.stream().map(DayColumn::root).toList());
 
         boolean hasClashes = !clashingDays.isEmpty();
         warningLabel.setVisible(hasClashes);
@@ -98,7 +127,147 @@ public class SchedulePanel extends UiPart<Region> {
         }
     }
 
-    private VBox createDayColumn(DayOfWeek day, List<Lesson> lessons, Set<LessonId> overlapping) {
+    /** Focuses Monday so the schedule can be explored without a mouse. */
+    public void focusFirstDay() {
+        assert days.size() == DayOfWeek.values().length : "The schedule must contain every weekday";
+        focusDay(0);
+    }
+
+    private void handleKeyPressed(KeyEvent event) {
+        if (event.getCode() == KeyCode.ESCAPE) {
+            focusCommandBox.run();
+            event.consume();
+            return;
+        }
+
+        if (getRoot().getScene() == null) {
+            return;
+        }
+        Node focusOwner = getRoot().getScene().getFocusOwner();
+        int dayIndex = dayIndexOf(focusOwner);
+        if (dayIndex < 0) {
+            return;
+        }
+
+        DayColumn day = days.get(dayIndex);
+        switch (event.getCode()) {
+            case LEFT:
+                focusDay(Math.max(0, dayIndex - 1));
+                event.consume();
+                break;
+            case RIGHT:
+                focusDay(Math.min(days.size() - 1, dayIndex + 1));
+                event.consume();
+                break;
+            case UP:
+                focusAdjacentLesson(day, focusOwner, -1);
+                event.consume();
+                break;
+            case DOWN:
+                focusAdjacentLesson(day, focusOwner, 1);
+                event.consume();
+                break;
+            case PAGE_UP:
+                scrollDayBy(day.scroll(), -day.scroll().getViewportBounds().getHeight() * PAGE_SCROLL_FRACTION);
+                event.consume();
+                break;
+            case PAGE_DOWN:
+                scrollDayBy(day.scroll(), day.scroll().getViewportBounds().getHeight() * PAGE_SCROLL_FRACTION);
+                event.consume();
+                break;
+            case HOME:
+                day.scroll().setVvalue(0);
+                event.consume();
+                break;
+            case END:
+                day.scroll().setVvalue(1);
+                event.consume();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private int dayIndexOf(Node focused) {
+        for (int index = 0; index < days.size(); index++) {
+            for (Node node = focused; node != null; node = node.getParent()) {
+                if (node == days.get(index).root()) {
+                    return index;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private void focusDay(int index) {
+        DayColumn day = days.get(index);
+        day.heading().requestFocus();
+        scrollDayIntoView(day.root());
+    }
+
+    private void focusAdjacentLesson(DayColumn day, Node focused, int direction) {
+        if (day.lessons().isEmpty()) {
+            scrollDayBy(day.scroll(), direction * PIXELS_PER_HOUR);
+            return;
+        }
+        int currentIndex = day.lessons().indexOf(focused);
+        int nextIndex = currentIndex < 0
+                ? (direction > 0 ? 0 : day.lessons().size() - 1)
+                : currentIndex + direction;
+        if (nextIndex >= 0 && nextIndex < day.lessons().size()) {
+            focusLesson(day, nextIndex);
+        }
+    }
+
+    private void focusLesson(DayColumn day, int index) {
+        Button lesson = day.lessons().get(index);
+        lesson.requestFocus();
+        ScrollPane scroll = day.scroll();
+        double viewportHeight = scroll.getViewportBounds().getHeight();
+        double scrollableHeight = scrollableHeight(scroll);
+        if (scrollableHeight <= 0 || viewportHeight <= 0) {
+            return;
+        }
+        double top = scroll.getVvalue() * scrollableHeight;
+        double lessonTop = lesson.getLayoutY();
+        double lessonBottom = lessonTop + lesson.getPrefHeight();
+        if (lessonTop < top) {
+            scroll.setVvalue(lessonTop / scrollableHeight);
+        } else if (lessonBottom > top + viewportHeight) {
+            scroll.setVvalue(Math.min(1, (lessonBottom - viewportHeight) / scrollableHeight));
+        }
+    }
+
+    private void scrollDayIntoView(VBox day) {
+        double viewportWidth = weekScroll.getViewportBounds().getWidth();
+        double scrollableWidth = Math.max(0, weekColumns.getBoundsInLocal().getWidth() - viewportWidth);
+        if (scrollableWidth <= 0 || viewportWidth <= 0) {
+            return;
+        }
+        double left = weekScroll.getHvalue() * scrollableWidth;
+        double dayLeft = day.getLayoutX();
+        double dayRight = dayLeft + day.getWidth();
+        if (dayLeft < left) {
+            weekScroll.setHvalue(dayLeft / scrollableWidth);
+        } else if (dayRight > left + viewportWidth) {
+            weekScroll.setHvalue(Math.min(1, (dayRight - viewportWidth) / scrollableWidth));
+        }
+    }
+
+    private void scrollDayBy(ScrollPane scroll, double pixels) {
+        double scrollableHeight = scrollableHeight(scroll);
+        if (scrollableHeight > 0) {
+            double nextValue = scroll.getVvalue() + pixels / scrollableHeight;
+            scroll.setVvalue(Math.max(0, Math.min(1, nextValue)));
+        }
+    }
+
+    private double scrollableHeight(ScrollPane scroll) {
+        return Math.max(0, scroll.getContent().getBoundsInLocal().getHeight()
+                - scroll.getViewportBounds().getHeight());
+    }
+
+    private DayColumn createDayColumn(DayOfWeek day, List<Lesson> lessons, Set<LessonId> overlapping) {
         assert lessons.stream().allMatch(lesson -> lesson.getTimeslot().getDay() == day)
                 : "Lessons must be grouped by day";
         List<ScheduleLayout.DisplayGroup> groups = ScheduleLayout.groupForDisplay(lessons,
@@ -113,9 +282,11 @@ public class SchedulePanel extends UiPart<Region> {
         column.setPrefWidth(TIMELINE_WIDTH + DAY_CHROME_WIDTH);
         column.setMaxWidth(TIMELINE_WIDTH + DAY_CHROME_WIDTH);
 
-        Label heading = new Label(Timeslot.dayName(day));
+        Button heading = new Button(Timeslot.dayName(day));
         heading.getStyleClass().add("schedule-day-heading");
-        Pane timeline = createTimeline(groups, overlapping);
+        heading.setAccessibleText(Timeslot.dayName(day) + ", " + lessons.size() + " lessons");
+        List<Button> buttons = new ArrayList<>();
+        Pane timeline = createTimeline(groups, overlapping, buttons);
 
         if (lessons.isEmpty()) {
             Label empty = new Label("No lessons");
@@ -126,7 +297,15 @@ public class SchedulePanel extends UiPart<Region> {
 
         ScrollPane dayScroll = createDayScroll(timeline, TIMELINE_WIDTH);
         column.getChildren().addAll(heading, dayScroll);
-        return column;
+        DayColumn dayColumn = new DayColumn(column, heading, dayScroll, List.copyOf(buttons));
+        heading.setOnAction(event -> {
+            if (buttons.isEmpty()) {
+                dayScroll.requestFocus();
+            } else {
+                focusLesson(dayColumn, 0);
+            }
+        });
+        return dayColumn;
     }
 
     private ScrollPane createDayScroll(Pane timeline, double width) {
@@ -141,7 +320,8 @@ public class SchedulePanel extends UiPart<Region> {
         return dayScroll;
     }
 
-    private Pane createTimeline(List<ScheduleLayout.DisplayGroup> groups, Set<LessonId> overlapping) {
+    private Pane createTimeline(List<ScheduleLayout.DisplayGroup> groups, Set<LessonId> overlapping,
+            List<Button> buttons) {
         double dayHeight = HOURS_PER_DAY * PIXELS_PER_HOUR;
         double height = dayHeight + END_OF_DAY_LABEL_SPACE;
         Pane timeline = new Pane();
@@ -150,7 +330,7 @@ public class SchedulePanel extends UiPart<Region> {
         timeline.setMinSize(TIMELINE_WIDTH, height);
 
         addHourMarkers(timeline, dayHeight);
-        addLessonGroups(timeline, groups, overlapping);
+        addLessonGroups(timeline, groups, overlapping, buttons);
         return timeline;
     }
 
@@ -178,7 +358,7 @@ public class SchedulePanel extends UiPart<Region> {
     }
 
     private void addLessonGroups(Pane timeline, List<ScheduleLayout.DisplayGroup> groups,
-            Set<LessonId> overlapping) {
+            Set<LessonId> overlapping, List<Button> buttons) {
         for (ScheduleLayout.DisplayGroup group : groups) {
             double startY = pixelsAtMinute(group.startMinute());
             double height = pixelsAtMinute(group.endMinute() - group.startMinute());
@@ -201,6 +381,7 @@ public class SchedulePanel extends UiPart<Region> {
             button.relocate(RULER_WIDTH + CARD_GAP + (isShort ? 7 : 0),
                     Math.max(0, Math.min(labelY, HOURS_PER_DAY * PIXELS_PER_HOUR - SHORT_MARKER_LABEL_HEIGHT)));
             timeline.getChildren().add(button);
+            buttons.add(button);
         }
     }
 
@@ -249,7 +430,10 @@ public class SchedulePanel extends UiPart<Region> {
                 : "View details for " + lessons.size() + " lessons between " + range;
         button.setTooltip(new Tooltip(description));
         button.setAccessibleText(description);
-        button.setOnAction(event -> showLessonDetails(group));
+        button.setOnAction(event -> {
+            showLessonDetails(group);
+            button.requestFocus();
+        });
         double buttonHeight = isShort ? SHORT_MARKER_LABEL_HEIGHT : height;
         double buttonWidth = CARD_WIDTH - (isShort ? 7 : 0);
         button.setPrefSize(buttonWidth, buttonHeight);
@@ -260,6 +444,7 @@ public class SchedulePanel extends UiPart<Region> {
 
     private void showLessonDetails(ScheduleLayout.DisplayGroup group) {
         List<Lesson> lessons = group.lessons();
+        assert !lessons.isEmpty() : "A displayed group must contain at least one lesson";
         VBox cards = new VBox(10);
         cards.setPadding(new Insets(4));
         for (Lesson lesson : lessons) {
@@ -269,6 +454,7 @@ public class SchedulePanel extends UiPart<Region> {
         ScrollPane detailsScroll = new ScrollPane(cards);
         detailsScroll.getStyleClass().add("schedule-details-scroll");
         detailsScroll.setFitToWidth(true);
+        detailsScroll.setFocusTraversable(true);
         detailsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         detailsScroll.setPrefViewportWidth(460);
         detailsScroll.setPrefViewportHeight(380);
@@ -280,6 +466,12 @@ public class SchedulePanel extends UiPart<Region> {
         dialogPane.getStylesheets().addAll("view/DarkTheme.css", "view/Extensions.css");
         dialogPane.getStyleClass().add("schedule-details-dialog");
         dialogPane.getButtonTypes().add(ButtonType.CLOSE);
+        dialogPane.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                dialog.close();
+                event.consume();
+            }
+        });
 
         Label heading = new Label(lessons.size() + (lessons.size() == 1 ? " lesson" : " lessons")
                 + " · " + Timeslot.dayName(lessons.get(0).getTimeslot().getDay()) + " "
@@ -288,6 +480,7 @@ public class SchedulePanel extends UiPart<Region> {
         VBox content = new VBox(10, heading, detailsScroll);
         content.getStyleClass().add("schedule-details-content");
         dialogPane.setContent(content);
+        dialog.setOnShown(event -> detailsScroll.requestFocus());
         dialog.showAndWait();
     }
 
@@ -311,6 +504,9 @@ public class SchedulePanel extends UiPart<Region> {
 
         VBox card = new VBox(4, title, time, idAndFee, attendees);
         card.getStyleClass().add("schedule-details-card");
+        card.setFocusTraversable(true);
+        card.setAccessibleText(title.getText() + ", " + time.getText() + ", " + idAndFee.getText()
+                + ", " + attendees.getText());
         return card;
     }
 }

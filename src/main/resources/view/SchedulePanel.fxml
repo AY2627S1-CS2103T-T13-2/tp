@@ -12,10 +12,12 @@
     <Insets top="10" right="10" bottom="10" left="10" />
   </padding>
   <Label text="Weekly schedule" styleClass="schedule-title" />
-  <Label text="Recurring lessons, Monday to Sunday · Select a bar or marker for details"
+  <Label fx:id="subtitle" text="Recurring lessons, Monday to Sunday · Select a bar or marker for details"
          styleClass="schedule-subtitle" />
   <Label fx:id="warningLabel" styleClass="schedule-warning" wrapText="true" />
-  <ScrollPane fitToHeight="true" hbarPolicy="AS_NEEDED" vbarPolicy="NEVER"
+  <Label text="Keyboard: F6 focus · Left/Right change day · Up/Down choose lesson · Enter opens details · Esc returns to command"
+         styleClass="schedule-subtitle" wrapText="true" />
+  <ScrollPane fx:id="weekScroll" fitToHeight="true" hbarPolicy="AS_NEEDED" vbarPolicy="NEVER"
               styleClass="schedule-scroll" VBox.vgrow="ALWAYS">
     <content>
       <HBox fx:id="weekColumns" minHeight="0" prefHeight="0" spacing="8" />

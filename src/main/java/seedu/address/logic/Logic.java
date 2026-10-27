@@ -1,6 +1,7 @@
 package seedu.address.logic;
 
 import java.util.List;
+import java.util.Optional;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.ObservableList;
@@ -36,6 +37,9 @@ public interface Logic {
     /** Returns all lessons, including those excluded by an active filter. */
     List<Lesson> getAllLessons();
 
+    /** Returns the student selected for the schedule, if it is limited to one student. */
+    Optional<StudentId> getScheduleStudentId();
+
     /** Returns which list the main panel should show. Observe it to react when {@code list} switches it. */
     ReadOnlyObjectProperty<ListView> listViewProperty();
 
@@ -47,6 +51,9 @@ public interface Logic {
 
     /** Returns true if the student has been marked as paid for the current month. */
     boolean isPaid(StudentId studentId);
+
+    /** Re-evaluates payment-dependent views when the calendar month changes. */
+    void refreshPaymentStatus();
 
     /**
      * Returns the user prefs' GUI settings.
