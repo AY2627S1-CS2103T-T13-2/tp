@@ -37,7 +37,7 @@ public class CommandBox extends UiPart<Region> {
     @FXML
     private void handleCommandEntered() {
         String commandText = commandTextField.getText();
-        if (commandText.equals("")) {
+        if (isBlankCommand(commandText)) {
             return;
         }
 
@@ -47,6 +47,11 @@ public class CommandBox extends UiPart<Region> {
         } catch (CommandException | ParseException e) {
             setStyleToIndicateCommandFailure();
         }
+    }
+
+    /** Returns whether the input contains no command after whitespace is ignored. */
+    static boolean isBlankCommand(String commandText) {
+        return commandText.isBlank();
     }
 
     /**
