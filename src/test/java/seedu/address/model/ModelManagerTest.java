@@ -222,6 +222,13 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void filterLessonsBySubjectAndLevel_subjectOnly_ignoresExtraSpaces() {
+        modelManager.filterLessonsBySubjectAndLevel(new Subject("  Science  "), null);
+
+        assertEquals(Arrays.asList(SCIENCE_S2, SCIENCE_P6), modelManager.getLessonList());
+    }
+
+    @Test
     public void filterLessonsBySubjectAndLevel_levelOnly_showsLessonsAtThatLevel() {
         modelManager.filterLessonsBySubjectAndLevel(null, new Level("PRIMARY 6"));
 

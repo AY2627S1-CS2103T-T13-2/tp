@@ -330,8 +330,7 @@ public class ModelManager implements Model {
         } else if (dayFilter != null) {
             lessonPredicate = lesson -> lesson.getTimeslot().getDay() == dayFilter;
         } else if (subjectFilter != null || levelFilter != null) {
-            lessonPredicate = lesson -> (subjectFilter == null
-                    || lesson.getSubject().value.equalsIgnoreCase(subjectFilter.value))
+            lessonPredicate = lesson -> (subjectFilter == null || lesson.getSubject().isSameSubject(subjectFilter))
                     && (levelFilter == null || lesson.getLevel().equals(levelFilter));
         } else {
             lessonPredicate = lesson -> true;
