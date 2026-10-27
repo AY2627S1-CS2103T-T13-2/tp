@@ -60,6 +60,11 @@ public class ListCommand extends Command {
         };
     }
 
+    @Override
+    public boolean isDataMutating() {
+        return false;
+    }
+
     private static CommandResult listStudents(Model model) {
         int studentCount = model.getStudentList().size();
         String message = studentCount == 0

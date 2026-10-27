@@ -198,6 +198,16 @@ public class ModelManagerTest {
     //// filters
 
     @Test
+    public void sort_studentNameAndLessonFee_ordersLists() {
+        modelManager.sort(SortField.STUDENT_NAME, false);
+        assertEquals(Arrays.asList(CHLOE, BRYAN, ALICE), modelManager.getStudentList());
+
+        modelManager.sort(SortField.LESSON_FEE, true);
+        assertEquals(Arrays.asList(seedu.address.testutil.TypicalLessons.ENGLISH, SCIENCE_P6,
+                MATHEMATICS, SCIENCE_S2), modelManager.getLessonList());
+    }
+
+    @Test
     public void filterLessonsByStudent_showsOnlyThatStudentsLessons() {
         modelManager.filterLessonsByStudent(ALICE.getId());
 
@@ -219,6 +229,13 @@ public class ModelManagerTest {
 
         assertEquals(Arrays.asList(SCIENCE_S2, SCIENCE_P6), modelManager.getLessonList()); // Wed, Thu
         assertEquals(3, modelManager.getStudentList().size()); // students unaffected
+    }
+
+    @Test
+    public void filterLessonsBySubjectAndLevel_subjectOnly_ignoresExtraSpaces() {
+        modelManager.filterLessonsBySubjectAndLevel(new Subject("  Science  "), null);
+
+        assertEquals(Arrays.asList(SCIENCE_S2, SCIENCE_P6), modelManager.getLessonList());
     }
 
     @Test

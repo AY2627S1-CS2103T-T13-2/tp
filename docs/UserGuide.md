@@ -40,6 +40,7 @@ With TuiTracker, you can view and update student and lesson details, manage enro
    * `edit student 1 c/90001111` : Updates the contact number of the student with ID 1.
 
    * `mark 1` : Marks the student with ID 1 as paid for the current month.
+   * `unmark 1` : Corrects student 1's payment status back to unpaid.
 
    * `delete student 3` : Deletes the student with ID 3.
 
@@ -50,6 +51,12 @@ With TuiTracker, you can view and update student and lesson details, manage enro
 --------------------------------------------------------------------------------------------------------------------
 
 ## Features
+
+### Command-box shortcuts
+
+The command box keeps successful commands for the current session. Press **Up** and **Down** to move through that
+history; text you were drafting is restored when you move past the newest entry. Consecutive duplicate commands are
+stored once. Type the start of a command word and press **Tab** to complete it when there is only one match.
 
 <box type="info" seamless>
 
@@ -150,7 +157,7 @@ Parameter | Meaning | Needed when | Rules
 `d/` | The day of the week | the lesson is new | `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Letter case is ignored.
 `st/` | The start time | the lesson is new | In the 24-hour format, such as `9:00`, `09:00` or `14:30`.
 `et/` | The end time | the lesson is new | In the same format, and later than the start time on the same day: a lesson cannot run past midnight. To end at midnight, use `23:59`, not `24:00` or `00:00`. To teach past midnight, add two lessons, such as `23:00`-`23:59` and `00:00`-`01:00` the next day.
-`f/` | The fee for one session | the lesson is new | 0 or more, with at most two decimal places, such as `50` or `45.50`. A fee of `0` is accepted for a free lesson, and the result ends with a note asking you to check it.
+`f/` | The fee for one session | the lesson is new | 0 or more, with at most seven digits before the decimal point and at most two decimal places, such as `50` or `45.50`. A fee of `0` is accepted for a free lesson, and the result ends with a note asking you to check it.
 
 Using a parameter that does not belong, such as `c/` with an existing student, is an error.
 
@@ -225,7 +232,7 @@ Parameter | Meaning | Used when | Rules
 `d/` | The day of the week | editing a lesson | `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Letter case is ignored.
 `st/` | The start time | editing a lesson | In the 24-hour format, such as `9:00`, `09:00` or `14:30`.
 `et/` | The end time | editing a lesson | In the same format, and later than the final start time on the same day.
-`f/` | The fee for one session | editing a lesson | 0 or more, with at most two decimal places, such as `50` or `45.50`.
+`f/` | The fee for one session | editing a lesson | 0 or more, with at most seven digits before the decimal point and at most two decimal places, such as `50` or `45.50`.
 
 Give at least one editable field after the ID. You can give the field parameters in any order, but each parameter can appear only once. The command word, record type and prefixes ignore letter case. For a lesson, you may give `st/`, `et/`, or both. If you give only one, the other keeps its existing value. The resulting end time must still be later than the start time.
 
@@ -347,6 +354,20 @@ Marks a student as paid for the current month using the student's ID. Use this c
 
 No data is changed on failure.
 
+### Correcting a payment to unpaid: `unmark`
+
+Corrects an accidental payment entry by marking the student as unpaid for the current month.
+
+**Format:** `unmark ID`
+
+Examples:
+
+* `unmark 1` — marks student 1 as unpaid for the current month.
+* `unmark 0012` — marks student 12 as unpaid; leading zeros are ignored.
+
+The student must exist and must currently be marked as paid. The change is saved immediately and is retained
+after restarting TuiTracker. The student's details and lesson enrollments are not changed.
+
 ### Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status: `filter`
 
 Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, only the lessons on one day of the week, only the lessons with a given subject, level, or both, or only the students who are paid or unpaid for the current month.
@@ -375,6 +396,24 @@ Examples:
 * `filter l/Mathematics` shows only the Mathematics lessons.
 * `filter llv/Primary 6` shows only the Primary 6 lessons.
 * `filter l/Mathematics llv/Primary 6` shows only the Primary 6 Mathematics lessons.
+
+If a filter is incomplete or mixes incompatible forms, TuiTracker explains the specific problem and includes a
+valid example. For instance, `filter student` suggests `filter student 1`, while combining `day` with `l/` explains
+that keyword and prefix filters cannot be mixed.
+
+### Sorting students and lessons: `sort`
+
+Sorts the currently displayed student or lesson records without changing saved data. The direction defaults to
+ascending and can be written explicitly as `asc` or `desc`.
+
+**Format:** `sort student name|payment [asc|desc]` or `sort lesson subject|fee|time [asc|desc]`
+
+Examples:
+
+* `sort student name` sorts students alphabetically by name.
+* `sort student payment desc` shows paid students before unpaid students.
+* `sort lesson fee desc` shows the highest-fee lessons first.
+* `sort lesson time` restores chronological weekday and start-time order.
 
 ### Viewing the weekly schedule: `schedule`
 
@@ -423,7 +462,6 @@ _Details coming soon ..._
 ## Known issues
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
-2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -437,6 +475,7 @@ Action     | Format, Examples
 **Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
 **Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
+**Unmark** | `unmark ID` <br> e.g., `unmark 1`, `unmark 0012`
 **Schedule** | `schedule` <br> Shows recurring lessons from Monday to Sunday
 **Help**   | `help`
 **Exit**   | `exit`
