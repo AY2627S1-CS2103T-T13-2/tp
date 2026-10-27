@@ -269,6 +269,8 @@ Command | Message
 `edit teacher 1 s/Alice` | Invalid command format. Use: edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL] OR edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]
 `edit student 1` | At least one field to edit must be provided.
 `edit student 1 c/90001111 c/92223333` | A parameter can only be specified once.
+`edit student 1 s/Alicia x/value` | Unknown parameter: x/. Use: edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL] OR edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]
+`edit student 1 c/92345678slv/Secondary 1` | slv/ was found inside the value of c/. Separate parameters with a space.
 `edit student 1 l/English` | Only s/, c/ and slv/ can be used when editing a student.
 `edit lesson 1 c/90001111` | Only l/, llv/, d/, st/, et/ and f/ can be used when editing a lesson.
 `edit student 0 c/90001111` | ID must be a positive whole number.

@@ -8,6 +8,8 @@ import static seedu.address.logic.commands.EditCommand.MESSAGE_NO_FIELDS;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_STUDENT_PARAMETERS_NOT_ALLOWED;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
+import static seedu.address.logic.parser.EditCommandParser.MESSAGE_PREFIX_INSIDE_VALUE;
+import static seedu.address.logic.parser.EditCommandParser.MESSAGE_UNKNOWN_PARAMETER;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_ID_TOO_LARGE;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_ID;
 
@@ -45,6 +47,20 @@ public class EditCommandParserTest {
 
         assertParseSuccess(parser, " student 3 C/+65 (9123) 4567 SLV/Secondary 1 S/Ravi s/o Kumar",
                 new EditCommand(edit));
+    }
+
+    @Test
+    public void parse_studentNameStartingWithO_returnsEditCommand() {
+        StudentEdit singleLetterName = new StudentEdit(new StudentId(1), Optional.of(new Name("o")),
+                Optional.empty(), Optional.empty());
+        StudentEdit nameStartingWithO = new StudentEdit(new StudentId(1), Optional.of(new Name("o Tan")),
+                Optional.empty(), Optional.empty());
+
+        assertParseSuccess(parser, " student 1 s/o", new EditCommand(singleLetterName));
+        assertParseSuccess(parser, " student 1 s/o Tan", new EditCommand(nameStartingWithO));
+        assertParseSuccess(parser, " student 1 c/90001111 s/o Tan",
+                new EditCommand(new StudentEdit(new StudentId(1), Optional.of(new Name("o Tan")),
+                        Optional.of(new Contact("90001111")), Optional.empty())));
     }
 
     @Test
@@ -95,6 +111,26 @@ public class EditCommandParserTest {
     @Test
     public void parse_repeatedParameter_throwsParseException() {
         assertParseFailure(parser, " student 1 c/91234567 c/98765432", MESSAGE_DUPLICATE_PARAMETER);
+    }
+
+    @Test
+    public void parse_unknownParameter_throwsSpecificParseException() {
+        String expectedMessage = String.format(MESSAGE_UNKNOWN_PARAMETER, "x/");
+
+        assertParseFailure(parser, " student 1 s/Alicia x/value", expectedMessage);
+        assertParseFailure(parser, " student 1 c/92345678 x/value", expectedMessage);
+        assertParseFailure(parser, " lesson 1 f/55 x/value", expectedMessage);
+    }
+
+    @Test
+    public void parse_prefixWithoutSeparatingSpace_throwsSpecificParseException() {
+        assertParseFailure(parser, " student 1 c/92345678slv/Secondary 1",
+                String.format(MESSAGE_PREFIX_INSIDE_VALUE, "slv/", "c/"));
+        assertParseFailure(parser, " lesson 1 st/15:00et/16:00",
+                String.format(MESSAGE_PREFIX_INSIDE_VALUE, "et/", "st/"));
+
+        String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE);
+        assertParseFailure(parser, " student 1s/Alicia", invalidFormat);
     }
 
     @Test
