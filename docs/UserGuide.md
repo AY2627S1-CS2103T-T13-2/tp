@@ -259,6 +259,8 @@ Each one starts from the sample data and is followed by the result you should se
 * Changing a lesson fee to `0` goes ahead with a note asking you to check that it is meant to be free.
 * A change in letter case still counts as an edit, including for a student's or lesson's level.
 * No data is changed if the command fails validation.
+* If the supplied values already match the stored record, TuiTracker reports that no changes were made and does not
+  rewrite the data file.
 
 #### Possible sources of errors
 
@@ -433,7 +435,7 @@ Format: `exit`
 
 ### Saving the data
 
-TuiTracker automatically saves data after every command. You do not need to save manually.
+TuiTracker automatically saves data after every command that changes stored data. You do not need to save manually.
 
 ### Editing the data file
 
@@ -442,7 +444,9 @@ TuiTracker data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, TuiTracker starts with no students or lessons at the next run. The invalid file remains on disk until you run a command (TuiTracker saves after every command). Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, TuiTracker starts with no students or lessons at the next run. The invalid
+file remains on disk until you run a command that changes stored data. Still, we recommend backing up the file before
+editing it.<br>
 Furthermore, certain edits can cause TuiTracker to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 

@@ -76,6 +76,11 @@ public class LogicManager implements Logic {
 
         CommandResult commandResult = command.execute(model);
 
+        if (commandResult.shouldSkipSave()) {
+            logger.fine("Command made no persistent data changes; skipping save");
+            return commandResult;
+        }
+
         try {
             storage.saveTuiTracker(model.getTuiTracker());
         } catch (AccessDeniedException e) {
