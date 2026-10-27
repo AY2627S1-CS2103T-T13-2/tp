@@ -376,6 +376,10 @@ Examples:
 * `filter llv/Primary 6` shows only the Primary 6 lessons.
 * `filter l/Mathematics llv/Primary 6` shows only the Primary 6 Mathematics lessons.
 
+If a filter is incomplete or mixes incompatible forms, TuiTracker explains the specific problem and includes a
+valid example. For instance, `filter student` suggests `filter student 1`, while combining `day` with `l/` explains
+that keyword and prefix filters cannot be mixed.
+
 ### Viewing the weekly schedule: `schedule`
 
 Shows all recurring lessons in a Monday-to-Sunday weekly timeline. Each day runs from 00:00 to 23:59 at the same time scale. Lesson bars span their actual start and end times and show the time and subject; taller bars also show the level and a student summary. Short lessons have a thin duration mark beside a clickable label. Select a bar or label to open a scrollable details window with a separate card for each lesson, including its ID, fee, and enrolled students. A day with no lessons shows `No lessons`; a lesson with no students shows `No students` in its details.
