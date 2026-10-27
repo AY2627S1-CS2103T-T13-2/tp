@@ -187,6 +187,25 @@ public class LogicManagerTest {
         assertEquals(ownMessage, thrown.getMessage());
     }
 
+    @Test
+    public void execute_markWhenSaveFails_reportsGenericErrorAndRollsBack() {
+        JsonTuiTrackerStorage failingStorage = new JsonTuiTrackerStorage(temporaryFolder.resolve("failing.json")) {
+            @Override
+            public void saveTuiTracker(ReadOnlyTuiTracker tuiTracker, Path filePath) throws IOException {
+                throw DUMMY_IO_EXCEPTION;
+            }
+        };
+        Logic failingLogic = new LogicManager(model, new StorageManager(failingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
+
+        CommandException thrown = Assertions.assertThrows(CommandException.class,
+                () -> failingLogic.execute("mark 1"));
+
+        assertEquals(String.format(LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()),
+                thrown.getMessage());
+        assertFalse(model.isPaid(ALICE.getId()));
+    }
+
     //// delegation to the model
 
     @Test
