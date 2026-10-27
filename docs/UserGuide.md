@@ -397,6 +397,10 @@ Examples:
 * `filter llv/Primary 6` shows only the Primary 6 lessons.
 * `filter l/Mathematics llv/Primary 6` shows only the Primary 6 Mathematics lessons.
 
+If a filter is incomplete or mixes incompatible forms, TuiTracker explains the specific problem and includes a
+valid example. For instance, `filter student` suggests `filter student 1`, while combining `day` with `l/` explains
+that keyword and prefix filters cannot be mixed.
+
 ### Sorting students and lessons: `sort`
 
 Sorts the currently displayed student or lesson records without changing saved data. The direction defaults to
