@@ -12,7 +12,8 @@
     <Insets top="10" right="10" bottom="10" left="10" />
   </padding>
   <Label text="Weekly schedule" styleClass="schedule-title" />
-  <Label text="Recurring lessons, Monday to Sunday" styleClass="schedule-subtitle" />
+  <Label text="Recurring lessons, Monday to Sunday · Select a bar or marker for details"
+         styleClass="schedule-subtitle" />
   <Label fx:id="warningLabel" styleClass="schedule-warning" wrapText="true" />
   <ScrollPane fitToHeight="true" hbarPolicy="AS_NEEDED" vbarPolicy="NEVER"
               styleClass="schedule-scroll" VBox.vgrow="ALWAYS">

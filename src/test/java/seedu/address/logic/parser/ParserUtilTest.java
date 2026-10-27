@@ -3,6 +3,7 @@ package seedu.address.logic.parser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.logic.parser.ParserUtil.MESSAGE_ID_TOO_LARGE;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_ID;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -54,8 +55,12 @@ public class ParserUtilTest {
 
     @Test
     public void parseStudentId_tooLargeToBeAnId_throwsParseException() throws Exception {
-        assertThrows(ParseException.class, MESSAGE_INVALID_ID, () -> ParserUtil.parseStudentId("99999999999999999999"));
-        assertThrows(ParseException.class, MESSAGE_INVALID_ID, () -> ParserUtil.parseStudentId("2147483648"));
+        assertThrows(ParseException.class, MESSAGE_ID_TOO_LARGE, () ->
+                ParserUtil.parseStudentId("99999999999999999999"));
+        assertThrows(ParseException.class, MESSAGE_ID_TOO_LARGE, () ->
+                ParserUtil.parseStudentId("2147483648"));
+        assertThrows(ParseException.class, MESSAGE_ID_TOO_LARGE, () ->
+                ParserUtil.parseStudentId("0002147483648"));
         assertEquals(new StudentId(Integer.MAX_VALUE), ParserUtil.parseStudentId("2147483647"));
     }
 
@@ -71,7 +76,8 @@ public class ParserUtilTest {
     @Test
     public void parseLessonId() throws Exception {
         assertEquals(new LessonId(7), ParserUtil.parseLessonId(" 7 "));
-        assertThrows(ParseException.class, MESSAGE_INVALID_ID, () -> ParserUtil.parseLessonId("99999999999"));
+        assertThrows(ParseException.class, MESSAGE_ID_TOO_LARGE, () ->
+                ParserUtil.parseLessonId("99999999999"));
         assertThrows(ParseException.class, MESSAGE_INVALID_ID, () -> ParserUtil.parseLessonId("0"));
         assertThrows(ParseException.class, MESSAGE_INVALID_ID, () -> ParserUtil.parseLessonId("seven"));
     }
@@ -160,14 +166,32 @@ public class ParserUtilTest {
 
         assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_END_TIME, () ->
             ParserUtil.parseEndTime("15:00", start));
-        assertThrows(ParseException.class, Timeslot.MESSAGE_END_BEFORE_START, () ->
+        assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_END_TIME, () ->
             ParserUtil.parseEndTime("14:59", start));
     }
 
     @Test
-    public void parseEndTime_afterMidnight_suggestsSplittingTheLesson() {
+    public void parseEndTime_tooLongToRunPastMidnight_asksForALaterEndTime() {
+        assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_END_TIME, () ->
+            ParserUtil.parseEndTime("16:00", LocalTime.of(17, 0))); // 23 hours
+        assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_END_TIME, () ->
+            ParserUtil.parseEndTime("4:30", LocalTime.of(15, 0))); // 13.5 hours
+        assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_END_TIME, () ->
+            ParserUtil.parseEndTime("05:59", LocalTime.of(18, 0))); // almost 12 hours
+        assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_END_TIME, () ->
+            ParserUtil.parseEndTime("00:30", LocalTime.of(18, 29))); // 6 hours 1 minute
+    }
+
+    @Test
+    public void parseEndTime_shortLessonPastMidnight_suggestsSplittingTheLesson() {
         assertThrows(ParseException.class, Timeslot.MESSAGE_END_BEFORE_START, () ->
-            ParserUtil.parseEndTime("01:00", LocalTime.of(23, 0)));
+            ParserUtil.parseEndTime("01:00", LocalTime.of(23, 0))); // 2 hours
+        assertThrows(ParseException.class, Timeslot.MESSAGE_END_BEFORE_START, () ->
+            ParserUtil.parseEndTime("01:00", LocalTime.of(20, 0))); // 5 hours
+        assertThrows(ParseException.class, Timeslot.MESSAGE_END_BEFORE_START, () ->
+            ParserUtil.parseEndTime("00:30", LocalTime.of(18, 30))); // exactly 6 hours
+        assertThrows(ParseException.class, Timeslot.MESSAGE_END_BEFORE_START, () ->
+            ParserUtil.parseEndTime("00:01", LocalTime.of(23, 59))); // 2 minutes
     }
 
     @Test
@@ -198,5 +222,15 @@ public class ParserUtilTest {
     public void parseEndTime_midnight_suggests2359() {
         assertThrows(ParseException.class, Timeslot.MESSAGE_MIDNIGHT_END, () ->
                 ParserUtil.parseEndTime("24:00", LocalTime.of(22, 0)));
+        assertThrows(ParseException.class, Timeslot.MESSAGE_MIDNIGHT_END, () ->
+                ParserUtil.parseEndTime("00:00", LocalTime.of(22, 0)));
+        assertThrows(ParseException.class, Timeslot.MESSAGE_MIDNIGHT_END, () ->
+                ParserUtil.parseEndTime("0:00", LocalTime.of(15, 0)));
+    }
+
+    @Test
+    public void parseEndTime_sameMidnightStartAndEnd_asksForALaterEndTime() {
+        assertThrows(ParseException.class, Timeslot.MESSAGE_INVALID_END_TIME, () ->
+                ParserUtil.parseEndTime("00:00", LocalTime.MIDNIGHT));
     }
 }

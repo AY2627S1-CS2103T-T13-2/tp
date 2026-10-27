@@ -69,8 +69,7 @@ public class AddCommandParser implements Parser<AddCommand> {
     public static final String MESSAGE_READ_AS_NEW = " %1$s%2$s was read as a new %3$s.";
     /** Added after {@link #MESSAGE_READ_AS_NEW} when the value starts with an ID followed by more text. */
     public static final String MESSAGE_USE_ID_ONLY = " To use an existing %1$s, give only its ID, such as %2$s%3$s.";
-    public static final String MESSAGE_ID_TOO_LARGE =
-            "ID is too large. No student or lesson has an ID above " + Integer.MAX_VALUE + ".";
+    public static final String MESSAGE_ID_TOO_LARGE = ParserUtil.MESSAGE_ID_TOO_LARGE;
 
     private static final Logger logger = LogsCenter.getLogger(AddCommandParser.class);
 

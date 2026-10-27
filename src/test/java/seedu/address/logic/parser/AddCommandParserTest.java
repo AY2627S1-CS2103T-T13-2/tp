@@ -288,9 +288,10 @@ public class AddCommandParserTest {
         assertParseFailure(parser, start + "24:00 et/16:30 f/50", Timeslot.MESSAGE_INVALID_START_TIME);
 
         assertParseFailure(parser, start + "15:00 et/15:00 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // not later
-        assertParseFailure(parser, start + "15:00 et/14:00 f/50", Timeslot.MESSAGE_END_BEFORE_START); // earlier
-        assertParseFailure(parser, start + "15:00 et/4:30 f/50", Timeslot.MESSAGE_END_BEFORE_START); // earlier
+        assertParseFailure(parser, start + "15:00 et/14:00 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // earlier
+        assertParseFailure(parser, start + "15:00 et/4:30 f/50", Timeslot.MESSAGE_INVALID_END_TIME); // earlier
         assertParseFailure(parser, start + "23:00 et/01:00 f/50", Timeslot.MESSAGE_END_BEFORE_START); // past midnight
+        assertParseFailure(parser, start + "22:00 et/00:00 f/50", Timeslot.MESSAGE_MIDNIGHT_END); // at midnight
     }
 
     @Test
@@ -377,5 +378,15 @@ public class AddCommandParserTest {
     public void parse_idTooLarge_saysSo() {
         assertParseFailure(parser, " s/2147483648 l/2", MESSAGE_ID_TOO_LARGE);
         assertParseFailure(parser, " s/1 l/99999999999", MESSAGE_ID_TOO_LARGE);
+    }
+
+    @Test
+    public void parse_relationWordsInName_success() {
+        assertParseSuccess(parser, " s/Ravi S/O Kumar c/90000004 slv/Primary 6 l/1",
+                new AddCommand(new NewStudent(new Name("Ravi S/O Kumar"), new Contact("90000004"),
+                        new Level("Primary 6")), new ExistingLesson(new LessonId(1))));
+        assertParseSuccess(parser, " s/Priya d/o Raj c/90000005 slv/Primary 6 l/1",
+                new AddCommand(new NewStudent(new Name("Priya d/o Raj"), new Contact("90000005"),
+                        new Level("Primary 6")), new ExistingLesson(new LessonId(1))));
     }
 }

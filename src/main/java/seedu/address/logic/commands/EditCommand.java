@@ -7,9 +7,13 @@ import static seedu.address.logic.Messages.MESSAGE_STUDENT_NOT_FOUND;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.common.Level;
@@ -47,11 +51,14 @@ public class EditCommand extends Command {
             "Another student with the same name and contact already exists (Student ID: %s).";
     public static final String MESSAGE_DUPLICATE_LESSON =
             "Another identical lesson already exists (Lesson ID: %s).";
-    public static final String MESSAGE_STUDENT_LEVEL_MISMATCH =
-            "Student level does not match an enrolled lesson.";
-    public static final String MESSAGE_LESSON_LEVEL_MISMATCH =
-            "Lesson level does not match an enrolled student.";
-    public static final String MESSAGE_LESSON_CLASH = "Edited lesson clashes with another lesson.";
+    public static final String MESSAGE_LESSON_CLASH = AddCommand.MESSAGE_LESSON_CLASH;
+    public static final String MESSAGE_NOTE_SAME_NAME = AddCommand.MESSAGE_NOTE_SAME_NAME;
+    public static final String MESSAGE_NOTE_LEVEL_MISMATCH = AddCommand.MESSAGE_NOTE_LEVEL_MISMATCH;
+    public static final String MESSAGE_NOTE_STUDENT_LEVEL_MISMATCH =
+            "Note: %1$s's level (%2$s) differs from lesson %3$s's level (%4$s).";
+    public static final String MESSAGE_NOTE_FREE_LESSON = AddCommand.MESSAGE_NOTE_FREE_LESSON;
+
+    private static final Logger logger = LogsCenter.getLogger(EditCommand.class);
 
     private final EditTarget target;
 
@@ -63,9 +70,17 @@ public class EditCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        return target instanceof StudentEdit studentEdit
-                ? editStudent(model, studentEdit)
-                : editLesson(model, (LessonEdit) target);
+        logger.fine("Executing edit command for " + describeTarget());
+        try {
+            return target instanceof StudentEdit studentEdit
+                    ? editStudent(model, studentEdit)
+                    : editLesson(model, (LessonEdit) target);
+        } catch (CommandException e) {
+            // User mistakes are expected and are logged at info rather than warning.
+            // Edit error messages contain IDs and validation details, never names or contacts.
+            logger.info("Rejected edit command: " + e.getMessage());
+            throw e;
+        }
     }
 
     private CommandResult editStudent(Model model, StudentEdit edit) throws CommandException {
@@ -78,28 +93,25 @@ public class EditCommand extends Command {
         Student updated = new Student(original.getId(), name, contact, level,
                 original.getLastPaidMonth().orElse(null));
 
-        if (updated.equals(original)) {
+        if (updated.equals(original) && !hasDifferentLevelSpelling(original.getLevel(), edit.level())) {
+            logger.fine("Student " + original.getId() + " already has the requested details");
             return new CommandResult(MESSAGE_NO_CHANGES);
         }
 
-        Optional<Student> duplicate = model.getTuiTracker().getStudentList().stream()
-                .filter(student -> !student.getId().equals(original.getId()))
-                .filter(student -> student.getName().equals(name) && student.getContact().equals(contact))
-                .findFirst();
+        Optional<Student> duplicate = findDuplicateStudent(model, original.getId(), name, contact);
         if (duplicate.isPresent()) {
             throw new CommandException(String.format(MESSAGE_DUPLICATE_STUDENT, duplicate.get().getId()));
         }
 
-        boolean mismatchedLesson = model.getLessonIdsOf(original.getId()).stream()
-                .map(id -> findEnrolledLesson(model, id))
-                .anyMatch(lesson -> !lesson.getLevel().equals(level));
-        if (mismatchedLesson) {
-            throw new CommandException(MESSAGE_STUDENT_LEVEL_MISMATCH);
-        }
+        List<String> notes = new ArrayList<>();
+        noteForNamesake(model, edit, original.getId(), name, contact).ifPresent(notes::add);
+        notes.addAll(notesForStudentLevelMismatches(model, edit, updated));
 
         Student edited = model.editStudent(original.getId(), name, contact, level);
         assert updated.equals(edited) : "Model returned unexpected student details after edit";
-        return new CommandResult(String.format(MESSAGE_SUCCESS_STUDENT, edited.getName(), edited.getId()));
+        logger.info("Edited student " + edited.getId());
+        String success = String.format(MESSAGE_SUCCESS_STUDENT, edited.getName(), edited.getId());
+        return new CommandResult(withNotes(success, notes));
     }
 
     private CommandResult editLesson(Model model, LessonEdit edit) throws CommandException {
@@ -118,37 +130,133 @@ public class EditCommand extends Command {
         Fee fee = edit.fee().orElse(original.getFee());
         Lesson updated = new Lesson(original.getId(), subject, level, timeslot, fee);
 
-        if (updated.equals(original)) {
+        if (updated.equals(original) && !hasDifferentLevelSpelling(original.getLevel(), edit.level())) {
+            logger.fine("Lesson " + original.getId() + " already has the requested details");
             return new CommandResult(MESSAGE_NO_CHANGES);
         }
 
-        Optional<Lesson> duplicate = model.getTuiTracker().getLessonList().stream()
-                .filter(lesson -> !lesson.getId().equals(original.getId()))
-                .filter(lesson -> lesson.getSubject().equals(subject)
-                        && lesson.getLevel().equals(level)
-                        && lesson.getTimeslot().equals(timeslot))
-                .findFirst();
+        Optional<Lesson> duplicate = findDuplicateLesson(model, original.getId(), subject, level, timeslot);
         if (duplicate.isPresent()) {
             throw new CommandException(String.format(MESSAGE_DUPLICATE_LESSON, duplicate.get().getId()));
         }
 
-        boolean mismatchedStudent = model.getStudentsIn(original.getId()).stream()
-                .anyMatch(student -> !student.getLevel().equals(level));
-        if (mismatchedStudent) {
-            throw new CommandException(MESSAGE_LESSON_LEVEL_MISMATCH);
+        Optional<Lesson> clash = findClashingLesson(model, original.getId(), timeslot);
+        if (clash.isPresent()) {
+            Lesson other = clash.get();
+            throw new CommandException(String.format(MESSAGE_LESSON_CLASH, other.getId(), other.getSubject(),
+                    other.getTimeslot()));
         }
 
-        boolean clashes = model.getTuiTracker().getLessonList().stream()
-                .filter(lesson -> !lesson.getId().equals(original.getId()))
-                .anyMatch(lesson -> lesson.getTimeslot().overlaps(timeslot));
-        if (clashes) {
-            throw new CommandException(MESSAGE_LESSON_CLASH);
-        }
+        List<String> notes = notesForLessonLevelMismatches(model, edit, updated);
+        noteForFreeLesson(edit, fee).ifPresent(notes::add);
 
         Lesson edited = model.editLesson(original.getId(), subject, level, timeslot, fee);
         assert updated.equals(edited) : "Model returned unexpected lesson details after edit";
-        return new CommandResult(String.format(MESSAGE_SUCCESS_LESSON, edited.getSubject(), edited.getLevel(),
-                edited.getTimeslot(), edited.getId()));
+        logger.info("Edited lesson " + edited.getId());
+        String success = String.format(MESSAGE_SUCCESS_LESSON, edited.getSubject(), edited.getLevel(),
+                edited.getTimeslot(), edited.getId());
+        return new CommandResult(withNotes(success, notes));
+    }
+
+    /** Returns another student whose name and contact match the edited details. */
+    private static Optional<Student> findDuplicateStudent(Model model, StudentId editedId,
+                                                           Name name, Contact contact) {
+        return model.getTuiTracker().getStudentList().stream()
+                .filter(student -> !student.getId().equals(editedId))
+                .filter(student -> student.getName().isSameName(name)
+                        && student.getContact().isSameContact(contact))
+                .findFirst();
+    }
+
+    /** Returns another lesson whose subject, level and timeslot match the edited details. */
+    private static Optional<Lesson> findDuplicateLesson(Model model, LessonId editedId, Subject subject,
+                                                         Level level, Timeslot timeslot) {
+        return model.getTuiTracker().getLessonList().stream()
+                .filter(lesson -> !lesson.getId().equals(editedId))
+                .filter(lesson -> lesson.getSubject().isSameSubject(subject)
+                        && lesson.getLevel().equals(level)
+                        && lesson.getTimeslot().equals(timeslot))
+                .findFirst();
+    }
+
+    /** Returns another lesson whose timeslot overlaps the edited timeslot. */
+    private static Optional<Lesson> findClashingLesson(Model model, LessonId editedId, Timeslot timeslot) {
+        return model.getTuiTracker().getLessonList().stream()
+                .filter(lesson -> !lesson.getId().equals(editedId))
+                .filter(lesson -> lesson.getTimeslot().overlaps(timeslot))
+                .findFirst();
+    }
+
+    /** Returns a note if the edited identity matches another student's name but not their contact. */
+    private static Optional<String> noteForNamesake(Model model, StudentEdit edit, StudentId editedId,
+                                                     Name name, Contact contact) {
+        if (edit.name().isEmpty() && edit.contact().isEmpty()) {
+            return Optional.empty();
+        }
+        return model.getTuiTracker().getStudentList().stream()
+                .filter(student -> !student.getId().equals(editedId))
+                .filter(student -> student.getName().isSameName(name))
+                .filter(namesake -> !namesake.getContact().isSameContact(contact))
+                .findFirst()
+                .map(namesake -> String.format(MESSAGE_NOTE_SAME_NAME, namesake.getName(), namesake.getId()));
+    }
+
+    /** Returns one note for each enrolled lesson whose level differs from the edited student level. */
+    private static List<String> notesForStudentLevelMismatches(Model model, StudentEdit edit, Student updated) {
+        List<String> notes = new ArrayList<>();
+        if (edit.level().isEmpty()) {
+            return notes;
+        }
+        for (LessonId lessonId : model.getLessonIdsOf(updated.getId())) {
+            Lesson lesson = findEnrolledLesson(model, lessonId);
+            if (!lesson.getLevel().equals(updated.getLevel())) {
+                notes.add(String.format(MESSAGE_NOTE_STUDENT_LEVEL_MISMATCH, updated.getName(), updated.getLevel(),
+                        lesson.getId(), lesson.getLevel()));
+            }
+        }
+        return notes;
+    }
+
+    /** Returns one note for each enrolled student whose level differs from the edited lesson level. */
+    private static List<String> notesForLessonLevelMismatches(Model model, LessonEdit edit, Lesson updated) {
+        List<String> notes = new ArrayList<>();
+        if (edit.level().isEmpty()) {
+            return notes;
+        }
+        for (Student student : model.getStudentsIn(updated.getId())) {
+            if (!student.getLevel().equals(updated.getLevel())) {
+                notes.add(String.format(MESSAGE_NOTE_LEVEL_MISMATCH, student.getName(), student.getLevel(),
+                        updated.getLevel()));
+            }
+        }
+        return notes;
+    }
+
+    /** Returns a note when the fee was explicitly changed to 0. */
+    private static Optional<String> noteForFreeLesson(LessonEdit edit, Fee fee) {
+        return edit.fee().isPresent() && fee.isFree()
+                ? Optional.of(MESSAGE_NOTE_FREE_LESSON)
+                : Optional.empty();
+    }
+
+    /** Returns true if the supplied level differs only in its stored spelling or letter case. */
+    private static boolean hasDifferentLevelSpelling(Level original, Optional<Level> requested) {
+        return requested.isPresent() && !requested.get().toString().equals(original.toString());
+    }
+
+    /** Returns the success message followed by each note on its own line. */
+    private static String withNotes(String success, List<String> notes) {
+        List<String> lines = new ArrayList<>();
+        lines.add(success);
+        lines.addAll(notes);
+        return String.join("\n", lines);
+    }
+
+    /** Returns a log-safe description containing only the target type and ID. */
+    private String describeTarget() {
+        return target instanceof StudentEdit studentEdit
+                ? "student " + studentEdit.id()
+                : "lesson " + ((LessonEdit) target).id();
     }
 
     private static Lesson findEnrolledLesson(Model model, LessonId id) {

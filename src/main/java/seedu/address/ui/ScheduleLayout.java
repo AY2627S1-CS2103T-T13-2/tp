@@ -18,8 +18,8 @@ import seedu.address.model.lesson.LessonId;
 /** Groups recurring lessons by weekday and identifies overlaps without hiding either lesson. */
 final class ScheduleLayout {
 
-    /** A lesson's horizontal track within its day. */
-    record PlacedLesson(Lesson lesson, int lane) {
+    /** The real time span of one lesson or a compact group of nearby lessons. */
+    record DisplayGroup(int startMinute, int endMinute, List<Lesson> lessons) {
     }
 
     private static final Comparator<Lesson> LESSON_ORDER = Comparator
@@ -63,29 +63,52 @@ final class ScheduleLayout {
     }
 
     /**
-     * Assigns simultaneous lessons different lanes so their cards remain visible.
-     * A lane becomes available as soon as its previous lesson ends.
+     * Combines lessons whose bars or short-marker labels would overlap at the schedule's fixed scale.
+     * Actual overlaps are still detected independently by {@link #overlappingLessonIds(Map)}.
      */
-    static List<PlacedLesson> placeInLanes(List<Lesson> lessons) {
+    static List<DisplayGroup> groupForDisplay(List<Lesson> lessons, int minimumBarMinutes, int markerLabelMinutes) {
         requireNonNull(lessons);
+        if (minimumBarMinutes <= 0 || markerLabelMinutes <= 0) {
+            throw new IllegalArgumentException("Display durations must be positive");
+        }
+
         List<Lesson> ordered = new ArrayList<>(lessons);
         ordered.sort(LESSON_ORDER);
-
-        List<LocalTime> laneEndTimes = new ArrayList<>();
-        List<PlacedLesson> placements = new ArrayList<>();
+        List<DisplayGroup> groups = new ArrayList<>();
+        List<Lesson> current = new ArrayList<>();
+        int start = 0;
+        int end = 0;
         for (Lesson lesson : ordered) {
-            LocalTime start = lesson.getTimeslot().getStart();
-            int lane = 0;
-            while (lane < laneEndTimes.size() && start.isBefore(laneEndTimes.get(lane))) {
-                lane++;
+            int lessonStart = minuteOfDay(lesson.getTimeslot().getStart());
+            int lessonEnd = minuteOfDay(lesson.getTimeslot().getEnd());
+            if (!current.isEmpty() && visibleStart(lessonStart, lessonEnd, minimumBarMinutes, markerLabelMinutes)
+                    >= visibleEnd(start, end, minimumBarMinutes, markerLabelMinutes)) {
+                groups.add(new DisplayGroup(start, end, List.copyOf(current)));
+                current.clear();
             }
-            if (lane == laneEndTimes.size()) {
-                laneEndTimes.add(lesson.getTimeslot().getEnd());
+            if (current.isEmpty()) {
+                start = lessonStart;
+                end = lessonEnd;
             } else {
-                laneEndTimes.set(lane, lesson.getTimeslot().getEnd());
+                end = Math.max(end, lessonEnd);
             }
-            placements.add(new PlacedLesson(lesson, lane));
+            current.add(lesson);
         }
-        return placements;
+        if (!current.isEmpty()) {
+            groups.add(new DisplayGroup(start, end, List.copyOf(current)));
+        }
+        return groups;
+    }
+
+    private static int minuteOfDay(LocalTime time) {
+        return time.getHour() * 60 + time.getMinute();
+    }
+
+    private static double visibleStart(int start, int end, int minimumBarMinutes, int markerLabelMinutes) {
+        return end - start < minimumBarMinutes ? (start + end - markerLabelMinutes) / 2.0 : start;
+    }
+
+    private static double visibleEnd(int start, int end, int minimumBarMinutes, int markerLabelMinutes) {
+        return end - start < minimumBarMinutes ? (start + end + markerLabelMinutes) / 2.0 : end;
     }
 }
