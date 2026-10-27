@@ -16,17 +16,24 @@ end box
 activate MainWindow UI_COLOR
 MainWindow -> SchedulePanel : refresh()
 activate SchedulePanel UI_COLOR
+SchedulePanel -> LogicManager : getScheduleStudentId()
+LogicManager --> SchedulePanel : Optional<StudentId>
 SchedulePanel -> LogicManager : getAllLessons()
 LogicManager --> SchedulePanel : all lessons
-SchedulePanel -> ScheduleLayout : groupByDay(all lessons)
+opt Student selected
+    SchedulePanel -> LogicManager : getLessonIdsOf(studentId)
+    LogicManager --> SchedulePanel : enrolled lesson IDs
+    SchedulePanel -> SchedulePanel : keep only enrolled lessons
+end
+SchedulePanel -> ScheduleLayout : groupByDay(visible lessons)
 ScheduleLayout --> SchedulePanel : seven sorted day lists
 SchedulePanel -> ScheduleLayout : overlappingLessonIds(byDay)
 ScheduleLayout --> SchedulePanel : overlapping IDs
 
 loop Each weekday
-    SchedulePanel -> ScheduleLayout : placeInLanes(dayLessons)
-    ScheduleLayout --> SchedulePanel : placements
-    loop Each lesson in the day
+    SchedulePanel -> ScheduleLayout : groupForDisplay(dayLessons, minimumBarMinutes, markerLabelMinutes)
+    ScheduleLayout --> SchedulePanel : display groups
+    opt A tall lesson bar needs a student summary
         SchedulePanel -> LogicManager : getStudentsIn(lessonId)
         LogicManager --> SchedulePanel : enrolled students
     end

@@ -54,11 +54,11 @@
         "add-feature": "Add feature",
         "edit-feature": "Edit feature",
         "delete-feature": "Delete feature",
-        "schedule-feature": "Schedule feature",
         "list-feature": "List feature",
         "mark-feature": "Mark feature",
         "help-feature": "Help feature",
         "filter-feature": "Filter feature",
+        "schedule-feature": "Schedule feature",
         "proposed-undo-redo-feature": "[Proposed] Undo/redo feature",
         "proposed-data-archiving": "[Proposed] Data archiving",
         "documentation-logging-testing-dev-ops": "Documentation, logging, testing, dev-ops",
@@ -75,6 +75,7 @@
         "listing-students-or-lessons": "Listing students or lessons",
         "marking-a-student-as-paid": "Marking a student as paid",
         "showing-a-student-s-lessons-or-a-lesson-s-students": "Showing a student's lessons or a lesson's students",
+        "viewing-the-weekly-schedule": "Viewing the weekly schedule",
         "saving-data": "Saving data"
       },
       "headingKeywords": {}
