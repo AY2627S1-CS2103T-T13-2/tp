@@ -397,6 +397,20 @@ Examples:
 * `filter llv/Primary 6` shows only the Primary 6 lessons.
 * `filter l/Mathematics llv/Primary 6` shows only the Primary 6 Mathematics lessons.
 
+### Sorting students and lessons: `sort`
+
+Sorts the currently displayed student or lesson records without changing saved data. The direction defaults to
+ascending and can be written explicitly as `asc` or `desc`.
+
+**Format:** `sort student name|payment [asc|desc]` or `sort lesson subject|fee|time [asc|desc]`
+
+Examples:
+
+* `sort student name` sorts students alphabetically by name.
+* `sort student payment desc` shows paid students before unpaid students.
+* `sort lesson fee desc` shows the highest-fee lessons first.
+* `sort lesson time` restores chronological weekday and start-time order.
+
 ### Viewing the weekly schedule: `schedule`
 
 Shows all recurring lessons in a Monday-to-Sunday weekly timeline. Each day runs from 00:00 to 23:59 at the same time scale. Lesson bars span their actual start and end times and show the time and subject; taller bars also show the level and a student summary. Short lessons have a thin duration mark beside a clickable label. Select a bar or label to open a scrollable details window with a separate card for each lesson, including its ID, fee, and enrolled students. A day with no lessons shows `No lessons`; a lesson with no students shows `No students` in its details.
