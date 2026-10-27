@@ -88,6 +88,10 @@ public class HelpWindow extends UiPart<Stage> {
      * Focuses on the help window.
      */
     public void focus() {
+        if (getRoot().isIconified()) {
+            getRoot().setIconified(false);
+        }
+        getRoot().toFront();
         getRoot().requestFocus();
     }
 
