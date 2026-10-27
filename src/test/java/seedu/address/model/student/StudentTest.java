@@ -54,6 +54,14 @@ public class StudentTest {
     }
 
     @Test
+    public void unmarkPaid_returnsACopyWithoutPaymentMonth() {
+        Student paid = ALICE.markPaid(CURRENT_MONTH);
+        Student unpaid = paid.unmarkPaid();
+        assertFalse(unpaid.isPaid(CURRENT_MONTH));
+        assertTrue(unpaid.getLastPaidMonth().isEmpty());
+    }
+
+    @Test
     public void isSameStudent() {
         // same object
         assertTrue(ALICE.isSameStudent(ALICE));

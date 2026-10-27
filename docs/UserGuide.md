@@ -40,6 +40,7 @@ With TuiTracker, you can view and update student and lesson details, manage enro
    * `edit student 1 c/90001111` : Updates the contact number of the student with ID 1.
 
    * `mark 1` : Marks the student with ID 1 as paid for the current month.
+   * `unmark 1` : Corrects student 1's payment status back to unpaid.
 
    * `delete student 3` : Deletes the student with ID 3.
 
@@ -353,6 +354,20 @@ Marks a student as paid for the current month using the student's ID. Use this c
 
 No data is changed on failure.
 
+### Correcting a payment to unpaid: `unmark`
+
+Corrects an accidental payment entry by marking the student as unpaid for the current month.
+
+**Format:** `unmark ID`
+
+Examples:
+
+* `unmark 1` — marks student 1 as unpaid for the current month.
+* `unmark 0012` — marks student 12 as unpaid; leading zeros are ignored.
+
+The student must exist and must currently be marked as paid. The change is saved immediately and is retained
+after restarting TuiTracker. The student's details and lesson enrollments are not changed.
+
 ### Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status: `filter`
 
 Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, only the lessons on one day of the week, only the lessons with a given subject, level, or both, or only the students who are paid or unpaid for the current month.
@@ -443,6 +458,7 @@ Action     | Format, Examples
 **Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
 **Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
+**Unmark** | `unmark ID` <br> e.g., `unmark 1`, `unmark 0012`
 **Schedule** | `schedule` <br> Shows recurring lessons from Monday to Sunday
 **Help**   | `help`
 **Exit**   | `exit`
