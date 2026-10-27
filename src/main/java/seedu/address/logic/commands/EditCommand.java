@@ -124,7 +124,7 @@ public class EditCommand extends Command {
         LocalTime start = edit.start().orElse(original.getTimeslot().getStart());
         LocalTime end = edit.end().orElse(original.getTimeslot().getEnd());
         if (!Timeslot.isValidTimeslot(start, end)) {
-            throw new CommandException(Timeslot.MESSAGE_INVALID_END_TIME);
+            throw new CommandException(Timeslot.messageForInvalidEnd(start, end));
         }
         Timeslot timeslot = new Timeslot(day, start, end);
         Fee fee = edit.fee().orElse(original.getFee());
