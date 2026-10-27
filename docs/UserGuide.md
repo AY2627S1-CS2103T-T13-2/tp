@@ -40,6 +40,7 @@ With TuiTracker, you can view and update student and lesson details, manage enro
    * `edit student 1 c/90001111` : Updates the contact number of the student with ID 1.
 
    * `mark 1` : Marks the student with ID 1 as paid for the current month.
+   * `unmark 1` : Corrects student 1's payment status back to unpaid.
 
    * `delete student 3` : Deletes the student with ID 3.
 
@@ -50,6 +51,12 @@ With TuiTracker, you can view and update student and lesson details, manage enro
 --------------------------------------------------------------------------------------------------------------------
 
 ## Features
+
+### Command-box shortcuts
+
+The command box keeps successful commands for the current session. Press **Up** and **Down** to move through that
+history; text you were drafting is restored when you move past the newest entry. Consecutive duplicate commands are
+stored once. Type the start of a command word and press **Tab** to complete it when there is only one match.
 
 <box type="info" seamless>
 
@@ -150,7 +157,7 @@ Parameter | Meaning | Needed when | Rules
 `d/` | The day of the week | the lesson is new | `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Letter case is ignored.
 `st/` | The start time | the lesson is new | In the 24-hour format, such as `9:00`, `09:00` or `14:30`.
 `et/` | The end time | the lesson is new | In the same format, and later than the start time on the same day: a lesson cannot run past midnight. To end at midnight, use `23:59`, not `24:00` or `00:00`. To teach past midnight, add two lessons, such as `23:00`-`23:59` and `00:00`-`01:00` the next day.
-`f/` | The fee for one session | the lesson is new | 0 or more, with at most two decimal places, such as `50` or `45.50`. A fee of `0` is accepted for a free lesson, and the result ends with a note asking you to check it.
+`f/` | The fee for one session | the lesson is new | 0 or more, with at most seven digits before the decimal point and at most two decimal places, such as `50` or `45.50`. A fee of `0` is accepted for a free lesson, and the result ends with a note asking you to check it.
 
 Using a parameter that does not belong, such as `c/` with an existing student, is an error.
 
@@ -225,7 +232,7 @@ Parameter | Meaning | Used when | Rules
 `d/` | The day of the week | editing a lesson | `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Letter case is ignored.
 `st/` | The start time | editing a lesson | In the 24-hour format, such as `9:00`, `09:00` or `14:30`.
 `et/` | The end time | editing a lesson | In the same format, and later than the final start time on the same day.
-`f/` | The fee for one session | editing a lesson | 0 or more, with at most two decimal places, such as `50` or `45.50`.
+`f/` | The fee for one session | editing a lesson | 0 or more, with at most seven digits before the decimal point and at most two decimal places, such as `50` or `45.50`.
 
 Give at least one editable field after the ID. You can give the field parameters in any order, but each parameter can appear only once. The command word, record type and prefixes ignore letter case. For a lesson, you may give `st/`, `et/`, or both. If you give only one, the other keeps its existing value. The resulting end time must still be later than the start time.
 
@@ -347,31 +354,66 @@ Marks a student as paid for the current month using the student's ID. Use this c
 
 No data is changed on failure.
 
-### Showing a student's lessons, a lesson's students, or lessons by day, subject or level: `filter`
+### Correcting a payment to unpaid: `unmark`
 
-Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, only the lessons on one day of the week, or only the lessons with a given subject, level, or both.
+Corrects an accidental payment entry by marking the student as unpaid for the current month.
 
-Format: `filter student|lesson ID`, `filter day DAY` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]`
+**Format:** `unmark ID`
+
+Examples:
+
+* `unmark 1` — marks student 1 as unpaid for the current month.
+* `unmark 0012` — marks student 12 as unpaid; leading zeros are ignored.
+
+The student must exist and must currently be marked as paid. The change is saved immediately and is retained
+after restarting TuiTracker. The student's details and lesson enrollments are not changed.
+
+### Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status: `filter`
+
+Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, only the lessons on one day of the week, only the lessons with a given subject, level, or both, or only the students who are paid or unpaid for the current month.
+
+Format: `filter student|lesson ID`, `filter day DAY`, `filter paid|unpaid` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]`
 
 * Shows a student's lessons: `filter student ID`.
 * Shows a lesson's students: `filter lesson ID`.
 * Shows a day's lessons: `filter day DAY`.
+* Shows students by payment status for the current month: `filter paid` or `filter unpaid`.
 * Shows lessons by subject, level, or both: `filter l/SUBJECT`, `filter llv/LESSON_LEVEL` or `filter l/SUBJECT llv/LESSON_LEVEL`. At least one of `l/` and `llv/` must be given, and they can be in any order. When both are given, only lessons matching both are shown.
 * `SUBJECT` and `LESSON_LEVEL` must match the lesson's subject and level exactly; letter case is ignored. For example, `l/mathematics` matches `Mathematics` but `l/Math` does not.
 * The `ID` refers to the student ID or lesson ID shown in the displayed list, not its position in the list.
 * The specified `ID` must belong to an existing student or lesson.
 * `DAY` is the full day name, e.g. `Monday`; letter case is ignored.
 * Filtering replaces any earlier filter; only one filter can be active at a time.
-* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson switches it to **Students**; filtering by a day, subject or level also switches it to **Lessons**.
+* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson, or by payment status, switches it to **Students**; filtering by a day, subject or level also switches it to **Lessons**.
 * To clear the filter and show every student and lesson again, use `list`.
 
 Examples:
 * `filter student 1` shows only the lessons that the student with ID `1` is enrolled in.
 * `filter lesson 2` shows only the students enrolled in the lesson with ID `2`.
 * `filter day Monday` shows only the lessons that take place on Monday.
+* `filter paid` shows only the students who have paid for the current month.
+* `filter unpaid` shows only the students who have not paid for the current month.
 * `filter l/Mathematics` shows only the Mathematics lessons.
 * `filter llv/Primary 6` shows only the Primary 6 lessons.
 * `filter l/Mathematics llv/Primary 6` shows only the Primary 6 Mathematics lessons.
+
+If a filter is incomplete or mixes incompatible forms, TuiTracker explains the specific problem and includes a
+valid example. For instance, `filter student` suggests `filter student 1`, while combining `day` with `l/` explains
+that keyword and prefix filters cannot be mixed.
+
+### Sorting students and lessons: `sort`
+
+Sorts the currently displayed student or lesson records without changing saved data. The direction defaults to
+ascending and can be written explicitly as `asc` or `desc`.
+
+**Format:** `sort student name|payment [asc|desc]` or `sort lesson subject|fee|time [asc|desc]`
+
+Examples:
+
+* `sort student name` sorts students alphabetically by name.
+* `sort student payment desc` shows paid students before unpaid students.
+* `sort lesson fee desc` shows the highest-fee lessons first.
+* `sort lesson time` restores chronological weekday and start-time order.
 
 ### Viewing the weekly schedule: `schedule`
 
@@ -431,9 +473,10 @@ Action     | Format, Examples
 **Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> _Examples to be added by the owner of `add`._
 **Edit**   | `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]` <br> `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]`
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
-**Filter** | `filter student\|lesson ID`, `filter day DAY` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter l/Mathematics llv/Primary 6`
+**Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
 **Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
+**Unmark** | `unmark ID` <br> e.g., `unmark 1`, `unmark 0012`
 **Schedule** | `schedule` <br> Shows recurring lessons from Monday to Sunday
 **Help**   | `help`
 **Exit**   | `exit`

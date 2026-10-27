@@ -198,6 +198,16 @@ public class ModelManagerTest {
     //// filters
 
     @Test
+    public void sort_studentNameAndLessonFee_ordersLists() {
+        modelManager.sort(SortField.STUDENT_NAME, false);
+        assertEquals(Arrays.asList(CHLOE, BRYAN, ALICE), modelManager.getStudentList());
+
+        modelManager.sort(SortField.LESSON_FEE, true);
+        assertEquals(Arrays.asList(seedu.address.testutil.TypicalLessons.ENGLISH, SCIENCE_P6,
+                MATHEMATICS, SCIENCE_S2), modelManager.getLessonList());
+    }
+
+    @Test
     public void filterLessonsByStudent_showsOnlyThatStudentsLessons() {
         modelManager.filterLessonsByStudent(ALICE.getId());
 
@@ -342,6 +352,22 @@ public class ModelManagerTest {
         modelManager.deleteStudent(BRYAN.getId());
 
         assertEquals(Arrays.asList(MATHEMATICS, SCIENCE_P6), modelManager.getLessonList());
+    }
+
+    @Test
+    public void filterStudentsByPaidStatus_paid_showsOnlyPaidStudents() {
+        modelManager.filterStudentsByPaidStatus(true);
+
+        assertEquals(Collections.singletonList(BRYAN), modelManager.getStudentList());
+        // the lesson list is unaffected
+        assertEquals(Arrays.asList(MATHEMATICS, SCIENCE_S2, SCIENCE_P6, ENGLISH), modelManager.getLessonList());
+    }
+
+    @Test
+    public void filterStudentsByPaidStatus_unpaid_showsOnlyUnpaidStudents() {
+        modelManager.filterStudentsByPaidStatus(false);
+
+        assertEquals(Arrays.asList(ALICE, CHLOE), modelManager.getStudentList());
     }
 
     @Test
