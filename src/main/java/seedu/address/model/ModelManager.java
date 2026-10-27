@@ -294,15 +294,15 @@ public class ModelManager implements Model {
     public void sort(SortField field, boolean ascending) {
         requireNonNull(field);
         Comparator<?> comparator = switch (field) {
-        case STUDENT_NAME -> Comparator.comparing(student -> ((Student) student).getName().fullName,
-                String.CASE_INSENSITIVE_ORDER).thenComparing(student -> ((Student) student).getId());
-        case STUDENT_PAYMENT -> Comparator.comparing(student -> ((Student) student).isPaid(currentMonth()))
-                .thenComparing(student -> ((Student) student).getId());
-        case LESSON_SUBJECT -> Comparator.comparing(lesson -> ((Lesson) lesson).getSubject().value,
-                String.CASE_INSENSITIVE_ORDER).thenComparing(lesson -> ((Lesson) lesson).getId());
-        case LESSON_FEE -> Comparator.comparing(lesson -> ((Lesson) lesson).getFee().getAmount())
-                .thenComparing(lesson -> ((Lesson) lesson).getId());
-        case LESSON_TIME -> LESSON_ORDER;
+            case STUDENT_NAME -> Comparator.comparing(student -> ((Student) student).getName().fullName,
+                    String.CASE_INSENSITIVE_ORDER).thenComparing(student -> ((Student) student).getId());
+            case STUDENT_PAYMENT -> Comparator.comparing(student -> ((Student) student).isPaid(currentMonth()))
+                    .thenComparing(student -> ((Student) student).getId());
+            case LESSON_SUBJECT -> Comparator.comparing(lesson -> ((Lesson) lesson).getSubject().value,
+                    String.CASE_INSENSITIVE_ORDER).thenComparing(lesson -> ((Lesson) lesson).getId());
+            case LESSON_FEE -> Comparator.comparing(lesson -> ((Lesson) lesson).getFee().getAmount())
+                    .thenComparing(lesson -> ((Lesson) lesson).getId());
+            case LESSON_TIME -> LESSON_ORDER;
         };
         if (!ascending) {
             comparator = comparator.reversed();

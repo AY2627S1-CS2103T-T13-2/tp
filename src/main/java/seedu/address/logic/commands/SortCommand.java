@@ -20,6 +20,7 @@ public class SortCommand extends Command {
     private final SortField field;
     private final boolean ascending;
 
+    /** Creates a command that sorts an entity list by the requested field and direction. */
     public SortCommand(String entity, String fieldName, SortField field, boolean ascending) {
         this.entity = requireNonNull(entity);
         this.fieldName = requireNonNull(fieldName);
