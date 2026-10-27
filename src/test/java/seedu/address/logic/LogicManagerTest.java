@@ -198,8 +198,8 @@ public class LogicManagerTest {
         Logic failingLogic = new LogicManager(model, new StorageManager(failingStorage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
 
-        CommandException thrown = Assertions.assertThrows(CommandException.class,
-                () -> failingLogic.execute("mark 1"));
+        CommandException thrown = Assertions.assertThrows(
+                CommandException.class, () -> failingLogic.execute("mark 1"));
 
         assertEquals(String.format(LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()),
                 thrown.getMessage());
