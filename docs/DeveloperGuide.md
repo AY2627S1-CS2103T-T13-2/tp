@@ -48,12 +48,6 @@ The bulk of the app's work is done by the following four components:
 
 [**`Commons`**](#common-classes) represents a collection of classes used by multiple other components.
 
-**How the architecture components interact with each other**
-
-The *Sequence Diagram* below shows how the components interact with each other when the user deletes a student.
-
-<puml src="diagrams/ArchitectureSequenceDiagram.puml" width="574" />
-
 Each of the four main components (also shown in the diagram above),
 
 * defines its *API* in an `interface` with the same name as the Component.
@@ -90,32 +84,11 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <puml src="diagrams/LogicClassDiagram.puml" width="550"/>
 
-The sequence diagram below gives an overview of the delete command flow. `KIND ID` stands for the selected kind and ID; the branches use `student 12` and `lesson 7` as examples.
-
-<puml src="diagrams/DeleteSequenceDiagram.puml" alt="Overview of the Delete Command Sequence" />
-
-The parsing interactions summarized in the overview are shown here:
-
-<puml src="diagrams/DeleteParsingSequenceDiagram.puml" alt="Parsing Sequence for the Delete Command" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
-</box>
-
-The next two diagrams expand the student and lesson reference frames. Each shows the lookup, deletion and associated enrollment removal, and the not-found path.
-
-<puml src="diagrams/DeleteStudentSequenceDiagram.puml" alt="Student Deletion Sequence for the Delete Command" />
-
-<puml src="diagrams/DeleteLessonSequenceDiagram.puml" alt="Lesson Deletion Sequence for the Delete Command" />
-
-
 How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to an `AddressBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
-1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
-   Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+1. The command can communicate with the `Model` when it is executed (e.g. to delete a student or lesson).
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -249,7 +222,28 @@ The sequence diagram below shows `execute("edit student 1 c/90001111")`, which u
 
 ### Delete feature
 
-The sequence diagram above shows the internal command flow. The activity diagram below summarizes validation, lookup and deletion of a student or lesson, including removal of associated enrollments and the relevant error paths.
+The `delete student|lesson ID` command removes exactly one record of the requested kind. `DeleteCommandParser` accepts one supported kind (case insensitive) and one positive ID, using the shared ID parsers. An invalid format fails during parsing. `DeleteCommand` looks up the ID only in the requested collection; a missing record raises a kind-specific `CommandException` before any deletion. On success, `Model` removes the record and its enrollments and the result names the deleted student or lesson.
+
+The first sequence diagram gives a component-level view of `delete student 12`. It omits parser and command objects so that the UI, Logic, Model and Storage responsibilities are easy to see.
+
+<puml src="diagrams/ArchitectureSequenceDiagram.puml" alt="Component-level sequence for deleting a student" />
+
+The next diagram expands the command flow. `KIND ID` stands for the requested kind and ID; `student 12` and `lesson 7` illustrate its two branches. The smaller diagrams below expand its parsing, student deletion and lesson deletion references.
+
+<puml src="diagrams/DeleteSequenceDiagram.puml" alt="Overview of the Delete Command Sequence" />
+
+<puml src="diagrams/DeleteParsingSequenceDiagram.puml" alt="Parsing Sequence for the Delete Command" />
+
+<box type="info" seamless>
+
+**Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
+</box>
+
+<puml src="diagrams/DeleteStudentSequenceDiagram.puml" alt="Student Deletion Sequence for the Delete Command" />
+
+<puml src="diagrams/DeleteLessonSequenceDiagram.puml" alt="Lesson Deletion Sequence for the Delete Command" />
+
+The activity diagram summarizes format validation, lookup, deletion, enrollment removal and the error paths. Its decisions use guard labels on the outgoing flows, leaving the diamonds empty.
 
 <puml src="diagrams/DeleteActivityDiagram.puml" alt="Activity Diagram for Deleting a Student or Lesson" />
 
@@ -286,26 +280,26 @@ The sequence diagram below shows the help window being opened by `executeCommand
 
 ### Filter feature
 
-The `filter` command narrows the displayed list down to one student's lessons, one lesson's students, or the lessons on one day of the week. Unlike `add`, it never creates or changes data — it only changes what `Model` currently shows, so its implementation is much smaller.
+The `filter` command narrows the displayed list to one student's lessons, one lesson's students, lessons matching a day, subject or level, or students with a selected payment status. It changes the displayed view without changing saved data.
 
 #### Parsing the arguments
 
-`FilterCommandParser` expects exactly two tokens: a keyword (`student`, `lesson` or `day`) and a value.
+`FilterCommandParser` accepts `student ID`, `lesson ID`, `day DAY`, the bare `paid` or `unpaid` keyword, or one or both of `l/SUBJECT` and `llv/LESSON_LEVEL`.
 
-1. The arguments split into exactly two whitespace-separated tokens; any other shape is rejected with `FilterCommand.MESSAGE_USAGE`.
-2. The first token must be exactly `student`, `lesson` or `day`; any other keyword is rejected the same way.
-3. The second token is parsed using the shared `ParserUtil` methods, which carry the exact error messages: `parseStudentId`/`parseLessonId` for the first two forms, `parseDay` (letter case ignored) for `day`.
+1. The `student`, `lesson` and `day` forms require exactly two whitespace-separated tokens. The payment forms require one token. The subject and level forms use their command prefixes and may be combined.
+2. An incomplete, unknown, mixed or repeated form raises a `ParseException` with a specific message before the view changes.
+3. IDs and days use the shared `ParserUtil` methods. Subject and level values are parsed with the corresponding domain parsers.
 
-The parser builds the matching `FilterCommand` directly — `FilterCommand(StudentId)`, `FilterCommand(LessonId)` or `FilterCommand(DayOfWeek)` — there is no intermediate "reference" object like `AddCommand.StudentRef`/`LessonRef`, because a filter only ever needs an ID or a day, never new details.
+The parser builds the corresponding `FilterCommand` directly. A filter selects existing records and never creates new ones.
 
 #### Executing the command
 
-`FilterCommand#execute(Model)` branches on which of its three fields is set (`studentId`, `lessonId` or `day` — exactly one is non-null):
+`FilterCommand#execute(Model)` branches on the selected filter kind:
 
 1. For `studentId`/`lessonId`, it first confirms the ID refers to an existing student or lesson, otherwise throws a `CommandException` (`MESSAGE_STUDENT_NOT_FOUND` / `MESSAGE_LESSON_NOT_FOUND`). A `DayOfWeek` needs no such check — unlike an ID, every value the parser can produce already refers to something real, so there is nothing to look up or fail to find.
-2. It then delegates to `Model#filterLessonsByStudent(StudentId)`, `Model#filterStudentsByLesson(LessonId)` or `Model#filterLessonsByDay(DayOfWeek)`, and calls `Model#setListView(ListView)` so the UI switches to the list that was just filtered — `LESSONS` for both the student and the day filter, `STUDENTS` for the lesson filter.
+2. It delegates to the matching `Model` filter method and selects the relevant list: `LESSONS` for student, day, subject and level filters; `STUDENTS` for lesson and payment-status filters.
 
-Inside `ModelManager`, at most one of `filteredByStudent` / `filteredByLesson` / `filteredByDay` is ever set — setting one clears the other two, which is what makes all three filters mutually exclusive. The actual filtering is done by `refreshFilters()`, which rebuilds the `Predicate` for both `FilteredList`s from scratch and re-applies it. The day filter only narrows the lesson list (`lesson.getTimeslot().getDay() == dayFilter`) — there is no sensible equivalent predicate for students, since a student has no day of their own, only through the lessons they're enrolled in, so the student list is left unfiltered when filtering by day. `refreshFilters()` is also called after every mutating operation (`addStudent`, `addLesson`, `enroll`, `deleteStudent`, `deleteLesson`), which is why an active filter stays correct even as enrollments change after it was set — the predicate re-checks `Model#isEnrolled` live rather than capturing a snapshot.
+Inside `ModelManager`, setting one filter clears the earlier filter fields. `refreshFilters()` then rebuilds the predicates for both `FilteredList`s. A day, subject or level filter narrows only lessons; payment status narrows only students. Mutating operations reapply the predicates. Payment changes and the month-boundary refresh also re-evaluate the current payment filter and payment sort.
 
 The sequence diagram below shows `execute("filter student 1")`.
 
@@ -315,10 +309,10 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 **Aspect: how the active filter is stored**
 
-* **Alternative 1 (current choice):** three nullable fields in `ModelManager` (`filteredByStudent`, `filteredByLesson`, `filteredByDay`), each clearing the other two when set.
-  * Pros: Simple; `resetFilters()` and the delete commands just null all three fields out.
-  * Cons: The "at most one is set" invariant is enforced by convention (every setter must remember to clear the other two), not by the type system. Adding a filter kind multiplies this by one more field each time.
-* **Alternative 2:** a small sealed type, similar to `AddCommand.StudentRef`/`LessonRef`, representing "no filter / filtered by student / filtered by lesson / filtered by day".
+* **Alternative 1 (current choice):** six nullable fields in `ModelManager`, one each for student, lesson, day, subject, level and paid status. The subject and level fields may be set together; every other filter setter clears the previous fields.
+  * Pros: Each predicate can read the fields it needs, and `resetFilters()` clears them in one place.
+  * Cons: The valid combinations are enforced by the setters rather than the type system, so a new filter setter must clear the previous fields correctly.
+* **Alternative 2:** a sealed type representing each filter form, including the combined subject and level form.
   * Pros: The compiler guarantees exactly one state at a time, and scales to more filter kinds without more fields.
   * Cons: More machinery for a feature this small; `ModelManager` would need to unwrap the sealed type everywhere `refreshFilters()` uses it.
 
@@ -342,21 +336,35 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 **Aspect: clearing the filter when its target is deleted**
 
-`deleteStudent`/`deleteLesson` check whether the ID being deleted is the one currently filtered on, and clear the filter if so, before calling `refreshFilters()`. This was a deliberate choice over leaving the filter as-is: an active filter pointing at a now-deleted ID would otherwise just show an empty list with no indication why, which would confuse the user more than falling back to the full list. The day filter needs no such check, since a day is never deleted.
+`deleteStudent` and `deleteLesson` call `refreshFilters()` without clearing the active filter. If the deleted record was the filter target, the relevant list becomes empty until the user runs another `filter` or `list`. This keeps deletion from changing the user's selected filter.
 
 #### Testing
 
-`FilterCommandParserTest` covers the valid `student`/`lesson`/`day` forms, malformed argument counts, an unknown keyword, an invalid ID and an invalid day name. `FilterCommandTest` covers all three successful filters (checking the resulting model and list view), both not-found cases, and `equals()`.
+`FilterCommandParserTest` covers the student, lesson, day, payment, subject and level forms, including malformed arguments. `FilterCommandTest` checks the resulting model and list view, missing IDs and command equality. `ModelManagerTest` checks that payment filters update after payment changes and a month rollover.
 
 ### Schedule feature
 
 The `schedule` command shows all recurring lessons, while `schedule student ID` limits the same weekly view to lessons attended by that student. Both forms keep the active list filter unchanged.
 
+Lessons recur by weekday and time, so the schedule has no calendar date or `/week` option. `LogicManager` treats the command as read-only and does not save the tracker when it runs.
+
 `ScheduleCommandParser` accepts either no arguments or exactly two tokens: the case-insensitive keyword `student` and an ID parsed by `ParserUtil.parseStudentId`. It throws a `ParseException` for a missing ID, extra tokens, an unknown keyword, or an invalid ID. The shared ID parser supplies the invalid and oversized ID messages.
 
 `ScheduleCommand#execute` checks `Model#findStudent` before changing view state. A missing student causes a `CommandException` with `MESSAGE_STUDENT_NOT_FOUND`; the existing view and schedule selection remain unchanged. For a valid command, it sets the optional schedule student ID in `ModelManager`, then switches to `ListView.SCHEDULE`. The ID is transient view state and does not change stored students, lessons, enrollments, or list filters. Plain `schedule` clears this schedule selection and shows every lesson.
 
+The first sequence diagram shows parsing and execution for `schedule student 1`. The rendering sequence and activity diagram below cover the panel and error paths separately to keep each diagram readable.
+
+<puml src="diagrams/ScheduleCommandSequenceDiagram.puml" alt="Parsing and executing the student schedule command" />
+
 `SchedulePanel#refresh` starts with all lessons. If a student is selected, it keeps only lessons whose IDs appear in `Model#getLessonIdsOf(StudentId)`, then passes them to the existing weekday layout. This keeps the seven-day timeline, empty-day labels, grouping, details cards, and overlap warnings consistent with the lessons currently shown. A student with no enrollments gets an empty weekly view.
+
+`ScheduleLayout` sorts each day's lessons by start time and ID and detects actual time overlaps. The panel groups bars or markers whose labels would collide, and each group opens a scrollable details dialog with a separate card for every lesson. The timeline uses one fixed scale from 00:00 to 23:59; each day scrolls vertically and the week scrolls horizontally. No lessons are hidden when a list filter is active.
+
+<puml src="diagrams/ScheduleRenderingSequenceDiagram.puml" alt="Building the weekly schedule panel" />
+
+The activity diagram uses blank decision diamonds with guards on their outgoing flows.
+
+<puml src="diagrams/ScheduleActivityDiagram.puml" alt="Activity diagram for showing the weekly schedule" />
 
 #### Keyboard navigation
 
@@ -629,8 +637,8 @@ Use case ends.
 
 **MSS**
 
-1. User requests to mark a student as paid using the student's displayed index.
-2. System identifies the student corresponding to the specified index.
+1. User requests to mark a student as paid using the student's permanent ID.
+2. System identifies the student corresponding to the specified ID.
 3. System marks the student's payment status as paid for the current month.
 4. System confirms that the student's payment has been marked as paid.
 
@@ -638,24 +646,16 @@ Use case ends.
 
 **Extensions**
 
-* 1a. The student list has not been displayed.
-    * 1a1. System displays `Please list the students before using the mark command`.
+* 1a. The student ID is missing or more than one argument is provided.
+    * 1a1. System displays `Invalid command format. Use: mark ID`.
     * Use case ends.
 
-* 1b. The student index is missing.
-    * 1b1. System displays `Please provide a student index`.
+* 1b. The student ID is non-numeric or not positive.
+    * 1b1. System displays `ID must be a positive whole number.`
     * Use case ends.
 
-* 1c. The student index is non-numeric or not positive.
-    * 1c1. System displays `Student index must be a positive integer`.
-    * Use case ends.
-
-* 1d. More than one student index is provided.
-    * 1d1. System displays `Only one student index may be provided`.
-    * Use case ends.
-
-* 2a. The student index is outside the displayed student list.
-    * 2a1. System displays `Student index is out of range`.
+* 2a. No student has the specified ID.
+    * 2a1. System displays `No student found with ID ID.`, using the requested ID.
     * Use case ends.
 
 * 3a. The student has already been marked as paid for the current month.
@@ -664,7 +664,7 @@ Use case ends.
     * Use case ends.
 
 * 3b. The payment status cannot be saved.
-    * 3b1. System displays `The payment status could not be saved. No changes were made`.
+    * 3b1. System displays the applicable file-write or insufficient-permissions error and states that no changes were made.
     * 3b2. System leaves the payment status unchanged.
     * Use case ends.
 
@@ -709,7 +709,7 @@ Use case ends.
 * **Contact**: The Singaporean phone number of a student (or of the student's parent or guardian), containing 8 digits.
 * **Current month**: The calendar month given by the date on the user's computer. Payment statuses apply only to the current month.
 * **Data file**: The local, human-editable file in which TuiTracker stores all students, lessons and enrollments.
-* **Display index**: The position number shown beside a student in the currently displayed student list, starting from 1. It can change whenever the displayed list changes, and is used by the `mark` command. Not to be confused with a _student ID_.
+* **Display index**: The position of a record in a currently displayed list, starting from 1. It can change whenever the displayed list changes. Commands use permanent student and lesson IDs instead.
 * **Duplicate lesson**: A lesson with the same subject, level, day, start time and end time as an existing lesson.
 * **Duplicate student**: A student with the same name and contact as an existing student.
 * **Enrollment**: The link between a student and a lesson that the student attends. A student can be enrolled in many lessons, and a lesson can have many students.

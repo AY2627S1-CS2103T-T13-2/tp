@@ -122,6 +122,34 @@ public class FilterCommandTest {
     }
 
     @Test
+    public void execute_paidGiven_showsPaidStudents() {
+        FilterCommand filterCommand = new FilterCommand(true);
+
+        Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+        expectedModel.filterStudentsByPaidStatus(true);
+        expectedModel.setListView(ListView.STUDENTS);
+
+        String expectedMessage = String.format(FilterCommand.MESSAGE_SHOWING_STUDENTS_BY_PAID_STATUS,
+                expectedModel.getStudentList().size(), "paid");
+
+        assertCommandSuccess(filterCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_unpaidGiven_showsUnpaidStudents() {
+        FilterCommand filterCommand = new FilterCommand(false);
+
+        Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+        expectedModel.filterStudentsByPaidStatus(false);
+        expectedModel.setListView(ListView.STUDENTS);
+
+        String expectedMessage = String.format(FilterCommand.MESSAGE_SHOWING_STUDENTS_BY_PAID_STATUS,
+                expectedModel.getStudentList().size(), "unpaid");
+
+        assertCommandSuccess(filterCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
     public void execute_studentIdNotFound_throwsCommandException() {
         StudentId missingId = new StudentId(999);
         FilterCommand filterCommand = new FilterCommand(missingId);
@@ -147,6 +175,8 @@ public class FilterCommandTest {
         FilterCommand filterByScience = new FilterCommand(new Subject("Science"), null);
         FilterCommand filterByPrimary6 = new FilterCommand(null, new Level("Primary 6"));
         FilterCommand filterByScienceP6 = new FilterCommand(new Subject("Science"), new Level("Primary 6"));
+        FilterCommand filterByPaid = new FilterCommand(true);
+        FilterCommand filterByUnpaid = new FilterCommand(false);
 
         // same object -> returns true
         assertTrue(filterByAlice.equals(filterByAlice));
@@ -174,6 +204,15 @@ public class FilterCommandTest {
         assertFalse(filterByScience.equals(filterByPrimary6));
         assertFalse(filterByScience.equals(filterByScienceP6));
         assertFalse(filterByPrimary6.equals(filterByScienceP6));
+
+        // same paid status -> returns true
+        assertTrue(filterByPaid.equals(new FilterCommand(true)));
+
+        // different paid status -> returns false
+        assertFalse(filterByPaid.equals(filterByUnpaid));
+
+        // paid vs student -> returns false
+        assertFalse(filterByPaid.equals(filterByAlice));
 
         // null -> returns false
         assertFalse(filterByAlice.equals(null));

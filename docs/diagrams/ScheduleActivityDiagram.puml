@@ -1,0 +1,41 @@
+@startuml
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+
+start
+:User enters `schedule` or `schedule student ID`;
+if () then ([valid arguments])
+    if () then ([student ID given])
+        :Look up the student;
+        if () then ([student exists])
+            :Select the student's enrolled lessons;
+        else ([student missing])
+            :Show the student-not-found error;
+            :Leave the displayed panel unchanged;
+            stop
+        endif
+    else ([no arguments])
+        :Select all lessons;
+    endif
+    :Switch to the schedule panel;
+    :Read all lessons, ignoring list filters;
+    :Keep only selected student's lessons, if applicable;
+    :Group by weekday and sort by start time;
+    :Detect overlaps and group labels that would collide;
+    if () then ([overlaps found])
+        :Show warning and highlight affected lessons;
+    endif
+    :Render all seven daily timelines;
+    :Show `No lessons` on empty days;
+    if () then ([lessons exist])
+        :Show the schedule confirmation;
+    else ([no lessons])
+        :Show the empty-schedule message;
+    endif
+else ([invalid arguments])
+    :Show the relevant ParseException message;
+    :Leave the displayed panel unchanged;
+endif
+stop
+
+@enduml

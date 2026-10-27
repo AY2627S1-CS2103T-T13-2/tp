@@ -120,6 +120,16 @@ public class ModelStub implements Model {
     }
 
     @Override
+    public Student unmarkPaid(StudentId studentId) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
+    public void refreshPaymentStatus() {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
     public Student addStudent(Name name, Contact contact, Level level) {
         throw new AssertionError("This method should not be called.");
     }
@@ -175,7 +185,17 @@ public class ModelStub implements Model {
     }
 
     @Override
+    public void filterStudentsByPaidStatus(boolean paid) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
     public void resetFilters() {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
+    public void sort(seedu.address.model.SortField field, boolean ascending) {
         throw new AssertionError("This method should not be called.");
     }
 

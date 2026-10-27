@@ -1,0 +1,50 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant ":ScheduleCommandParser" as ScheduleCommandParser LOGIC_COLOR
+participant "ParserUtil" as ParserUtil LOGIC_COLOR
+participant "s:ScheduleCommand" as ScheduleCommand LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant ":ModelManager" as ModelManager MODEL_COLOR
+end box
+
+[-> LogicManager : execute("schedule student 1")
+activate LogicManager LOGIC_COLOR
+
+LogicManager -> AddressBookParser : parseCommand("schedule student 1")
+activate AddressBookParser LOGIC_COLOR
+create ScheduleCommandParser
+AddressBookParser -> ScheduleCommandParser : new ScheduleCommandParser()
+activate ScheduleCommandParser LOGIC_COLOR
+AddressBookParser -> ScheduleCommandParser : parse(" student 1")
+ScheduleCommandParser -> ParserUtil : parseStudentId("1")
+ParserUtil --> ScheduleCommandParser : StudentId(1)
+create ScheduleCommand
+ScheduleCommandParser -> ScheduleCommand : new ScheduleCommand(StudentId(1))
+ScheduleCommand --> ScheduleCommandParser : s
+ScheduleCommandParser --> AddressBookParser : s
+deactivate ScheduleCommandParser
+AddressBookParser --> LogicManager : s
+deactivate AddressBookParser
+
+LogicManager -> ScheduleCommand : execute(ModelManager)
+activate ScheduleCommand LOGIC_COLOR
+ScheduleCommand -> ModelManager : findStudent(StudentId(1))
+ModelManager --> ScheduleCommand : Optional<Student>
+ScheduleCommand -> ModelManager : getLessonIdsOf(StudentId(1))
+ModelManager --> ScheduleCommand : lesson IDs
+ScheduleCommand -> ModelManager : setScheduleStudentId(Optional.of(StudentId(1)))
+ScheduleCommand -> ModelManager : setListView(SCHEDULE)
+ScheduleCommand --> LogicManager : r:CommandResult
+deactivate ScheduleCommand
+
+[<-- LogicManager : r
+deactivate LogicManager
+
+@enduml

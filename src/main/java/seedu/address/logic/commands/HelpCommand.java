@@ -16,7 +16,9 @@ public class HelpCommand extends Command {
             DeleteCommand.MESSAGE_USAGE,
             ListCommand.MESSAGE_USAGE,
             MarkCommand.MESSAGE_USAGE,
+            UnmarkCommand.MESSAGE_USAGE,
             ScheduleCommand.MESSAGE_USAGE,
+            SortCommand.MESSAGE_USAGE,
             FilterCommand.MESSAGE_USAGE,
             COMMAND_WORD,
             ExitCommand.COMMAND_WORD);
@@ -26,5 +28,10 @@ public class HelpCommand extends Command {
     @Override
     public CommandResult execute(Model model) {
         return new CommandResult(SHOWING_HELP_MESSAGE, true, false);
+    }
+
+    @Override
+    public boolean isDataMutating() {
+        return false;
     }
 }

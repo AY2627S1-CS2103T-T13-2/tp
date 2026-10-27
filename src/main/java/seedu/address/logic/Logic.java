@@ -52,6 +52,9 @@ public interface Logic {
     /** Returns true if the student has been marked as paid for the current month. */
     boolean isPaid(StudentId studentId);
 
+    /** Re-evaluates payment-dependent views when the calendar month changes. */
+    void refreshPaymentStatus();
+
     /**
      * Returns the user prefs' GUI settings.
      */

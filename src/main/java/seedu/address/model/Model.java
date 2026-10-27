@@ -130,6 +130,15 @@ public interface Model {
      */
     Student markPaid(StudentId studentId);
 
+    /**
+     * Removes the student's paid status for the current month and returns the updated student.
+     * The student must exist.
+     */
+    Student unmarkPaid(StudentId studentId);
+
+    /** Re-evaluates payment-dependent filtering and sorting for the current calendar month. */
+    void refreshPaymentStatus();
+
     //// create, edit and delete
 
     /**
@@ -197,9 +206,18 @@ public interface Model {
     void filterLessonsBySubjectAndLevel(Subject subject, Level level);
 
     /**
+     * Shows only the students who have (or have not) been marked as paid for the current month, replacing any
+     * earlier filter. The lesson list is unaffected.
+     */
+    void filterStudentsByPaidStatus(boolean paid);
+
+    /**
      * Clears any filter, so that every student and every lesson is shown.
      */
     void resetFilters();
+
+    /** Sorts the displayed records by the selected field and direction. */
+    void sort(SortField field, boolean ascending);
 
     //// view
 

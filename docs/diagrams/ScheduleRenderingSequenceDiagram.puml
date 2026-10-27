@@ -1,0 +1,49 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box UI UI_COLOR_T1
+participant ":MainWindow" as MainWindow UI_COLOR
+participant ":SchedulePanel" as SchedulePanel UI_COLOR
+participant "ScheduleLayout" as ScheduleLayout UI_COLOR
+end box
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+end box
+
+[-> MainWindow : schedule result returned
+activate MainWindow UI_COLOR
+MainWindow -> SchedulePanel : refresh()
+activate SchedulePanel UI_COLOR
+SchedulePanel -> LogicManager : getScheduleStudentId()
+LogicManager --> SchedulePanel : Optional<StudentId>
+SchedulePanel -> LogicManager : getAllLessons()
+LogicManager --> SchedulePanel : all lessons
+opt Student selected
+    SchedulePanel -> LogicManager : getLessonIdsOf(studentId)
+    LogicManager --> SchedulePanel : enrolled lesson IDs
+    SchedulePanel -> SchedulePanel : keep only enrolled lessons
+end
+SchedulePanel -> ScheduleLayout : groupByDay(visible lessons)
+ScheduleLayout --> SchedulePanel : seven sorted day lists
+SchedulePanel -> ScheduleLayout : overlappingLessonIds(byDay)
+ScheduleLayout --> SchedulePanel : overlapping IDs
+
+loop Each weekday
+    SchedulePanel -> ScheduleLayout : groupForDisplay(dayLessons, minimumBarMinutes, markerLabelMinutes)
+    ScheduleLayout --> SchedulePanel : display groups
+    opt A tall lesson bar needs a student summary
+        SchedulePanel -> LogicManager : getStudentsIn(lessonId)
+        LogicManager --> SchedulePanel : enrolled students
+    end
+end
+
+SchedulePanel -> SchedulePanel : rebuild timelines, cards and warning
+SchedulePanel --> MainWindow : refreshed
+deactivate SchedulePanel
+MainWindow -> MainWindow : display result message
+[<-- MainWindow : result
+deactivate MainWindow
+
+@enduml

@@ -41,6 +41,7 @@ public class MainWindow extends UiPart<Stage> {
     private CommandBox commandBox;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+    private PaymentMonthRefresher paymentMonthRefresher;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -142,6 +143,12 @@ public class MainWindow extends UiPart<Stage> {
                 event.consume();
             }
         });
+
+        paymentMonthRefresher = new PaymentMonthRefresher(() -> {
+            logic.refreshPaymentStatus();
+            studentListPanel.refresh();
+        });
+        paymentMonthRefresher.start();
     }
 
     /**
@@ -181,6 +188,9 @@ public class MainWindow extends UiPart<Stage> {
                 (int) primaryStage.getX(), (int) primaryStage.getY());
         logic.setGuiSettings(guiSettings);
         helpWindow.hide();
+        if (paymentMonthRefresher != null) {
+            paymentMonthRefresher.stop();
+        }
         primaryStage.hide();
     }
 

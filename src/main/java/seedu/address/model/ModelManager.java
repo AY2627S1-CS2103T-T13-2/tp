@@ -53,18 +53,23 @@ public class ModelManager implements Model {
     private final Clock clock;
     private final FilteredList<Student> filteredStudents;
     private final FilteredList<Lesson> filteredLessons;
+    private final SortedList<Student> sortedStudents;
+    private final SortedList<Lesson> sortedLessons;
     private final ObjectProperty<ListView> listView = new SimpleObjectProperty<>(ListView.STUDENTS);
     private Optional<StudentId> scheduleStudentId = Optional.empty();
+    private SortField studentSortField;
+    private boolean studentSortAscending = true;
 
     /**
      * The filter that is currently active, if any. Only one kind is set at a time: the student, the lesson,
-     * the day, or the subject and level (either or both of which may be set).
+     * the day, the paid status, or the subject and level (either or both of which may be set).
      */
     private StudentId filteredByStudent;
     private LessonId filteredByLesson;
     private DayOfWeek filteredByDay;
     private Subject filteredBySubject;
     private Level filteredByLevel;
+    private Boolean filteredByPaidStatus;
 
     /**
      * Initializes a ModelManager with the given tuiTracker, userPrefs and clock.
@@ -79,8 +84,10 @@ public class ModelManager implements Model {
         this.tuiTracker = new TuiTracker(tuiTracker);
         this.userPrefs = new UserPrefs(userPrefs);
         this.clock = clock;
-        filteredStudents = new FilteredList<>(new SortedList<>(this.tuiTracker.getStudentList(), STUDENT_ORDER));
-        filteredLessons = new FilteredList<>(new SortedList<>(this.tuiTracker.getLessonList(), LESSON_ORDER));
+        sortedStudents = new SortedList<>(this.tuiTracker.getStudentList(), STUDENT_ORDER);
+        sortedLessons = new SortedList<>(this.tuiTracker.getLessonList(), LESSON_ORDER);
+        filteredStudents = new FilteredList<>(sortedStudents);
+        filteredLessons = new FilteredList<>(sortedLessons);
     }
 
     /**
@@ -191,7 +198,24 @@ public class ModelManager implements Model {
 
     @Override
     public Student markPaid(StudentId studentId) {
-        return tuiTracker.markPaid(studentId, currentMonth());
+        Student updated = tuiTracker.markPaid(studentId, currentMonth());
+        refreshPaymentStatus();
+        return updated;
+    }
+
+    @Override
+    public Student unmarkPaid(StudentId studentId) {
+        Student updated = tuiTracker.unmarkPaid(studentId);
+        refreshPaymentStatus();
+        return updated;
+    }
+
+    @Override
+    public void refreshPaymentStatus() {
+        refreshFilters();
+        if (studentSortField == SortField.STUDENT_PAYMENT) {
+            sort(studentSortField, studentSortAscending);
+        }
     }
 
     //=========== Create, edit and delete ====================================================================
@@ -282,9 +306,46 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public void filterStudentsByPaidStatus(boolean paid) {
+        clearFilterFields();
+        filteredByPaidStatus = paid;
+        refreshFilters();
+    }
+
+    @Override
     public void resetFilters() {
         clearFilterFields();
         refreshFilters();
+    }
+
+    @Override
+    public void sort(SortField field, boolean ascending) {
+        requireNonNull(field);
+        Comparator<?> comparator = switch (field) {
+            case STUDENT_NAME -> Comparator.comparing(student -> ((Student) student).getName().fullName,
+                    String.CASE_INSENSITIVE_ORDER).thenComparing(student -> ((Student) student).getId());
+            case STUDENT_PAYMENT -> Comparator.comparing(student -> ((Student) student).isPaid(currentMonth()))
+                    .thenComparing(student -> ((Student) student).getId());
+            case LESSON_SUBJECT -> Comparator.comparing(lesson -> ((Lesson) lesson).getSubject().value,
+                    String.CASE_INSENSITIVE_ORDER).thenComparing(lesson -> ((Lesson) lesson).getId());
+            case LESSON_FEE -> Comparator.comparing(lesson -> ((Lesson) lesson).getFee().getAmount())
+                    .thenComparing(lesson -> ((Lesson) lesson).getId());
+            case LESSON_TIME -> LESSON_ORDER;
+        };
+        if (!ascending) {
+            comparator = comparator.reversed();
+        }
+        if (field == SortField.STUDENT_NAME || field == SortField.STUDENT_PAYMENT) {
+            @SuppressWarnings("unchecked")
+            Comparator<Student> studentComparator = (Comparator<Student>) comparator;
+            sortedStudents.setComparator(studentComparator);
+            studentSortField = field;
+            studentSortAscending = ascending;
+        } else {
+            @SuppressWarnings("unchecked")
+            Comparator<Lesson> lessonComparator = (Comparator<Lesson>) comparator;
+            sortedLessons.setComparator(lessonComparator);
+        }
     }
 
     private void clearFilterFields() {
@@ -293,6 +354,7 @@ public class ModelManager implements Model {
         filteredByDay = null;
         filteredBySubject = null;
         filteredByLevel = null;
+        filteredByPaidStatus = null;
     }
 
     /**
@@ -305,18 +367,24 @@ public class ModelManager implements Model {
         final DayOfWeek dayFilter = filteredByDay;
         final Subject subjectFilter = filteredBySubject;
         final Level levelFilter = filteredByLevel;
+        final Boolean paidFilter = filteredByPaidStatus;
 
-        Predicate<Student> studentPredicate = lessonFilter == null
-                ? student -> true
-                : student -> tuiTracker.isEnrolled(student.getId(), lessonFilter);
+        Predicate<Student> studentPredicate;
+        if (lessonFilter != null) {
+            studentPredicate = student -> tuiTracker.isEnrolled(student.getId(), lessonFilter);
+        } else if (paidFilter != null) {
+            final YearMonth month = currentMonth();
+            studentPredicate = student -> student.isPaid(month) == paidFilter;
+        } else {
+            studentPredicate = student -> true;
+        }
         Predicate<Lesson> lessonPredicate;
         if (studentFilter != null) {
             lessonPredicate = lesson -> tuiTracker.isEnrolled(studentFilter, lesson.getId());
         } else if (dayFilter != null) {
             lessonPredicate = lesson -> lesson.getTimeslot().getDay() == dayFilter;
         } else if (subjectFilter != null || levelFilter != null) {
-            lessonPredicate = lesson -> (subjectFilter == null
-                    || lesson.getSubject().value.equalsIgnoreCase(subjectFilter.value))
+            lessonPredicate = lesson -> (subjectFilter == null || lesson.getSubject().isSameSubject(subjectFilter))
                     && (levelFilter == null || lesson.getLevel().equals(levelFilter));
         } else {
             lessonPredicate = lesson -> true;

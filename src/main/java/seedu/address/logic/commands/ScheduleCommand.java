@@ -58,6 +58,11 @@ public class ScheduleCommand extends Command {
     }
 
     @Override
+    public boolean isDataMutating() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object other) {
         return other == this || (other instanceof ScheduleCommand otherCommand
                 && studentId.equals(otherCommand.studentId));

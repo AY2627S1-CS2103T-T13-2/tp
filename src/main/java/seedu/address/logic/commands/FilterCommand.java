@@ -22,14 +22,15 @@ import seedu.address.model.student.StudentId;
 
 /**
  * Shows only the lessons of one student, only the students of one lesson, only the lessons on one day,
- * or only the lessons with a given subject, level, or both.
+ * only the students who are paid or unpaid for the current month, or only the lessons with a given subject,
+ * level, or both.
  */
 public class FilterCommand extends Command {
 
     public static final String COMMAND_WORD = "filter";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + " student|lesson ID or " + COMMAND_WORD + " day DAY or "
-            + COMMAND_WORD + " [l/SUBJECT] [llv/LESSON_LEVEL]";
+            + COMMAND_WORD + " paid|unpaid or " + COMMAND_WORD + " [l/SUBJECT] [llv/LESSON_LEVEL]";
 
     public static final String MESSAGE_SHOWING_LESSONS = "Showing %1$d lesson(s) for student ID %2$s.";
 
@@ -39,15 +40,19 @@ public class FilterCommand extends Command {
 
     public static final String MESSAGE_SHOWING_LESSONS_MATCHING = "Showing %1$d lesson(s) with %2$s.";
 
+    public static final String MESSAGE_SHOWING_STUDENTS_BY_PAID_STATUS =
+            "Showing %1$d student(s) who are %2$s for the current month.";
+
     /**
-     * Only one kind of filter is set: the student, the lesson, the day, or the subject and level.
-     * When filtering by subject and level, either one or both may be set.
+     * Only one kind of filter is set: the student, the lesson, the day, the paid status, or the subject and
+     * level. When filtering by subject and level, either one or both may be set.
      */
     private final StudentId studentId;
     private final LessonId lessonId;
     private final DayOfWeek day;
     private final Subject subject;
     private final Level level;
+    private final Boolean paidStatus;
 
     /**
      * Creates a command that shows only the lessons the given student is enrolled in.
@@ -58,6 +63,7 @@ public class FilterCommand extends Command {
         this.day = null;
         this.subject = null;
         this.level = null;
+        this.paidStatus = null;
     }
 
     /**
@@ -69,6 +75,7 @@ public class FilterCommand extends Command {
         this.day = null;
         this.subject = null;
         this.level = null;
+        this.paidStatus = null;
     }
 
     /**
@@ -80,6 +87,7 @@ public class FilterCommand extends Command {
         this.day = requireNonNull(day);
         this.subject = null;
         this.level = null;
+        this.paidStatus = null;
     }
 
     /**
@@ -93,6 +101,19 @@ public class FilterCommand extends Command {
         this.day = null;
         this.subject = subject;
         this.level = level;
+        this.paidStatus = null;
+    }
+
+    /**
+     * Creates a command that shows only the students who are (or are not) paid for the current month.
+     */
+    public FilterCommand(boolean paidStatus) {
+        this.studentId = null;
+        this.lessonId = null;
+        this.day = null;
+        this.subject = null;
+        this.level = null;
+        this.paidStatus = paidStatus;
     }
 
     @Override
@@ -128,6 +149,13 @@ public class FilterCommand extends Command {
                     Timeslot.dayName(day)));
         }
 
+        if (paidStatus != null) {
+            model.filterStudentsByPaidStatus(paidStatus);
+            model.setListView(ListView.STUDENTS);
+            return new CommandResult(String.format(MESSAGE_SHOWING_STUDENTS_BY_PAID_STATUS,
+                    model.getStudentList().size(), paidStatus ? "paid" : "unpaid"));
+        }
+
         model.filterLessonsBySubjectAndLevel(subject, level);
         model.setListView(ListView.LESSONS);
         return new CommandResult(String.format(MESSAGE_SHOWING_LESSONS_MATCHING, model.getLessonList().size(),
@@ -149,6 +177,11 @@ public class FilterCommand extends Command {
     }
 
     @Override
+    public boolean isDataMutating() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;
@@ -163,12 +196,13 @@ public class FilterCommand extends Command {
                 && Objects.equals(lessonId, otherFilterCommand.lessonId)
                 && Objects.equals(day, otherFilterCommand.day)
                 && Objects.equals(subject, otherFilterCommand.subject)
-                && Objects.equals(level, otherFilterCommand.level);
+                && Objects.equals(level, otherFilterCommand.level)
+                && Objects.equals(paidStatus, otherFilterCommand.paidStatus);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(studentId, lessonId, day, subject, level);
+        return Objects.hash(studentId, lessonId, day, subject, level, paidStatus);
     }
 
     @Override
@@ -179,6 +213,7 @@ public class FilterCommand extends Command {
                 .add("day", day)
                 .add("subject", subject)
                 .add("level", level)
+                .add("paidStatus", paidStatus)
                 .toString();
     }
 }
