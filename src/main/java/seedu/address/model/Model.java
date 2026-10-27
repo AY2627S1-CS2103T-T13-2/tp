@@ -203,6 +203,12 @@ public interface Model {
     void filterLessonsBySubjectAndLevel(Subject subject, Level level);
 
     /**
+     * Shows only the students who have (or have not) been marked as paid for the current month, replacing any
+     * earlier filter. The lesson list is unaffected.
+     */
+    void filterStudentsByPaidStatus(boolean paid);
+
+    /**
      * Clears any filter, so that every student and every lesson is shown.
      */
     void resetFilters();
