@@ -54,6 +54,7 @@
         "add-feature": "Add feature",
         "edit-feature": "Edit feature",
         "delete-feature": "Delete feature",
+        "schedule-feature": "Schedule feature",
         "list-feature": "List feature",
         "mark-feature": "Mark feature",
         "help-feature": "Help feature",
