@@ -649,7 +649,7 @@ Use case ends.
     * Use case ends.
 
 * 3b. The payment status cannot be saved.
-    * 3b1. System displays `The payment status could not be saved. No changes were made`.
+    * 3b1. System displays the applicable file-write or insufficient-permissions error and states that no changes were made.
     * 3b2. System leaves the payment status unchanged.
     * Use case ends.
 
