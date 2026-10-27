@@ -51,6 +51,12 @@ With TuiTracker, you can view and update student and lesson details, manage enro
 
 ## Features
 
+### Command-box shortcuts
+
+The command box keeps successful commands for the current session. Press **Up** and **Down** to move through that
+history; text you were drafting is restored when you move past the newest entry. Consecutive duplicate commands are
+stored once. Type the start of a command word and press **Tab** to complete it when there is only one match.
+
 <box type="info" seamless>
 
 **Notes about the command format:**<br>
