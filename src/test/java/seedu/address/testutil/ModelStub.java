@@ -200,6 +200,16 @@ public class ModelStub implements Model {
     }
 
     @Override
+    public Optional<StudentId> getScheduleStudentId() {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
+    public void setScheduleStudentId(Optional<StudentId> studentId) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
     public ReadOnlyObjectProperty<ListView> listViewProperty() {
         throw new AssertionError("This method should not be called.");
     }

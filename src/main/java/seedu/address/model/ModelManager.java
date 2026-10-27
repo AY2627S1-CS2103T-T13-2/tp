@@ -54,6 +54,7 @@ public class ModelManager implements Model {
     private final FilteredList<Student> filteredStudents;
     private final FilteredList<Lesson> filteredLessons;
     private final ObjectProperty<ListView> listView = new SimpleObjectProperty<>(ListView.STUDENTS);
+    private Optional<StudentId> scheduleStudentId = Optional.empty();
 
     /**
      * The filter that is currently active, if any. Only one kind is set at a time: the student, the lesson,
@@ -349,6 +350,16 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public Optional<StudentId> getScheduleStudentId() {
+        return scheduleStudentId;
+    }
+
+    @Override
+    public void setScheduleStudentId(Optional<StudentId> studentId) {
+        scheduleStudentId = requireNonNull(studentId);
+    }
+
+    @Override
     public ReadOnlyObjectProperty<ListView> listViewProperty() {
         return listView;
     }
@@ -368,12 +379,13 @@ public class ModelManager implements Model {
                 && userPrefs.equals(otherModelManager.userPrefs)
                 && filteredStudents.equals(otherModelManager.filteredStudents)
                 && filteredLessons.equals(otherModelManager.filteredLessons)
+                && scheduleStudentId.equals(otherModelManager.scheduleStudentId)
                 && getListView() == otherModelManager.getListView();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tuiTracker, userPrefs, getListView());
+        return Objects.hash(tuiTracker, userPrefs, scheduleStudentId, getListView());
     }
 
 }

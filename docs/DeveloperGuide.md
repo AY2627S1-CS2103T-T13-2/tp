@@ -348,6 +348,24 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 `FilterCommandParserTest` covers the valid `student`/`lesson`/`day` forms, malformed argument counts, an unknown keyword, an invalid ID and an invalid day name. `FilterCommandTest` covers all three successful filters (checking the resulting model and list view), both not-found cases, and `equals()`.
 
+### Schedule feature
+
+The `schedule` command shows all recurring lessons, while `schedule student ID` limits the same weekly view to lessons attended by that student. Both forms keep the active list filter unchanged.
+
+`ScheduleCommandParser` accepts either no arguments or exactly two tokens: the case-insensitive keyword `student` and an ID parsed by `ParserUtil.parseStudentId`. It throws a `ParseException` for a missing ID, extra tokens, an unknown keyword, or an invalid ID. The shared ID parser supplies the invalid and oversized ID messages.
+
+`ScheduleCommand#execute` checks `Model#findStudent` before changing view state. A missing student causes a `CommandException` with `MESSAGE_STUDENT_NOT_FOUND`; the existing view and schedule selection remain unchanged. For a valid command, it sets the optional schedule student ID in `ModelManager`, then switches to `ListView.SCHEDULE`. The ID is transient view state and does not change stored students, lessons, enrollments, or list filters. Plain `schedule` clears this schedule selection and shows every lesson.
+
+`SchedulePanel#refresh` starts with all lessons. If a student is selected, it keeps only lessons whose IDs appear in `Model#getLessonIdsOf(StudentId)`, then passes them to the existing weekday layout. This keeps the seven-day timeline, empty-day labels, grouping, details cards, and overlap warnings consistent with the lessons currently shown. A student with no enrollments gets an empty weekly view.
+
+#### Keyboard navigation
+
+`MainWindow` captures `F6` when the schedule is visible and focuses Monday's heading. Each day heading is a focusable button, including on empty days. `SchedulePanel` handles arrow keys within its own view: Left/Right chooses a day, Up/Down chooses the previous or next lesson, and Page Up/Page Down and Home/End scroll the focused day. The panel adjusts horizontal and vertical scroll positions when focus moves so the focused control stays visible. Pressing Enter or Space uses the button's normal action to enter a day or open lesson details. Escape returns focus to the command box.
+
+The lesson details dialog starts with its scroll area focused. Its cards can be reached with Tab, Escape closes it, and focus returns to the lesson button that opened it. The key handler is attached to the schedule panel, so it does not consume arrow keys while the user is typing a command. Focused headings, lessons, and detail cards have visible highlights.
+
+`ScheduleCommandParserTest` covers accepted and malformed arguments. `ScheduleCommandTest` checks student selection, empty and missing students, unchanged list filters, and resetting to the full schedule.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
@@ -482,6 +500,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
 | `* * *` | tutor | list my students with their contact details, levels, lessons, monthly fees, and payment statuses | review my roster and outstanding payments |
 | `* * *` | tutor | list my lessons with their timeslots, fees, and enrolled students | review my teaching schedule |
+| `* * *` | tutor | view the weekly schedule for one student | see when that student's lessons take place |
 | `* * *` | tutor | delete a student and their associated enrollments | remove a student who no longer attends lessons without leaving obsolete enrollments |
 | `* * *` | tutor | delete a lesson and its associated enrollments | remove a cancelled lesson without leaving obsolete enrollments |
 | `* * *` | tutor | mark a student as paid for the current month | track which students have paid |
@@ -760,6 +779,32 @@ _To be written by the owner of `mark`._
 ### Showing a student's lessons or a lesson's students
 
 _To be written by the owner of `filter`._
+
+### Viewing the weekly schedule
+
+1. Enter `schedule student 1` with the sample data.<br>
+   Expected: The weekly schedule shows only student 1's enrolled lessons, while retaining all seven days. The result names the student and ID.
+
+1. Enter `schedule`.<br>
+   Expected: The same weekly view now shows all lessons again.
+
+1. Enter `schedule student 999`.<br>
+   Expected: `No student found with ID 999.` The displayed schedule is unchanged.
+
+1. Enter `schedule student`, `schedule student abc`, and `schedule student 1 extra` separately.<br>
+   Expected: Each command is rejected with a format or ID error. The displayed schedule is unchanged.
+
+1. Create a student who is not enrolled in any lesson, then enter `schedule student ID` using their assigned ID.<br>
+   Expected: All seven days say `No lessons`; the result names the student and says no lessons are scheduled for them.
+
+1. Enter `schedule`, then press `F6` without using the mouse.<br>
+   Expected: Monday's heading receives a visible focus highlight. Use Left/Right to reach Sunday, and Enter or Space on a day with lessons to focus its first lesson.
+
+1. Use Up/Down to move between lessons, then press Enter.<br>
+   Expected: Focus and scrolling follow the selected lesson, and its details window opens. Use Tab to reach each card and the Close button. Press Escape to close it; focus returns to that lesson. Press Escape again to focus the command box.
+
+1. Focus an empty day and use Page Down, Page Up, Home, and End.<br>
+   Expected: Its timeline can be scrolled from 00:00 to 23:59 without using the mouse. Other day columns keep their own scroll positions.
 
 ### Saving data
 

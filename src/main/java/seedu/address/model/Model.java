@@ -224,6 +224,12 @@ public interface Model {
      */
     void setListView(ListView listView);
 
+    /** Returns the student whose lessons the schedule shows, or empty when it shows all lessons. */
+    Optional<StudentId> getScheduleStudentId();
+
+    /** Selects a student's lessons for the schedule, or all lessons when empty. */
+    void setScheduleStudentId(Optional<StudentId> studentId);
+
     /**
      * Returns a property that changes when {@link #setListView(ListView)} is called, for the UI to observe.
      */
