@@ -53,6 +53,8 @@ public class ModelManager implements Model {
     private final Clock clock;
     private final FilteredList<Student> filteredStudents;
     private final FilteredList<Lesson> filteredLessons;
+    private final SortedList<Student> sortedStudents;
+    private final SortedList<Lesson> sortedLessons;
     private final ObjectProperty<ListView> listView = new SimpleObjectProperty<>(ListView.STUDENTS);
 
     /**
@@ -78,8 +80,10 @@ public class ModelManager implements Model {
         this.tuiTracker = new TuiTracker(tuiTracker);
         this.userPrefs = new UserPrefs(userPrefs);
         this.clock = clock;
-        filteredStudents = new FilteredList<>(new SortedList<>(this.tuiTracker.getStudentList(), STUDENT_ORDER));
-        filteredLessons = new FilteredList<>(new SortedList<>(this.tuiTracker.getLessonList(), LESSON_ORDER));
+        sortedStudents = new SortedList<>(this.tuiTracker.getStudentList(), STUDENT_ORDER);
+        sortedLessons = new SortedList<>(this.tuiTracker.getLessonList(), LESSON_ORDER);
+        filteredStudents = new FilteredList<>(sortedStudents);
+        filteredLessons = new FilteredList<>(sortedLessons);
     }
 
     /**
@@ -284,6 +288,34 @@ public class ModelManager implements Model {
     public void resetFilters() {
         clearFilterFields();
         refreshFilters();
+    }
+
+    @Override
+    public void sort(SortField field, boolean ascending) {
+        requireNonNull(field);
+        Comparator<?> comparator = switch (field) {
+        case STUDENT_NAME -> Comparator.comparing(student -> ((Student) student).getName().fullName,
+                String.CASE_INSENSITIVE_ORDER).thenComparing(student -> ((Student) student).getId());
+        case STUDENT_PAYMENT -> Comparator.comparing(student -> ((Student) student).isPaid(currentMonth()))
+                .thenComparing(student -> ((Student) student).getId());
+        case LESSON_SUBJECT -> Comparator.comparing(lesson -> ((Lesson) lesson).getSubject().value,
+                String.CASE_INSENSITIVE_ORDER).thenComparing(lesson -> ((Lesson) lesson).getId());
+        case LESSON_FEE -> Comparator.comparing(lesson -> ((Lesson) lesson).getFee().getAmount())
+                .thenComparing(lesson -> ((Lesson) lesson).getId());
+        case LESSON_TIME -> LESSON_ORDER;
+        };
+        if (!ascending) {
+            comparator = comparator.reversed();
+        }
+        if (field == SortField.STUDENT_NAME || field == SortField.STUDENT_PAYMENT) {
+            @SuppressWarnings("unchecked")
+            Comparator<Student> studentComparator = (Comparator<Student>) comparator;
+            sortedStudents.setComparator(studentComparator);
+        } else {
+            @SuppressWarnings("unchecked")
+            Comparator<Lesson> lessonComparator = (Comparator<Lesson>) comparator;
+            sortedLessons.setComparator(lessonComparator);
+        }
     }
 
     private void clearFilterFields() {

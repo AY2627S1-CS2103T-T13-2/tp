@@ -180,6 +180,11 @@ public class ModelStub implements Model {
     }
 
     @Override
+    public void sort(seedu.address.model.SortField field, boolean ascending) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
     public ObservableList<Student> getStudentList() {
         throw new AssertionError("This method should not be called.");
     }

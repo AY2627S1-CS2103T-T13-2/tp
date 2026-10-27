@@ -201,6 +201,9 @@ public interface Model {
      */
     void resetFilters();
 
+    /** Sorts the displayed records by the selected field and direction. */
+    void sort(SortField field, boolean ascending);
+
     //// view
 
     /**

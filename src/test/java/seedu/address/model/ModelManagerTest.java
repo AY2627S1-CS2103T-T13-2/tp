@@ -198,6 +198,16 @@ public class ModelManagerTest {
     //// filters
 
     @Test
+    public void sort_studentNameAndLessonFee_ordersLists() {
+        modelManager.sort(SortField.STUDENT_NAME, false);
+        assertEquals(Arrays.asList(CHLOE, BRYAN, ALICE), modelManager.getStudentList());
+
+        modelManager.sort(SortField.LESSON_FEE, true);
+        assertEquals(Arrays.asList(seedu.address.testutil.TypicalLessons.ENGLISH, SCIENCE_P6,
+                MATHEMATICS, SCIENCE_S2), modelManager.getLessonList());
+    }
+
+    @Test
     public void filterLessonsByStudent_showsOnlyThatStudentsLessons() {
         modelManager.filterLessonsByStudent(ALICE.getId());
 
