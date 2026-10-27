@@ -610,8 +610,8 @@ Use case ends.
 
 **MSS**
 
-1. User requests to mark a student as paid using the student's displayed index.
-2. System identifies the student corresponding to the specified index.
+1. User requests to mark a student as paid using the student's permanent ID.
+2. System identifies the student corresponding to the specified ID.
 3. System marks the student's payment status as paid for the current month.
 4. System confirms that the student's payment has been marked as paid.
 
@@ -619,24 +619,16 @@ Use case ends.
 
 **Extensions**
 
-* 1a. The student list has not been displayed.
-    * 1a1. System displays `Please list the students before using the mark command`.
+* 1a. The student ID is missing or more than one argument is provided.
+    * 1a1. System displays `Invalid command format. Use: mark ID`.
     * Use case ends.
 
-* 1b. The student index is missing.
-    * 1b1. System displays `Please provide a student index`.
+* 1b. The student ID is non-numeric or not positive.
+    * 1b1. System displays `ID must be a positive whole number.`
     * Use case ends.
 
-* 1c. The student index is non-numeric or not positive.
-    * 1c1. System displays `Student index must be a positive integer`.
-    * Use case ends.
-
-* 1d. More than one student index is provided.
-    * 1d1. System displays `Only one student index may be provided`.
-    * Use case ends.
-
-* 2a. The student index is outside the displayed student list.
-    * 2a1. System displays `Student index is out of range`.
+* 2a. No student has the specified ID.
+    * 2a1. System displays `No student found with ID ID.`, using the requested ID.
     * Use case ends.
 
 * 3a. The student has already been marked as paid for the current month.
@@ -690,7 +682,7 @@ Use case ends.
 * **Contact**: The Singaporean phone number of a student (or of the student's parent or guardian), containing 8 digits.
 * **Current month**: The calendar month given by the date on the user's computer. Payment statuses apply only to the current month.
 * **Data file**: The local, human-editable file in which TuiTracker stores all students, lessons and enrollments.
-* **Display index**: The position number shown beside a student in the currently displayed student list, starting from 1. It can change whenever the displayed list changes, and is used by the `mark` command. Not to be confused with a _student ID_.
+* **Display index**: The position of a record in a currently displayed list, starting from 1. It can change whenever the displayed list changes. Commands use permanent student and lesson IDs instead.
 * **Duplicate lesson**: A lesson with the same subject, level, day, start time and end time as an existing lesson.
 * **Duplicate student**: A student with the same name and contact as an existing student.
 * **Enrollment**: The link between a student and a lesson that the student attends. A student can be enrolled in many lessons, and a lesson can have many students.
