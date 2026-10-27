@@ -34,6 +34,8 @@ public class FeeTest {
         assertFalse(Fee.isValidFee("5.")); // a decimal point with no decimals
         assertFalse(Fee.isValidFee(".5")); // no digit before the decimal point
         assertFalse(Fee.isValidFee("1e3")); // scientific notation
+        assertFalse(Fee.isValidFee("12345678")); // too many whole-number digits
+        assertFalse(Fee.isValidFee("12345678.90")); // too many whole-number digits with cents
 
         // valid fees
         assertTrue(Fee.isValidFee("50"));

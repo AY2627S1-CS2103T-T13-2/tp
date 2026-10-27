@@ -130,6 +130,12 @@ public interface Model {
      */
     Student markPaid(StudentId studentId);
 
+    /**
+     * Removes the student's paid status for the current month and returns the updated student.
+     * The student must exist.
+     */
+    Student unmarkPaid(StudentId studentId);
+
     //// create, edit and delete
 
     /**
@@ -206,6 +212,9 @@ public interface Model {
      * Clears any filter, so that every student and every lesson is shown.
      */
     void resetFilters();
+
+    /** Sorts the displayed records by the selected field and direction. */
+    void sort(SortField field, boolean ascending);
 
     //// view
 

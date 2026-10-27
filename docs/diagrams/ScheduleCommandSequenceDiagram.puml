@@ -1,0 +1,53 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant ":ScheduleCommandParser" as ScheduleCommandParser LOGIC_COLOR
+participant "s:ScheduleCommand" as ScheduleCommand LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant ":ModelManager" as ModelManager MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":StorageManager" as StorageManager STORAGE_COLOR
+end box
+
+[-> LogicManager : execute("schedule")
+activate LogicManager LOGIC_COLOR
+
+LogicManager -> AddressBookParser : parseCommand("schedule")
+activate AddressBookParser LOGIC_COLOR
+create ScheduleCommandParser
+AddressBookParser -> ScheduleCommandParser : new ScheduleCommandParser()
+activate ScheduleCommandParser LOGIC_COLOR
+AddressBookParser -> ScheduleCommandParser : parse("")
+create ScheduleCommand
+ScheduleCommandParser -> ScheduleCommand : new ScheduleCommand()
+ScheduleCommand --> ScheduleCommandParser : s
+ScheduleCommandParser --> AddressBookParser : s
+deactivate ScheduleCommandParser
+AddressBookParser --> LogicManager : s
+deactivate AddressBookParser
+
+LogicManager -> ScheduleCommand : execute(ModelManager)
+activate ScheduleCommand LOGIC_COLOR
+ScheduleCommand -> ModelManager : getTuiTracker()
+ModelManager --> ScheduleCommand : current tracker
+ScheduleCommand -> ModelManager : setListView(SCHEDULE)
+ModelManager --> ScheduleCommand
+ScheduleCommand --> LogicManager : r:CommandResult
+deactivate ScheduleCommand
+
+LogicManager -> StorageManager : saveTuiTracker(current tracker)
+activate StorageManager STORAGE_COLOR
+StorageManager --> LogicManager : saved
+deactivate StorageManager
+[<-- LogicManager : r
+deactivate LogicManager
+
+@enduml

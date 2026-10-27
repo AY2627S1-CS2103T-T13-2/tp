@@ -1,0 +1,30 @@
+@startuml
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+
+start
+:User enters `schedule`;
+if () then ([no extra arguments])
+    :Check whether any lessons exist;
+    :Select the schedule panel;
+    :Read all lessons, ignoring list filters;
+    :Group by weekday and sort by start time;
+    :Detect overlaps and assign horizontal lanes;
+    if () then ([overlaps found])
+        :Show overlap warning and highlight affected lessons;
+    endif
+    :Render all seven daily timelines;
+    :Show enrolled students or `No students` on each card;
+    :Show `No lessons` on empty days;
+    if () then ([lessons exist])
+        :Show `Showing weekly schedule.`;
+    else ([no lessons])
+        :Show `No lessons are scheduled for this week.`;
+    endif
+else ([extra arguments])
+    :Show `Unknown parameter. Use: schedule`;
+    :Leave the displayed panel unchanged;
+endif
+stop
+
+@enduml
