@@ -131,11 +131,25 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_commandThatSucceeds_savesTheData() throws Exception {
-        CommandResult result = logic.execute("help");
+    public void execute_mutatingCommandThatSucceeds_savesTheData() throws Exception {
+        logic.execute("mark 1");
+        assertTrue(temporaryFolder.resolve("tuitracker.json").toFile().exists());
+    }
+
+    @Test
+    public void execute_helpWhenStorageFails_stillShowsHelp() throws Exception {
+        JsonTuiTrackerStorage failingStorage = new JsonTuiTrackerStorage(temporaryFolder.resolve("failing.json")) {
+            @Override
+            public void saveTuiTracker(ReadOnlyTuiTracker tuiTracker, Path filePath) throws IOException {
+                throw DUMMY_IO_EXCEPTION;
+            }
+        };
+        Logic failingLogic = new LogicManager(model, new StorageManager(failingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
+
+        CommandResult result = failingLogic.execute("help");
 
         assertEquals(HelpCommand.SHOWING_HELP_MESSAGE, result.getFeedbackToUser());
-        assertTrue(temporaryFolder.resolve("tuitracker.json").toFile().exists());
     }
 
     //// a command whose changes cannot be saved is undone
