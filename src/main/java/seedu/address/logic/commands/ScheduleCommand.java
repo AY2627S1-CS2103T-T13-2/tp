@@ -23,6 +23,11 @@ public class ScheduleCommand extends Command {
     }
 
     @Override
+    public boolean isDataMutating() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object other) {
         return other instanceof ScheduleCommand;
     }

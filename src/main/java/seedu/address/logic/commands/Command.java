@@ -27,4 +27,11 @@ public abstract class Command {
         return defaultMessage;
     }
 
+    /**
+     * Returns whether this command changes data that must be persisted.
+     */
+    public boolean isDataMutating() {
+        return true;
+    }
+
 }

@@ -149,6 +149,11 @@ public class FilterCommand extends Command {
     }
 
     @Override
+    public boolean isDataMutating() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;
