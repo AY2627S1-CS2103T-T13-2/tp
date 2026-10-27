@@ -150,7 +150,7 @@ Parameter | Meaning | Needed when | Rules
 `d/` | The day of the week | the lesson is new | `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Letter case is ignored.
 `st/` | The start time | the lesson is new | In the 24-hour format, such as `9:00`, `09:00` or `14:30`.
 `et/` | The end time | the lesson is new | In the same format, and later than the start time on the same day: a lesson cannot run past midnight. To end at midnight, use `23:59`, not `24:00` or `00:00`. To teach past midnight, add two lessons, such as `23:00`-`23:59` and `00:00`-`01:00` the next day.
-`f/` | The fee for one session | the lesson is new | 0 or more, with at most two decimal places, such as `50` or `45.50`. A fee of `0` is accepted for a free lesson, and the result ends with a note asking you to check it.
+`f/` | The fee for one session | the lesson is new | 0 or more, with at most seven digits before the decimal point and at most two decimal places, such as `50` or `45.50`. A fee of `0` is accepted for a free lesson, and the result ends with a note asking you to check it.
 
 Using a parameter that does not belong, such as `c/` with an existing student, is an error.
 
@@ -225,7 +225,7 @@ Parameter | Meaning | Used when | Rules
 `d/` | The day of the week | editing a lesson | `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Letter case is ignored.
 `st/` | The start time | editing a lesson | In the 24-hour format, such as `9:00`, `09:00` or `14:30`.
 `et/` | The end time | editing a lesson | In the same format, and later than the final start time on the same day.
-`f/` | The fee for one session | editing a lesson | 0 or more, with at most two decimal places, such as `50` or `45.50`.
+`f/` | The fee for one session | editing a lesson | 0 or more, with at most seven digits before the decimal point and at most two decimal places, such as `50` or `45.50`.
 
 Give at least one editable field after the ID. You can give the field parameters in any order, but each parameter can appear only once. The command word, record type and prefixes ignore letter case. For a lesson, you may give `st/`, `et/`, or both. If you give only one, the other keeps its existing value. The resulting end time must still be later than the start time.
 
