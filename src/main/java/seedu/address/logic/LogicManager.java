@@ -67,6 +67,10 @@ public class LogicManager implements Logic {
 
         Command command = addressBookParser.parseCommand(commandText);
 
+        if (!command.isDataMutating()) {
+            return command.execute(model);
+        }
+
         // Kept so that a command whose changes cannot be saved is undone, leaving the data as it was.
         ReadOnlyTuiTracker before = new TuiTracker(model.getTuiTracker());
 
