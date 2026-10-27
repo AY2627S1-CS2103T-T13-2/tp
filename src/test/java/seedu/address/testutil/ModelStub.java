@@ -120,6 +120,11 @@ public class ModelStub implements Model {
     }
 
     @Override
+    public Student unmarkPaid(StudentId studentId) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
     public Student addStudent(Name name, Contact contact, Level level) {
         throw new AssertionError("This method should not be called.");
     }
@@ -171,6 +176,11 @@ public class ModelStub implements Model {
 
     @Override
     public void filterLessonsBySubjectAndLevel(Subject subject, Level level) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
+    public void filterStudentsByPaidStatus(boolean paid) {
         throw new AssertionError("This method should not be called.");
     }
 

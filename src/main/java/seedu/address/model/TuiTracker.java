@@ -301,6 +301,20 @@ public class TuiTracker implements ReadOnlyTuiTracker {
         return updated;
     }
 
+    /**
+     * Removes the student's recorded paid month and returns the updated student.
+     *
+     * @throws StudentNotFoundException if there is no such student.
+     */
+    public Student unmarkPaid(StudentId studentId) {
+        requireNonNull(studentId);
+        Student original = students.find(studentId).orElseThrow(StudentNotFoundException::new);
+        Student updated = original.unmarkPaid();
+        students.replace(original, updated);
+        logger.fine("Marked student " + studentId + " as unpaid");
+        return updated;
+    }
+
     //// util methods
 
     @Override

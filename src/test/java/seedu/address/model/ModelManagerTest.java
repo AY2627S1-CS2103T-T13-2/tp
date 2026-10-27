@@ -355,6 +355,22 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void filterStudentsByPaidStatus_paid_showsOnlyPaidStudents() {
+        modelManager.filterStudentsByPaidStatus(true);
+
+        assertEquals(Collections.singletonList(BRYAN), modelManager.getStudentList());
+        // the lesson list is unaffected
+        assertEquals(Arrays.asList(MATHEMATICS, SCIENCE_S2, SCIENCE_P6, ENGLISH), modelManager.getLessonList());
+    }
+
+    @Test
+    public void filterStudentsByPaidStatus_unpaid_showsOnlyUnpaidStudents() {
+        modelManager.filterStudentsByPaidStatus(false);
+
+        assertEquals(Arrays.asList(ALICE, CHLOE), modelManager.getStudentList());
+    }
+
+    @Test
     public void setTuiTracker_keepsTheFilterUpToDate() {
         modelManager.filterStudentsByLesson(MATHEMATICS.getId());
         TuiTracker withoutEnrollments = new seedu.address.testutil.TuiTrackerBuilder()

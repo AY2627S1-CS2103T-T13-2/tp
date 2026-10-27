@@ -48,12 +48,6 @@ The bulk of the app's work is done by the following four components:
 
 [**`Commons`**](#common-classes) represents a collection of classes used by multiple other components.
 
-**How the architecture components interact with each other**
-
-The *Sequence Diagram* below shows how the components interact with each other when the user deletes a student.
-
-<puml src="diagrams/ArchitectureSequenceDiagram.puml" width="574" />
-
 Each of the four main components (also shown in the diagram above),
 
 * defines its *API* in an `interface` with the same name as the Component.
@@ -90,32 +84,11 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <puml src="diagrams/LogicClassDiagram.puml" width="550"/>
 
-The sequence diagram below gives an overview of the delete command flow. `KIND ID` stands for the selected kind and ID; the branches use `student 12` and `lesson 7` as examples.
-
-<puml src="diagrams/DeleteSequenceDiagram.puml" alt="Overview of the Delete Command Sequence" />
-
-The parsing interactions summarized in the overview are shown here:
-
-<puml src="diagrams/DeleteParsingSequenceDiagram.puml" alt="Parsing Sequence for the Delete Command" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
-</box>
-
-The next two diagrams expand the student and lesson reference frames. Each shows the lookup, deletion and associated enrollment removal, and the not-found path.
-
-<puml src="diagrams/DeleteStudentSequenceDiagram.puml" alt="Student Deletion Sequence for the Delete Command" />
-
-<puml src="diagrams/DeleteLessonSequenceDiagram.puml" alt="Lesson Deletion Sequence for the Delete Command" />
-
-
 How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to an `AddressBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
-1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
-   Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+1. The command can communicate with the `Model` when it is executed (e.g. to delete a student or lesson).
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -249,9 +222,48 @@ The sequence diagram below shows `execute("edit student 1 c/90001111")`, which u
 
 ### Delete feature
 
-The sequence diagram above shows the internal command flow. The activity diagram below summarizes validation, lookup and deletion of a student or lesson, including removal of associated enrollments and the relevant error paths.
+The `delete student|lesson ID` command removes exactly one record of the requested kind. `DeleteCommandParser` accepts one supported kind (case insensitive) and one positive ID, using the shared ID parsers. An invalid format fails during parsing. `DeleteCommand` looks up the ID only in the requested collection; a missing record raises a kind-specific `CommandException` before any deletion. On success, `Model` removes the record and its enrollments and the result names the deleted student or lesson.
+
+The first sequence diagram gives a component-level view of `delete student 12`. It omits parser and command objects so that the UI, Logic, Model and Storage responsibilities are easy to see.
+
+<puml src="diagrams/ArchitectureSequenceDiagram.puml" alt="Component-level sequence for deleting a student" />
+
+The next diagram expands the command flow. `KIND ID` stands for the requested kind and ID; `student 12` and `lesson 7` illustrate its two branches. The smaller diagrams below expand its parsing, student deletion and lesson deletion references.
+
+<puml src="diagrams/DeleteSequenceDiagram.puml" alt="Overview of the Delete Command Sequence" />
+
+<puml src="diagrams/DeleteParsingSequenceDiagram.puml" alt="Parsing Sequence for the Delete Command" />
+
+<box type="info" seamless>
+
+**Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
+</box>
+
+<puml src="diagrams/DeleteStudentSequenceDiagram.puml" alt="Student Deletion Sequence for the Delete Command" />
+
+<puml src="diagrams/DeleteLessonSequenceDiagram.puml" alt="Lesson Deletion Sequence for the Delete Command" />
+
+The activity diagram summarizes format validation, lookup, deletion, enrollment removal and the error paths. Its decisions use guard labels on the outgoing flows, leaving the diamonds empty.
 
 <puml src="diagrams/DeleteActivityDiagram.puml" alt="Activity Diagram for Deleting a Student or Lesson" />
+
+### Schedule feature
+
+`schedule` displays recurring lessons from Monday to Sunday. There is no date or `/week` parameter because a lesson stores a weekday and timeslot rather than a calendar date. `ScheduleCommandParser` accepts only whitespace after the command word; other arguments cause `Unknown parameter. Use: schedule` without switching the displayed panel.
+
+`ScheduleCommand` checks whether the complete lesson collection is empty, selects `ListView.SCHEDULE`, and returns either `Showing weekly schedule.` or `No lessons are scheduled for this week.` It does not clear an active filter. `MainWindow` observes the view change and displays its dedicated `SchedulePanel`. As with other successful commands, `LogicManager` passes the current tracker to `Storage` before returning the result, although `schedule` changes no student, lesson or enrollment data.
+
+The command sequence is separated from panel rendering to keep each diagram readable. The first shows parsing and execution of `schedule`; the second shows how the panel builds the seven-day view after the command returns. The invalid-argument path appears in the activity diagram.
+
+<puml src="diagrams/ScheduleCommandSequenceDiagram.puml" alt="Parsing and executing the schedule command" />
+
+`SchedulePanel#refresh()` requests **all** lessons through `Logic#getAllLessons()`, so a list filter cannot hide lessons from the schedule. `ScheduleLayout` initializes all seven days, sorts each day's lessons by start time and ID, detects overlaps, and assigns simultaneous lessons separate horizontal lanes. The panel uses each lesson's start and end times to position its card on the 00:00–23:59 timeline, increasing its vertical scale when needed to keep short lesson cards readable. It reads enrolled students through `Logic#getStudentsIn(LessonId)`; empty days show `No lessons`, and empty lessons show `No students`. The current weekday is outlined, day timelines scroll vertically, individual cards scroll when their details need more space, and the full week scrolls horizontally. If overlaps are present, the affected cards remain visible and the panel shows a warning naming the days.
+
+<puml src="diagrams/ScheduleRenderingSequenceDiagram.puml" alt="Building the weekly schedule panel" />
+
+The activity diagram covers both invalid arguments and the populated or empty weekly view. Its decision diamonds are blank, with conditions on the outgoing flows.
+
+<puml src="diagrams/ScheduleActivityDiagram.puml" alt="Activity diagram for showing the weekly schedule" />
 
 ### List feature
 
