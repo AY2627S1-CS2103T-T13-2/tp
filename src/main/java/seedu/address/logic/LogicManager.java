@@ -74,6 +74,7 @@ public class LogicManager implements Logic {
 
         // Kept so that a command whose changes cannot be saved is undone, leaving the data as it was.
         ReadOnlyTuiTracker before = new TuiTracker(model.getTuiTracker());
+        Optional<StudentId> scheduleStudentBefore = model.getScheduleStudentId();
 
         CommandResult commandResult = command.execute(model);
 
@@ -82,11 +83,13 @@ public class LogicManager implements Logic {
         } catch (AccessDeniedException e) {
             logger.log(Level.WARNING, "Could not save data; reverting command changes", e);
             model.setTuiTracker(before);
+            model.setScheduleStudentId(scheduleStudentBefore);
             throw new CommandException(command.getSaveFailureMessage(
                     String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage())), e);
         } catch (IOException ioe) {
             logger.log(Level.WARNING, "Could not save data; reverting command changes", ioe);
             model.setTuiTracker(before);
+            model.setScheduleStudentId(scheduleStudentBefore);
             throw new CommandException(command.getSaveFailureMessage(
                     String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage())), ioe);
         }

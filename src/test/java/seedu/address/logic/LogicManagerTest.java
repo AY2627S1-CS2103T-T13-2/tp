@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -239,6 +240,26 @@ public class LogicManagerTest {
         assertEquals(String.format(LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()),
                 thrown.getMessage());
         assertFalse(model.isPaid(ALICE.getId()));
+    }
+
+    @Test
+    public void execute_deleteScheduleStudentWhenSaveFails_restoresSelection() {
+        model.setScheduleStudentId(Optional.of(ALICE.getId()));
+        model.setListView(ListView.SCHEDULE);
+        JsonTuiTrackerStorage failingStorage = new JsonTuiTrackerStorage(temporaryFolder.resolve("failing.json")) {
+            @Override
+            public void saveTuiTracker(ReadOnlyTuiTracker tuiTracker, Path filePath) throws IOException {
+                throw DUMMY_IO_EXCEPTION;
+            }
+        };
+        Logic failingLogic = new LogicManager(model, new StorageManager(failingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
+
+        Assertions.assertThrows(CommandException.class, () -> failingLogic.execute("delete student 1"));
+
+        assertTrue(model.findStudent(ALICE.getId()).isPresent());
+        assertEquals(Optional.of(ALICE.getId()), model.getScheduleStudentId());
+        assertEquals(ListView.SCHEDULE, model.getListView());
     }
 
     //// delegation to the model
