@@ -104,20 +104,43 @@ public class EditCommand extends Command {
         }
 
         List<String> notes = new ArrayList<>();
-        noteForNamesake(model, edit, original.getId(), name, contact).ifPresent(notes::add);
-        notes.addAll(notesForStudentLevelMismatches(model, edit, updated));
+        createNamesakeNote(model, edit, original.getId(), name, contact).ifPresent(notes::add);
+        notes.addAll(createStudentLevelMismatchNotes(model, edit, updated));
 
         Student edited = model.editStudent(original.getId(), name, contact, level);
         assert updated.equals(edited) : "Model returned unexpected student details after edit";
         logger.info("Edited student " + edited.getId());
         String success = String.format(MESSAGE_SUCCESS_STUDENT, edited.getName(), edited.getId());
-        return new CommandResult(withNotes(success, notes));
+        return new CommandResult(appendNotes(success, notes));
     }
 
     private CommandResult editLesson(Model model, LessonEdit edit) throws CommandException {
         Lesson original = model.findLesson(edit.id()).orElseThrow(() ->
                 new CommandException(String.format(MESSAGE_LESSON_NOT_FOUND, edit.id())));
         assert original.getId().equals(edit.id()) : "Lesson lookup returned a different ID";
+        Lesson updated = createUpdatedLesson(original, edit);
+
+        if (updated.equals(original) && !hasDifferentLevelSpelling(original.getLevel(), edit.level())) {
+            logger.fine("Lesson " + original.getId() + " already has the requested details");
+            return CommandResult.createWithoutDataChange(MESSAGE_NO_CHANGES);
+        }
+
+        validateEditedLesson(model, original.getId(), updated);
+
+        List<String> notes = createLessonLevelMismatchNotes(model, edit, updated);
+        createFreeLessonNote(edit, updated.getFee()).ifPresent(notes::add);
+
+        Lesson edited = model.editLesson(original.getId(), updated.getSubject(), updated.getLevel(),
+                updated.getTimeslot(), updated.getFee());
+        assert updated.equals(edited) : "Model returned unexpected lesson details after edit";
+        logger.info("Edited lesson " + edited.getId());
+        String success = String.format(MESSAGE_SUCCESS_LESSON, edited.getSubject(), edited.getLevel(),
+                edited.getTimeslot(), edited.getId());
+        return new CommandResult(appendNotes(success, notes));
+    }
+
+    /** Creates the final lesson by applying the supplied fields to the stored lesson. */
+    private static Lesson createUpdatedLesson(Lesson original, LessonEdit edit) throws CommandException {
         Subject subject = edit.subject().orElse(original.getSubject());
         Level level = edit.level().orElse(original.getLevel());
         DayOfWeek day = edit.day().orElse(original.getTimeslot().getDay());
@@ -128,34 +151,24 @@ public class EditCommand extends Command {
         }
         Timeslot timeslot = new Timeslot(day, start, end);
         Fee fee = edit.fee().orElse(original.getFee());
-        Lesson updated = new Lesson(original.getId(), subject, level, timeslot, fee);
+        return new Lesson(original.getId(), subject, level, timeslot, fee);
+    }
 
-        if (updated.equals(original) && !hasDifferentLevelSpelling(original.getLevel(), edit.level())) {
-            logger.fine("Lesson " + original.getId() + " already has the requested details");
-            return CommandResult.createWithoutDataChange(MESSAGE_NO_CHANGES);
-        }
-
-        Optional<Lesson> duplicate = findDuplicateLesson(model, original.getId(), subject, level, timeslot);
+    /** Rejects an edited lesson that duplicates or clashes with another lesson. */
+    private static void validateEditedLesson(Model model, LessonId editedId, Lesson updated)
+            throws CommandException {
+        Optional<Lesson> duplicate = findDuplicateLesson(model, editedId, updated.getSubject(),
+                updated.getLevel(), updated.getTimeslot());
         if (duplicate.isPresent()) {
             throw new CommandException(String.format(MESSAGE_DUPLICATE_LESSON, duplicate.get().getId()));
         }
 
-        Optional<Lesson> clash = findClashingLesson(model, original.getId(), timeslot);
+        Optional<Lesson> clash = findClashingLesson(model, editedId, updated.getTimeslot());
         if (clash.isPresent()) {
             Lesson other = clash.get();
             throw new CommandException(String.format(MESSAGE_LESSON_CLASH, other.getId(), other.getSubject(),
                     other.getTimeslot()));
         }
-
-        List<String> notes = notesForLessonLevelMismatches(model, edit, updated);
-        noteForFreeLesson(edit, fee).ifPresent(notes::add);
-
-        Lesson edited = model.editLesson(original.getId(), subject, level, timeslot, fee);
-        assert updated.equals(edited) : "Model returned unexpected lesson details after edit";
-        logger.info("Edited lesson " + edited.getId());
-        String success = String.format(MESSAGE_SUCCESS_LESSON, edited.getSubject(), edited.getLevel(),
-                edited.getTimeslot(), edited.getId());
-        return new CommandResult(withNotes(success, notes));
     }
 
     /** Returns another student whose name and contact match the edited details. */
@@ -188,8 +201,8 @@ public class EditCommand extends Command {
     }
 
     /** Returns a note if the edited identity matches another student's name but not their contact. */
-    private static Optional<String> noteForNamesake(Model model, StudentEdit edit, StudentId editedId,
-                                                     Name name, Contact contact) {
+    private static Optional<String> createNamesakeNote(Model model, StudentEdit edit, StudentId editedId,
+                                                       Name name, Contact contact) {
         if (edit.name().isEmpty() && edit.contact().isEmpty()) {
             return Optional.empty();
         }
@@ -202,7 +215,8 @@ public class EditCommand extends Command {
     }
 
     /** Returns one note for each enrolled lesson whose level differs from the edited student level. */
-    private static List<String> notesForStudentLevelMismatches(Model model, StudentEdit edit, Student updated) {
+    private static List<String> createStudentLevelMismatchNotes(Model model, StudentEdit edit,
+            Student updated) {
         List<String> notes = new ArrayList<>();
         if (edit.level().isEmpty()) {
             return notes;
@@ -210,15 +224,15 @@ public class EditCommand extends Command {
         for (LessonId lessonId : model.getLessonIdsOf(updated.getId())) {
             Lesson lesson = findEnrolledLesson(model, lessonId);
             if (!lesson.getLevel().equals(updated.getLevel())) {
-                notes.add(String.format(MESSAGE_NOTE_STUDENT_LEVEL_MISMATCH, updated.getName(), updated.getLevel(),
-                        lesson.getId(), lesson.getLevel()));
+                notes.add(String.format(MESSAGE_NOTE_STUDENT_LEVEL_MISMATCH, updated.getName(),
+                        updated.getLevel(), lesson.getId(), lesson.getLevel()));
             }
         }
         return notes;
     }
 
     /** Returns one note for each enrolled student whose level differs from the edited lesson level. */
-    private static List<String> notesForLessonLevelMismatches(Model model, LessonEdit edit, Lesson updated) {
+    private static List<String> createLessonLevelMismatchNotes(Model model, LessonEdit edit, Lesson updated) {
         List<String> notes = new ArrayList<>();
         if (edit.level().isEmpty()) {
             return notes;
@@ -233,7 +247,7 @@ public class EditCommand extends Command {
     }
 
     /** Returns a note when the fee was explicitly changed to 0. */
-    private static Optional<String> noteForFreeLesson(LessonEdit edit, Fee fee) {
+    private static Optional<String> createFreeLessonNote(LessonEdit edit, Fee fee) {
         return edit.fee().isPresent() && fee.isFree()
                 ? Optional.of(MESSAGE_NOTE_FREE_LESSON)
                 : Optional.empty();
@@ -245,7 +259,7 @@ public class EditCommand extends Command {
     }
 
     /** Returns the success message followed by each note on its own line. */
-    private static String withNotes(String success, List<String> notes) {
+    private static String appendNotes(String success, List<String> notes) {
         List<String> lines = new ArrayList<>();
         lines.add(success);
         lines.addAll(notes);

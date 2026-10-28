@@ -99,6 +99,12 @@ public class ListCommandTest {
     }
 
     @Test
+    public void isDataMutating_returnsFalse() {
+        assertFalse(new ListCommand(ListView.STUDENTS).isDataMutating());
+        assertFalse(new ListCommand(ListView.LESSONS).isDataMutating());
+    }
+
+    @Test
     public void equals() {
         ListCommand listStudents = new ListCommand(ListView.STUDENTS);
         ListCommand listStudentsCopy = new ListCommand(ListView.STUDENTS);
