@@ -258,6 +258,9 @@ public class ModelManager implements Model {
     public Student deleteStudent(StudentId studentId) {
         requireNonNull(studentId);
         Student deleted = tuiTracker.deleteStudent(studentId);
+        if (scheduleStudentId.equals(Optional.of(studentId))) {
+            scheduleStudentId = Optional.empty();
+        }
         refreshFilters();
         return deleted;
     }

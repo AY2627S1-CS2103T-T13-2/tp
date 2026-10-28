@@ -304,7 +304,7 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 
 **Successful deletion:**
 
-* The result box confirms the deleted record, for example `Deleted student: Alice Tan (ID: 12)`.
+* The result box confirms the deleted record, for example `Deleted student: Alice Tan (ID: 12)`. If the deleted student was selected in the schedule, the result also says `The schedule now shows all lessons.`
 * Deleting a lesson confirms its subject, level, timeslot and ID, for example `Deleted lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 7)`.
 
 **Notes:**
@@ -425,6 +425,8 @@ Shows all recurring lessons in a Monday-to-Sunday weekly timeline. Each day runs
 **Format:** `schedule [student ID]`
 
 Use `schedule` to show all lessons, or `schedule student 1` to show only the lessons attended by student `1`. The `student` keyword ignores letter case. The ID must be a positive whole number belonging to an existing student. An empty schedule for an existing student still shows all seven days with `No lessons`. Neither form changes an active list filter; entering plain `schedule` removes any earlier student selection from the schedule.
+
+If you delete the student whose schedule is displayed, the schedule switches to showing all lessons.
 
 The schedule repeats each week because lessons are stored by weekday and time, without calendar dates. The current weekday is outlined. Scroll horizontally to see all seven day columns, and scroll within a day to move through its 24-hour timeline. Lessons whose labels would overlap are grouped into one clickable bar or marker; the details window keeps every lesson separate. A group does not necessarily mean a timetable clash. Actual overlapping times are highlighted, with a warning naming the affected day. Use `list` or `filter` to switch back to a student or lesson list.
 
