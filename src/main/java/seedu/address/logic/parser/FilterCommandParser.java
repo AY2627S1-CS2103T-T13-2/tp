@@ -22,9 +22,7 @@ import seedu.address.model.student.StudentId;
  */
 public class FilterCommandParser implements Parser<FilterCommand> {
 
-    public static final String MESSAGE_INVALID_SUBJECT = "Invalid subject. Subject must contain at least one letter, "
-            + "may contain only letters, numbers, spaces and hyphens, and cannot exceed " + Subject.MAX_LENGTH
-            + " characters.";
+    public static final String MESSAGE_INVALID_SUBJECT = Subject.MESSAGE_CONSTRAINTS;
     public static final String MESSAGE_FILTER_EXAMPLES = "Choose a filter form. Examples: filter student 1, "
             + "filter lesson 2, filter day Monday, filter paid, or filter l/Mathematics llv/Primary 6.";
     public static final String MESSAGE_MISSING_FILTER_VALUE = "The %1$s filter needs a value. "
