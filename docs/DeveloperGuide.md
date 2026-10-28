@@ -210,6 +210,8 @@ The `edit` command changes the specified fields of one existing student or lesso
 
 Duplicate students are matched using `Name#isSameName` and `Contact#isSameContact`; duplicate lessons use `Subject#isSameSubject`, level equality and the final timeslot. Edit's private lookup helpers exclude the record being edited, so that changing only formatting or letter case is not mistaken for a duplicate or a clash. A different student/lesson level, a namesake with a different contact and a fee of `0` are allowed but appended to the success message as notes.
 
+If the requested details are identical to the stored record, `EditCommand` returns `No changes were made.` and marks the result so that `LogicManager` skips saving. A case-only level edit is still treated as a real edit because it changes the stored spelling, so it follows the normal save-and-rollback path.
+
 The sequence diagram below shows `execute("edit student 1 c/90001111")`, which updates only an existing student's contact number. Less-important method parameters, duplicate checking, note generation, the no-change path and the error paths are omitted to keep the diagram focused. Editing a lesson follows the same overall flow, with validation of its final timeslot, duplicates and clashes before the update.
 
 <puml src="diagrams/EditSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `edit` Command" />

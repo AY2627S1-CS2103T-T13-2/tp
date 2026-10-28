@@ -33,6 +33,9 @@ public class CommandResultTest {
 
         // different exit value -> returns false
         assertFalse(commandResult.equals(new CommandResult("feedback", false, true)));
+
+        // different shouldSkipSave value -> returns false
+        assertFalse(commandResult.equals(CommandResult.createWithoutDataChange("feedback")));
     }
 
     @Test
@@ -50,6 +53,9 @@ public class CommandResultTest {
 
         // different exit value -> returns different hashcode
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", false, true).hashCode());
+
+        // different shouldSkipSave value -> returns different hashcode
+        assertNotEquals(commandResult.hashCode(), CommandResult.createWithoutDataChange("feedback").hashCode());
     }
 
     @Test
@@ -57,7 +63,13 @@ public class CommandResultTest {
         CommandResult commandResult = new CommandResult("feedback");
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.isShowHelp()
-                + ", exit=" + commandResult.isExit() + "}";
+                + ", exit=" + commandResult.isExit() + ", shouldSkipSave=" + commandResult.shouldSkipSave() + "}";
         assertEquals(expected, commandResult.toString());
+    }
+
+    @Test
+    public void shouldSkipSave_regularAndNoChangeResults_returnsExpectedValue() {
+        assertFalse(new CommandResult("feedback").shouldSkipSave());
+        assertTrue(CommandResult.createWithoutDataChange("feedback").shouldSkipSave());
     }
 }
