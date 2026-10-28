@@ -325,11 +325,17 @@ public class ModelManager implements Model {
     public void sort(SortField field, boolean ascending) {
         requireNonNull(field);
         Comparator<?> comparator = switch (field) {
+            case STUDENT_ID -> Comparator.comparing(student -> ((Student) student).getId());
             case STUDENT_NAME -> Comparator.comparing(student -> ((Student) student).getName().fullName,
                     String.CASE_INSENSITIVE_ORDER).thenComparing(student -> ((Student) student).getId());
             case STUDENT_PAYMENT -> Comparator.comparing(student -> ((Student) student).isPaid(currentMonth()))
                     .thenComparing(student -> ((Student) student).getId());
+            case STUDENT_LEVEL -> Comparator.comparing(student -> ((Student) student).getLevel().value,
+                    String.CASE_INSENSITIVE_ORDER).thenComparing(student -> ((Student) student).getId());
+            case LESSON_ID -> Comparator.comparing(lesson -> ((Lesson) lesson).getId());
             case LESSON_SUBJECT -> Comparator.comparing(lesson -> ((Lesson) lesson).getSubject().value,
+                    String.CASE_INSENSITIVE_ORDER).thenComparing(lesson -> ((Lesson) lesson).getId());
+            case LESSON_LEVEL -> Comparator.comparing(lesson -> ((Lesson) lesson).getLevel().value,
                     String.CASE_INSENSITIVE_ORDER).thenComparing(lesson -> ((Lesson) lesson).getId());
             case LESSON_FEE -> Comparator.comparing(lesson -> ((Lesson) lesson).getFee().getAmount())
                     .thenComparing(lesson -> ((Lesson) lesson).getId());
@@ -338,7 +344,7 @@ public class ModelManager implements Model {
         if (!ascending) {
             comparator = comparator.reversed();
         }
-        if (field == SortField.STUDENT_NAME || field == SortField.STUDENT_PAYMENT) {
+        if (field.name().startsWith("STUDENT_")) {
             @SuppressWarnings("unchecked")
             Comparator<Student> studentComparator = (Comparator<Student>) comparator;
             sortedStudents.setComparator(studentComparator);

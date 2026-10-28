@@ -428,14 +428,21 @@ that keyword and prefix filters cannot be mixed.
 Sorts the currently displayed student or lesson records without changing saved data. The direction defaults to
 ascending and can be written explicitly as `asc` or `desc`.
 
-**Format:** `sort student name|payment [asc|desc]` or `sort lesson subject|fee|time [asc|desc]`
+**Format:** `sort student id|name|level|payment|paid [asc|desc]` or `sort lesson id|subject|level|fee|time [asc|desc]`
+
+* For students, you can sort by `id`, `name`, `level`, or payment status (`payment` / `paid`).
+* Sorting students by payment status in ascending order (default) places **unpaid** students at the top, making it easy for tutors to see who has yet to pay for the current month. Using `desc` places paid students at the top.
+* For lessons, you can sort by `id`, `subject`, `level`, `fee`, or `time` (chronological weekday and start-time order).
 
 Examples:
 
-* `sort student name` sorts students alphabetically by name.
+* `sort student payment` or `sort student paid` sorts students with unpaid students at the top.
 * `sort student payment desc` shows paid students before unpaid students.
+* `sort student name` sorts students alphabetically by name.
+* `sort student level` sorts students by educational level.
 * `sort lesson fee desc` shows the highest-fee lessons first.
 * `sort lesson time` restores chronological weekday and start-time order.
+* `sort lesson id` sorts lessons by their identifier.
 
 ### Viewing the weekly schedule: `schedule`
 
@@ -514,6 +521,6 @@ Action     | Format, Examples
 **Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
 **Unmark** | `unmark ID` <br> e.g., `unmark 1`, `unmark 0012`
 **Schedule** | `schedule [student ID]` <br> e.g., `schedule`, `schedule student 1`; shows recurring lessons from Monday to Sunday
-**Sort** | `sort student name\|payment [asc\|desc]` or `sort lesson subject\|fee\|time [asc\|desc]` <br> e.g., `sort student name`, `sort lesson fee desc`
+**Sort** | `sort student id\|name\|level\|payment\|paid [asc\|desc]` or `sort lesson id\|subject\|level\|fee\|time [asc\|desc]` <br> e.g., `sort student payment`, `sort lesson fee desc`
 **Help**   | `help`
 **Exit**   | `exit`
