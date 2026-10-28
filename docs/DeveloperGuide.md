@@ -773,9 +773,127 @@ testers are expected to do more *exploratory* testing.
 
 1. _{ more test cases … }_
 
-### Adding a student to a lesson
+### Adding students, lessons and enrollments
 
-_To be written by the owner of `add`._
+Prerequisites: Start from the sample data. Close TuiTracker, delete `[JAR file location]/data/tuitracker.json`, and launch it again. Run the test cases below in order in one session, as the IDs in the expected messages depend on the records added by earlier test cases. Enter `list students` or `list lessons` at any time to see what has been added. A command that is rejected adds nothing.
+
+1. Enrolling an existing student in an existing lesson
+
+   1. Test case: `add s/2 l/1`<br>
+      Expected: `Enrolled Bryan Lim [Student ID: 2] in Mathematics [Lesson ID: 1]. Payment status: Paid.`, followed by `Note: Bryan Lim's level (Secondary 2) differs from the lesson's level (Primary 6).`
+
+   1. Test case: `add s/1 l/1`<br>
+      Expected: `The student is already enrolled in this lesson.`
+
+   1. Test case: `add s/99 l/1`<br>
+      Expected: `No student found with ID 99.`
+
+   1. Test case: `add s/1 l/99`<br>
+      Expected: `No lesson found with ID 99.`
+
+1. Enrolling a new student in an existing lesson
+
+   1. Test case: `add s/Daniel Koh c/92223333 slv/Primary 6 l/1`<br>
+      Expected: `Enrolled Daniel Koh [Student ID: 4] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.` Daniel Koh appears in the student list.
+
+   1. Test case: `add s/daniel  koh c/9222 3333 slv/Primary 6 l/2`<br>
+      Expected: `A student with the same name and contact already exists (Student ID: 4). Use the existing student ID.`
+
+   1. Test case: `add s/Eve Lee slv/Primary 6 l/1`<br>
+      Expected: `Missing required parameter: c/. s/Eve Lee was read as a new student.`
+
+   1. Test case: `add s/Eve Lee c/12 slv/Primary 6 l/1`<br>
+      Expected: `Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a + can start the number, such as +65 (9123) 4567.`
+
+1. Enrolling an existing student in a new lesson
+
+   1. Test case: `add s/1 l/Art llv/Primary 6 d/Tuesday st/10:00 et/11:00 f/40`<br>
+      Expected: `Enrolled Alice Tan [Student ID: 1] in Art [Lesson ID: 5]. Payment status: Unpaid.` Art appears in the lesson list.
+
+   1. Test case: `add s/2 l/art llv/primary 6 d/Tue st/10:00 et/11:00 f/40`<br>
+      Expected: `An identical lesson already exists (Lesson ID: 5). Use the existing lesson ID.`
+
+   1. Test case: `add s/1 l/Music llv/Primary 6 d/Monday st/16:00 et/17:00 f/40`<br>
+      Expected: `Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).`
+
+   1. Test case: `add s/1 l/Music llv/Primary 6 d/Tuesday`<br>
+      Expected: `Missing required parameter: st/, et/, f/. l/Music was read as a new lesson.`
+
+   1. Test case: `add s/1 l/Music llv/Primary 6 d/Tuesday st/12:00 et/11:00 f/40`<br>
+      Expected: `Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start time.`
+
+1. Enrolling a new student in a new lesson
+
+   1. Test case: `add s/Farah Aziz c/93334444 slv/Secondary 1 l/History llv/Secondary 1 d/Friday st/14:00 et/15:00 f/55`<br>
+      Expected: `Enrolled Farah Aziz [Student ID: 5] in History [Lesson ID: 6]. Payment status: Unpaid.`
+
+   1. Test case: `add s/Gina Ho c/94445555 slv/Primary 5 l/Music llv/Primary 5 d/Monday st/15:30 et/16:30 f/40`<br>
+      Expected: `Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).` Gina Ho is not added either, even though nothing is wrong with her details.
+
+1. Adding a new student on their own
+
+   1. Test case: `add s/Hana Yusof c/95556666 slv/Primary 3`<br>
+      Expected: `Added student Hana Yusof [Student ID: 6].` Hana Yusof appears in the student list, with no lessons.
+
+   1. Test case: `add s/Hana Yusof c/95556666 slv/Primary 3` again<br>
+      Expected: `A student with the same name and contact already exists (Student ID: 6). Use the existing student ID.`
+
+   1. Test case: `add s/Ivan Teo c/96667777`<br>
+      Expected: `Missing required parameter: slv/. s/Ivan Teo was read as a new student.`
+
+   1. Test case: `add c/96667777 slv/Primary 3`<br>
+      Expected: `Missing required parameter: s/.`
+
+   1. Test case: `add s/1`<br>
+      Expected: `Alice Tan [Student ID: 1] already exists. To enroll them, add l/ with a lesson ID or the details of a new lesson.`
+
+1. Adding a new lesson on its own
+
+   1. Test case: `add l/Chinese llv/Primary 3 d/Sunday st/9:00 et/10:00 f/35`<br>
+      Expected: `Added lesson Chinese [Lesson ID: 7].` Chinese appears in the lesson list, with no students.
+
+   1. Test case: `add l/Chinese llv/Primary 3 d/Sunday st/9:00 et/10:00 f/35` again<br>
+      Expected: `An identical lesson already exists (Lesson ID: 7). Use the existing lesson ID.`
+
+   1. Test case: `add l/Music llv/Primary 3 d/Sunday st/9:30 et/10:30 f/35`<br>
+      Expected: `Lesson clashes with lesson 7 (Chinese, Sunday 09:00-10:00).`
+
+   1. Test case: `add llv/Primary 3 d/Sunday st/11:00 et/12:00 f/35`<br>
+      Expected: `Missing required parameter: l/.`
+
+   1. Test case: `add l/1`<br>
+      Expected: `Mathematics [Lesson ID: 1] already exists. To enroll a student in it, add s/ with a student ID or the details of a new student.`
+
+1. Notes added to a successful `add`
+
+   1. Test case: `add s/Alice Tan c/90001111 slv/Primary 6 l/1`<br>
+      Expected: `Enrolled Alice Tan [Student ID: 7] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.`, followed by `Note: another student named Alice Tan already exists (Student ID: 1).`
+
+   1. Test case: `add s/1 l/Drawing llv/Primary 6 d/Wednesday st/9:00 et/10:00 f/0`<br>
+      Expected: `Enrolled Alice Tan [Student ID: 1] in Drawing [Lesson ID: 8]. Payment status: Unpaid.`, followed by `Note: the fee is 0. Check that this lesson is meant to be free.`
+
+1. Typing mistakes
+
+   1. Test case: `add s/Jay Ong c/97778888slv/Primary 6 l/1` (no space before `slv/`)<br>
+      Expected: `slv/ was found inside the value of c/. Separate parameters with a space.`
+
+   1. Test case: `add s/0 l/2`<br>
+      Expected: `s/0 is neither an ID nor a valid name. An ID is a positive whole number, such as s/3.`
+
+   1. Test case: `add s/2147483648 l/2`<br>
+      Expected: `ID is too large. No student or lesson has an ID above 2147483647.`
+
+   1. Test case: `add s/1 l/2 extra words`<br>
+      Expected: `Missing required parameter: llv/, d/, st/, et/, f/. l/2 extra words was read as a new lesson. To use an existing lesson, give only its ID, such as l/2.`
+
+   1. Test case: `add s/1 l/Art llv/Primary 6 d/Friday st/22:00 et/24:00 f/40`<br>
+      Expected: `A lesson cannot end at 24:00 or 00:00. To end at midnight, use 23:59.`
+
+   1. Test case: `add s/1 s/2 l/1`<br>
+      Expected: `A parameter can only be specified once.`
+
+   1. Test case: `add`<br>
+      Expected: `Invalid command format. Use: add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]`
 
 ### Deleting a student or a lesson
 
