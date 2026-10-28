@@ -43,11 +43,13 @@ import seedu.address.model.lesson.Timeslot;
  *
  * <p>The value after {@code s/} is an existing student if it is an ID, and the name of a new student otherwise.
  * {@code l/} works the same way for lessons. Which of the other parameters are required, and which are not allowed,
- * follows from that. The checks run in this order, and the first problem found is the one reported:
+ * follows from that. Either {@code s/} or {@code l/} can be left out, along with the parameters that belong to it,
+ * to create only a student or only a lesson. The checks run in this order, and the first problem found is the one
+ * reported:
  * <ol>
  *   <li>the command is well formed: no text before the first parameter, and at least one parameter</li>
  *   <li>no parameter is given more than once</li>
- *   <li>both {@code s/} and {@code l/} are given</li>
+ *   <li>{@code s/} is given if any student parameter is, and {@code l/} if any lesson parameter is</li>
  *   <li>no parameter is given that does not belong to the form: student parameters first, then lesson parameters</li>
  *   <li>no required parameter is missing</li>
  *   <li>every value is valid: the student's values first ({@code s/}, {@code c/}, {@code slv/}), then the
@@ -117,23 +119,40 @@ public class AddCommandParser implements Parser<AddCommand> {
         checkNoPrefixInsideValues(argMultimap);
         checkStudentAndLessonGiven(argMultimap);
 
-        String studentValue = requiredValue(argMultimap, PREFIX_STUDENT);
-        String lessonValue = requiredValue(argMultimap, PREFIX_LESSON);
-        checkNumberIsAnId(PREFIX_STUDENT, studentValue, "name");
-        checkNumberIsAnId(PREFIX_LESSON, lessonValue, "subject");
-        checkIdNotTooLarge(studentValue);
-        checkIdNotTooLarge(lessonValue);
-        boolean isNewStudent = !ParserUtil.isId(studentValue);
-        boolean isNewLesson = !ParserUtil.isId(lessonValue);
-        logger.fine("Parsing add command: " + (isNewStudent ? "new" : "existing") + " student, "
-                + (isNewLesson ? "new" : "existing") + " lesson");
+        Optional<String> studentValue = argMultimap.getValue(PREFIX_STUDENT);
+        Optional<String> lessonValue = argMultimap.getValue(PREFIX_LESSON);
+        assert studentValue.isPresent() || lessonValue.isPresent() : "s/ or l/ should have been checked as given";
+        if (studentValue.isPresent()) {
+            checkNumberIsAnId(PREFIX_STUDENT, studentValue.get(), "name");
+            checkIdNotTooLarge(studentValue.get());
+        }
+        if (lessonValue.isPresent()) {
+            checkNumberIsAnId(PREFIX_LESSON, lessonValue.get(), "subject");
+            checkIdNotTooLarge(lessonValue.get());
+        }
+        boolean isNewStudent = studentValue.isPresent() && !ParserUtil.isId(studentValue.get());
+        boolean isNewLesson = lessonValue.isPresent() && !ParserUtil.isId(lessonValue.get());
+        logger.fine("Parsing add command: " + describeSide(studentValue, isNewStudent, "student") + ", "
+                + describeSide(lessonValue, isNewLesson, "lesson"));
 
         checkNoUnexpectedParameters(argMultimap, isNewStudent, isNewLesson);
         checkNoMissingParameters(argMultimap, isNewStudent, isNewLesson);
 
-        StudentRef student = isNewStudent ? parseNewStudent(argMultimap) : parseExistingStudent(studentValue);
-        LessonRef lesson = isNewLesson ? parseNewLesson(argMultimap) : parseExistingLesson(lessonValue);
-        return new AddCommand(student, lesson);
+        Optional<StudentRef> student = studentValue.isEmpty() ? Optional.empty()
+                : Optional.of(isNewStudent ? parseNewStudent(argMultimap) : parseExistingStudent(studentValue.get()));
+        Optional<LessonRef> lesson = lessonValue.isEmpty() ? Optional.empty()
+                : Optional.of(isNewLesson ? parseNewLesson(argMultimap) : parseExistingLesson(lessonValue.get()));
+        if (student.isEmpty()) {
+            return new AddCommand(lesson.orElseThrow());
+        }
+        if (lesson.isEmpty()) {
+            return new AddCommand(student.get());
+        }
+        return new AddCommand(student.get(), lesson.get());
+    }
+
+    private static String describeSide(Optional<String> value, boolean isNew, String kind) {
+        return value.isEmpty() ? "no " + kind : (isNew ? "new " : "existing ") + kind;
     }
 
     /**
@@ -197,11 +216,17 @@ public class AddCommandParser implements Parser<AddCommand> {
     }
 
     /**
-     * Throws if {@code s/} or {@code l/} is missing. Whether each side is new or existing decides everything else,
-     * so both must be given before anything else is checked.
+     * Throws if a student parameter is given without {@code s/}, or a lesson parameter without {@code l/}. Whether
+     * each side is new or existing decides everything else, so this is checked before anything else.
      */
     private static void checkStudentAndLessonGiven(ArgumentMultimap argMultimap) throws ParseException {
-        List<Prefix> missing = missingPrefixes(argMultimap, PREFIX_STUDENT, PREFIX_LESSON);
+        List<Prefix> missing = new ArrayList<>();
+        if (argMultimap.getValue(PREFIX_STUDENT).isEmpty() && anyGiven(argMultimap, NEW_STUDENT_PREFIXES)) {
+            missing.add(PREFIX_STUDENT);
+        }
+        if (argMultimap.getValue(PREFIX_LESSON).isEmpty() && anyGiven(argMultimap, NEW_LESSON_PREFIXES)) {
+            missing.add(PREFIX_LESSON);
+        }
         if (!missing.isEmpty()) {
             throw missingParameter(missing);
         }

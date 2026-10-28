@@ -121,11 +121,13 @@ Displays either all students or all lessons. Use this command to switch between 
 * The same view repeated — the app displays `The view can only be specified once.`
 * Both `students` and `lessons` — the app displays `Choose either students or lessons, not both.`
 
-### Adding a student to a lesson: `add`
+### Adding a student, a lesson, or a student to a lesson: `add`
 
 Enrolls a student in a lesson. The student and the lesson can each be **new** (the app creates them) or **existing** (you refer to them by their ID).
 
-Format: `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]`
+You can also add a new student or a new lesson **on its own**, without enrolling anyone, by leaving out the other side. Enroll them later with `add s/ID l/ID`.
+
+Format: `add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]`
 
 <box type="tip" seamless>
 
@@ -146,13 +148,17 @@ existing | existing | `s/ID l/ID`
 new | existing | `s/NAME c/CONTACT slv/STUDENT_LEVEL l/ID`
 existing | new | `s/ID l/SUBJECT llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE`
 new | new | all of the above
+new | none | `s/NAME c/CONTACT slv/STUDENT_LEVEL`
+none | new | `l/SUBJECT llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE`
+
+At least one of `s/` and `l/` is needed. An existing student or lesson given on its own, such as `add s/3`, is an error that asks you for the other side, since there is nothing new to add.
 
 #### Parameters
 
 Parameter | Meaning | Needed when | Rules
 ----------|---------|-------------|------
-`s/` | The student: an ID, or the name of a new student | always | A name has at most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter. The words `s/o` and `d/o` can be part of a name, such as `Ravi s/o Kumar`; a name cannot start with the single word `O`.
-`l/` | The lesson: an ID, or the subject of a new lesson | always | A subject has at most 50 characters: letters, numbers, spaces and `.` `,` `-` `(` `)` `&` `@`, with at least one letter.
+`s/` | The student: an ID, or the name of a new student | you enroll a student, or add one | A name has at most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter. The words `s/o` and `d/o` can be part of a name, such as `Ravi s/o Kumar`; a name cannot start with the single word `O`.
+`l/` | The lesson: an ID, or the subject of a new lesson | you enroll a student in a lesson, or add one | A subject has at most 50 characters: letters, numbers, spaces and `.` `,` `-` `(` `)` `&` `@`, with at least one letter.
 `c/` | The student's contact number | the student is new | 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a `+` can start the number, such as `+65 (9123) 4567`. Duplicates are compared by the digits only.
 `slv/` | The student's level, such as `Primary 6` | the student is new | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
 `llv/` | The lesson's level, such as `Primary 6` | the lesson is new | The same as `slv/`.
@@ -179,6 +185,11 @@ Each one is followed by the result you should see.
 1. `add s/4 l/2`: Enrolled Daniel Koh [Student ID: 4] in Science [Lesson ID: 2]. Payment status: Unpaid.
 1. `add s/2 l/Physics llv/Secondary 2 d/Friday st/14:00 et/15:00 f/55`: Enrolled Bryan Lim [Student ID: 2] in Physics [Lesson ID: 7]. Payment status: Paid.
 1. `add s/1 l/4`: Enrolled Alice Tan [Student ID: 1] in English [Lesson ID: 4]. Payment status: Unpaid. The result ends with `Note: Alice Tan's level (Primary 6) differs from the lesson's level (Primary 4).` A student can join a lesson of another level, but the note asks you to check that this is intended.
+1. `add s/Nora Lim c/90000000 slv/Primary 6`: Added student Nora Lim [Student ID: 6]. Nora is not enrolled in any lesson yet, so the student list shows `Lessons: none`.
+1. `add l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50`: Added lesson Mathematics [Lesson ID: 8]. No student is enrolled yet.
+1. `add s/6 l/8`: Enrolled Nora Lim [Student ID: 6] in Mathematics [Lesson ID: 8]. Payment status: Unpaid.
+
+The result always gives the new ID, so you can use it even if an active filter hides the new record.
 
 #### Possible sources of errors
 
@@ -202,9 +213,12 @@ Command | Message
 `add s/1 l/1 c/91234567` | c/ and slv/ can only be used when adding a new student.
 `add s/1 l/1 d/Monday` | llv/, d/, st/, et/ and f/ can only be used when adding a new lesson.
 `add s/1 s/2 l/1` | A parameter can only be specified once.
+`add s/1` | Alice Tan [Student ID: 1] already exists. To enroll them, add l/ with a lesson ID or the details of a new lesson.
+`add l/1` | Mathematics [Lesson ID: 1] already exists. To enroll a student in it, add s/ with a student ID or the details of a new student.
+`add c/90000000 slv/Primary 6` | Missing required parameter: s/.
 `add s/Daniel Koh c/12 slv/Primary 6 l/1` | Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a + can start the number, such as +65 (9123) 4567.
 `add s/1 l/History llv/Primary 6 d/Monday st/9:60 et/10:00 f/35` | Invalid start time. Use the 24-hour format, such as 9:00 or 14:30.
-`add` | Invalid command format. Use: add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
+`add` | Invalid command format. Use: add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
 
 ### Editing a student or lesson: `edit`
 
@@ -490,7 +504,7 @@ _Details coming soon ..._
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> _Examples to be added by the owner of `add`._
+**Add**    | `add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> e.g., `add s/1 l/2`, `add s/Nora Lim c/90000000 slv/Primary 6`, `add l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50`
 **Edit**   | `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]` <br> `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]`
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
 **Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`
