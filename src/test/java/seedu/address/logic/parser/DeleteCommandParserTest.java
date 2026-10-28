@@ -36,10 +36,9 @@ class DeleteCommandParserTest {
 
     @Test
     void parse_idTooLarge_reportsSpecificError() {
-        assertThrows(ParseException.class, ParserUtil.MESSAGE_ID_TOO_LARGE,
-                () -> parser.parse("student 2147483648"));
-        assertThrows(ParseException.class, ParserUtil.MESSAGE_ID_TOO_LARGE,
-                () -> parser.parse("lesson 99999999999999999999"));
+        String expectedMessage = ParserUtil.MESSAGE_ID_TOO_LARGE;
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parse("student 2147483648"));
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parse("lesson 99999999999999999999"));
     }
 }
 
