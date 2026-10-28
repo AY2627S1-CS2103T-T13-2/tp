@@ -212,7 +212,7 @@ Duplicate students are matched using `Name#isSameName` and `Contact#isSameContac
 
 If the requested details are identical to the stored record, `EditCommand` returns `No changes were made.` and marks the result so that `LogicManager` skips saving. A case-only level edit is still treated as a real edit because it changes the stored spelling, so it follows the normal save-and-rollback path.
 
-The sequence diagram below shows `execute("edit student 1 c/90001111")`, which updates only an existing student's contact number. Less-important method parameters, duplicate checking, note generation, the no-change path and the error paths are omitted to keep the diagram focused. Editing a lesson follows the same overall flow, with validation of its final timeslot, duplicates and clashes before the update.
+The sequence diagram below shows `execute("edit student 1 c/90001111")`, which updates only an existing student's contact number. Less-important method parameters, duplicate checking, note generation, the no-change path, the error paths, and the common snapshot, save, and rollback interactions in `LogicManager` are omitted to keep the diagram focused. Editing a lesson follows the same overall flow, with validation of its final timeslot, duplicates and clashes before the update.
 
 <puml src="diagrams/EditSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `edit` Command" />
 
@@ -408,7 +408,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | be warned when a new lesson overlaps another lesson on the same day | avoid double-booking my teaching time |
 | `* * *` | tutor | be prevented from creating duplicate students, lessons, or enrollments | keep my records accurate |
 | `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
-| `* * *` | tutor | list my students with their contact details, levels, lessons, monthly fees, and payment statuses | review my roster and outstanding payments |
+| `* * *` | tutor | list my students with their contact details, levels, lessons, and payment statuses | review my roster and outstanding payments |
 | `* * *` | tutor | list my lessons with their timeslots, fees, and enrolled students | review my teaching schedule |
 | `* * *` | tutor | view the weekly schedule for one student | see when that student's lessons take place |
 | `* * *` | tutor | delete a student and their associated enrollments | remove a student who no longer attends lessons without leaving obsolete enrollments |
@@ -485,10 +485,10 @@ Use case ends.
 2.  System validates the requested view.
 3.  System clears any active list filter.
 4.  System retrieves the requested records.
-5.  System shows records in their current sort order (by ID for students and by day and time for lessons by default).
+5.  System shows records in their current sort order (by ID for students and by weekday, start time, then ID for lessons by default).
 6.  System displays the records and the total count.
 
-    Use case ends.
+Use case ends.
 
 **Extensions**
 
@@ -511,7 +511,7 @@ Use case ends.
 3. System deletes the specified record and all enrolments associated with it.
 4. System confirms the deletion and identifies the deleted record.
 
-    Use case ends.
+Use case ends.
 
 **Extensions**
 * 1a. The command is missing the kind, contains an unknown kind, or contains extra text.
@@ -531,6 +531,43 @@ Use case ends.
     * 2b1. System displays an error message.
     * 2b2. System leaves all data unchanged.
     * Use case ends.
+
+**Use case: Edit a student or lesson**
+
+**MSS**
+
+1. User requests to edit a student or lesson using its kind, ID, and updated fields.
+2. System identifies the specified student or lesson.
+3. System validates the updated fields, checking for duplicate details or lesson clashes.
+4. System updates the specified record while preserving its ID and existing enrolments.
+5. System saves the changes and displays the updated record details.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The command format is invalid, kind is missing or unknown, or ID is invalid.
+    * 1a1. System displays an error message showing the correct command format.
+    * Use case ends.
+
+* 2a. No student or lesson exists with the specified kind and ID.
+    * 2a1. System displays an error message stating that no record of the specified kind exists with the given ID.
+    * Use case ends.
+
+* 3a. The updated details result in a duplicate student, duplicate lesson, or lesson timeslot clash.
+    * 3a1. System displays an error message explaining the conflict.
+    * 3a2. System leaves all data unchanged.
+    * Use case ends.
+
+* 3b. The requested details are identical to the stored record.
+    * 3b1. System displays `No changes were made.`
+    * 3b2. System skips saving and leaves all data unchanged.
+    * Use case ends.
+
+* 4a. The edited record cannot be saved.
+    * 4a1. System restores the original data.
+    * 4a2. System displays the applicable file-write or permission error.
+    * Use case ends without a persistent change.
 
 
 **Use case: Mark a student's monthly payment as paid**
@@ -561,6 +598,41 @@ Use case ends.
 * 3a. The student has already been marked as paid for the current month.
     * 3a1. System leaves the payment status unchanged.
     * 3a2. System informs the user that the student is already paid.
+    * Use case ends.
+
+* 3b. The payment status cannot be saved.
+    * 3b1. System displays the applicable file-write or insufficient-permissions error and states that no changes were made.
+    * 3b2. System leaves the payment status unchanged.
+    * Use case ends.
+
+**Use case: Correct a student's monthly payment to unpaid**
+
+**MSS**
+
+1. User requests to unmark a student's payment using the student's permanent ID.
+2. System identifies the student corresponding to the specified ID.
+3. System marks the student's payment status as unpaid for the current month.
+4. System confirms that the student's payment has been marked as unpaid.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The student ID is missing or more than one argument is provided.
+    * 1a1. System displays `Invalid command format. Use: unmark ID`.
+    * Use case ends.
+
+* 1b. The student ID is non-numeric or not positive.
+    * 1b1. System displays `ID must be a positive whole number.`
+    * Use case ends.
+
+* 2a. No student has the specified ID.
+    * 2a1. System displays `No student found with ID ID.`, using the requested ID.
+    * Use case ends.
+
+* 3a. The student has already been marked as unpaid for the current month.
+    * 3a1. System leaves the payment status unchanged.
+    * 3a2. System informs the user that the student is already unpaid.
     * Use case ends.
 
 * 3b. The payment status cannot be saved.
