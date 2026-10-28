@@ -101,7 +101,8 @@ Displays either all students or all lessons. Use this command to switch between 
 **Successful listing:**
 
 * The selected list is displayed and any active filter is cleared.
-* The result box reports the number of records, for example `Listed 3 students.` or `Listed 4 lessons.`
+* The result box reports the number of records, for example `Listed 1 student.`, `Listed 3 students.`,
+  `Listed 1 lesson.`, or `Listed 4 lessons.`
 * If the selected list is empty, the result box displays `No students found. Use the add command to create one.` or `No lessons found. Lessons are created through the add command.`
 
 **Displayed information:**
