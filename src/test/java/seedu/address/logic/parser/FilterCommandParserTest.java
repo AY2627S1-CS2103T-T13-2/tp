@@ -36,6 +36,10 @@ public class FilterCommandParserTest {
     @Test
     public void parse_validLessonArgs_returnsFilterCommand() {
         assertParseSuccess(parser, "lesson 2", new FilterCommand(new LessonId(2)));
+
+        // letter case is ignored
+        assertParseSuccess(parser, "LESSON 2", new FilterCommand(new LessonId(2)));
+        assertParseSuccess(parser, "Lesson 2", new FilterCommand(new LessonId(2)));
     }
 
     @Test
@@ -44,12 +48,20 @@ public class FilterCommandParserTest {
 
         // letter case and whitespace are ignored
         assertParseSuccess(parser, "  day   MONDAY  ", new FilterCommand(DayOfWeek.MONDAY));
+        assertParseSuccess(parser, "DAY monday", new FilterCommand(DayOfWeek.MONDAY));
+        assertParseSuccess(parser, "Day Monday", new FilterCommand(DayOfWeek.MONDAY));
     }
 
     @Test
     public void parse_validPaidArgs_returnsFilterCommand() {
         assertParseSuccess(parser, "paid", new FilterCommand(true));
         assertParseSuccess(parser, "unpaid", new FilterCommand(false));
+
+        // letter case is ignored
+        assertParseSuccess(parser, "PAID", new FilterCommand(true));
+        assertParseSuccess(parser, "Paid", new FilterCommand(true));
+        assertParseSuccess(parser, "UNPAID", new FilterCommand(false));
+        assertParseSuccess(parser, "Unpaid", new FilterCommand(false));
 
         // extra whitespace is ignored
         assertParseSuccess(parser, "  paid  ", new FilterCommand(true));

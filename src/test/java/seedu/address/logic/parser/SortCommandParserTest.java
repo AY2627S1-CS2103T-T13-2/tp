@@ -18,6 +18,12 @@ public class SortCommandParserTest {
                 SortField.STUDENT_NAME, true));
         assertParseSuccess(parser, "lesson fee desc", new SortCommand("lesson", "fee",
                 SortField.LESSON_FEE, false));
+
+        // letter case is ignored
+        assertParseSuccess(parser, "STUDENT NAME ASC", new SortCommand("student", "name",
+                SortField.STUDENT_NAME, true));
+        assertParseSuccess(parser, "LESSON FEE DESC", new SortCommand("lesson", "fee",
+                SortField.LESSON_FEE, false));
     }
 
     @Test
