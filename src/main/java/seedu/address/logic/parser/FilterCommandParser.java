@@ -23,9 +23,7 @@ import seedu.address.model.student.StudentId;
  */
 public class FilterCommandParser implements Parser<FilterCommand> {
 
-    public static final String MESSAGE_INVALID_SUBJECT = "Invalid subject. Subject must contain at least one letter, "
-            + "may contain only letters, numbers, spaces and hyphens, and cannot exceed " + Subject.MAX_LENGTH
-            + " characters.";
+    public static final String MESSAGE_INVALID_SUBJECT = Subject.MESSAGE_CONSTRAINTS;
     public static final String MESSAGE_FILTER_EXAMPLES = "Choose a filter form. Examples: filter student 1, "
             + "filter lesson 2, filter day Monday, filter paid, filter l/Mathematics llv/Primary 6, "
             + "or filter slv/Primary 6.";
@@ -71,10 +69,10 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         }
 
         String trimmedArgs = args.trim();
-        if (trimmedArgs.equals(KEYWORD_PAID)) {
+        if (trimmedArgs.equalsIgnoreCase(KEYWORD_PAID)) {
             return new FilterCommand(true);
         }
-        if (trimmedArgs.equals(KEYWORD_UNPAID)) {
+        if (trimmedArgs.equalsIgnoreCase(KEYWORD_UNPAID)) {
             return new FilterCommand(false);
         }
 
@@ -83,7 +81,8 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         if (parts.length == 1 && parts[0].isEmpty()) {
             throw new ParseException(MESSAGE_FILTER_EXAMPLES);
         }
-        String keyword = parts[0];
+        String originalKeyword = parts[0];
+        String keyword = originalKeyword.toLowerCase();
         if (parts.length == 1 && isKeyword(keyword)) {
             throw new ParseException(String.format(MESSAGE_MISSING_FILTER_VALUE, keyword, exampleValue(keyword)));
         }
@@ -91,7 +90,7 @@ public class FilterCommandParser implements Parser<FilterCommand> {
             throw new ParseException(String.format(MESSAGE_EXTRA_FILTER_ARGUMENTS, keyword, exampleValue(keyword)));
         }
         if (!isKeyword(keyword)) {
-            throw new ParseException(String.format(MESSAGE_UNKNOWN_FILTER, keyword));
+            throw new ParseException(String.format(MESSAGE_UNKNOWN_FILTER, originalKeyword));
         }
 
         String id = parts[1];
@@ -111,7 +110,7 @@ public class FilterCommandParser implements Parser<FilterCommand> {
             return new FilterCommand(day);
         }
 
-        throw new ParseException(String.format(MESSAGE_UNKNOWN_FILTER, keyword));
+        throw new ParseException(String.format(MESSAGE_UNKNOWN_FILTER, originalKeyword));
     }
 
     private static FilterCommand parseSubjectAndLevel(ArgumentMultimap argMultimap) throws ParseException {

@@ -27,6 +27,10 @@ public class FilterCommandParserTest {
 
         // extra whitespace is ignored
         assertParseSuccess(parser, "  student   1  ", new FilterCommand(new StudentId(1)));
+
+        // letter case is ignored
+        assertParseSuccess(parser, "STUDENT 1", new FilterCommand(new StudentId(1)));
+        assertParseSuccess(parser, "Student 1", new FilterCommand(new StudentId(1)));
     }
 
     @Test
@@ -49,6 +53,11 @@ public class FilterCommandParserTest {
 
         // extra whitespace is ignored
         assertParseSuccess(parser, "  paid  ", new FilterCommand(true));
+
+        // letter case is ignored
+        assertParseSuccess(parser, "PAID", new FilterCommand(true));
+        assertParseSuccess(parser, "Paid", new FilterCommand(true));
+        assertParseSuccess(parser, "UNPAID", new FilterCommand(false));
     }
 
     @Test
@@ -133,9 +142,6 @@ public class FilterCommandParserTest {
     public void parse_unknownKeyword_throwsParseException() {
         assertParseFailure(parser, "students 1", String.format(FilterCommandParser.MESSAGE_UNKNOWN_FILTER,
                 "students"));
-        assertParseFailure(parser, "Student 1", String.format(FilterCommandParser.MESSAGE_UNKNOWN_FILTER,
-                "Student"));
-        assertParseFailure(parser, "Paid", String.format(FilterCommandParser.MESSAGE_UNKNOWN_FILTER, "Paid"));
         assertParseFailure(parser, "paid now", String.format(FilterCommandParser.MESSAGE_UNKNOWN_FILTER, "paid"));
     }
 
