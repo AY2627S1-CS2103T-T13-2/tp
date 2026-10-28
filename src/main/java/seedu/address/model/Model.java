@@ -212,6 +212,11 @@ public interface Model {
     void filterStudentsByPaidStatus(boolean paid);
 
     /**
+     * Shows only the students at the given level, replacing any earlier filter. The lesson list is unaffected.
+     */
+    void filterStudentsByLevel(Level level);
+
+    /**
      * Clears any filter, so that every student and every lesson is shown.
      */
     void resetFilters();
