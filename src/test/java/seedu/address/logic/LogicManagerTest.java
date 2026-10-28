@@ -10,6 +10,7 @@ import static seedu.address.testutil.TypicalClock.CLOCK;
 import static seedu.address.testutil.TypicalLessons.MATHEMATICS;
 import static seedu.address.testutil.TypicalStudents.ALICE;
 import static seedu.address.testutil.TypicalStudents.BRYAN;
+import static seedu.address.testutil.TypicalStudents.CHLOE;
 import static seedu.address.testutil.TypicalStudents.DANIEL;
 import static seedu.address.testutil.TypicalTuiTracker.getTypicalTuiTracker;
 
@@ -33,6 +34,7 @@ import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.HelpCommand;
+import seedu.address.logic.commands.SortCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.AddressBookParser;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -150,6 +152,25 @@ public class LogicManagerTest {
         CommandResult result = failingLogic.execute("help");
 
         assertEquals(HelpCommand.SHOWING_HELP_MESSAGE, result.getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_sortWhenStorageFails_stillSortsWithoutSaving() throws Exception {
+        JsonTuiTrackerStorage failingStorage = new JsonTuiTrackerStorage(temporaryFolder.resolve("failing.json")) {
+            @Override
+            public void saveTuiTracker(ReadOnlyTuiTracker tuiTracker, Path filePath) throws IOException {
+                throw DUMMY_IO_EXCEPTION;
+            }
+        };
+        Logic failingLogic = new LogicManager(model, new StorageManager(failingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
+
+        CommandResult result = failingLogic.execute("sort student name desc");
+
+        assertEquals(String.format(SortCommand.MESSAGE_SUCCESS, "students", "name", "descending"),
+                result.getFeedbackToUser());
+        assertEquals(ListView.STUDENTS, model.listViewProperty().get());
+        assertEquals(CHLOE, model.getStudentList().get(0));
     }
 
     //// a command whose changes cannot be saved is undone

@@ -17,6 +17,7 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.TuiTracker;
 import seedu.address.model.UserPrefs;
+import seedu.address.testutil.TuiTrackerBuilder;
 
 public class ListCommandTest {
 
@@ -74,6 +75,27 @@ public class ListCommandTest {
 
         assertCommandSuccess(new ListCommand(ListView.LESSONS), emptyModel,
                 ListCommand.MESSAGE_NO_LESSONS, expectedModel);
+    }
+
+    @Test
+    public void execute_studentsWithOneRecord_usesSingularMessage() {
+        TuiTracker tracker = new TuiTrackerBuilder().withStudent(ALICE).build();
+        Model oneStudentModel = new ModelManager(tracker, new UserPrefs(), CLOCK);
+        Model expectedModel = new ModelManager(tracker, new UserPrefs(), CLOCK);
+
+        assertCommandSuccess(new ListCommand(ListView.STUDENTS), oneStudentModel,
+                ListCommand.MESSAGE_LISTED_ONE_STUDENT, expectedModel);
+    }
+
+    @Test
+    public void execute_lessonsWithOneRecord_usesSingularMessage() {
+        TuiTracker tracker = new TuiTrackerBuilder().withLesson(MATHEMATICS).build();
+        Model oneLessonModel = new ModelManager(tracker, new UserPrefs(), CLOCK);
+        Model expectedModel = new ModelManager(tracker, new UserPrefs(), CLOCK);
+        expectedModel.setListView(ListView.LESSONS);
+
+        assertCommandSuccess(new ListCommand(ListView.LESSONS), oneLessonModel,
+                ListCommand.MESSAGE_LISTED_ONE_LESSON, expectedModel);
     }
 
     @Test

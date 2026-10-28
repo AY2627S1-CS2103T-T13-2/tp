@@ -125,6 +125,11 @@ public class ModelStub implements Model {
     }
 
     @Override
+    public void refreshPaymentStatus() {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
     public Student addStudent(Name name, Contact contact, Level level) {
         throw new AssertionError("This method should not be called.");
     }
@@ -211,6 +216,16 @@ public class ModelStub implements Model {
 
     @Override
     public void setListView(ListView listView) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
+    public Optional<StudentId> getScheduleStudentId() {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
+    public void setScheduleStudentId(Optional<StudentId> studentId) {
         throw new AssertionError("This method should not be called.");
     }
 

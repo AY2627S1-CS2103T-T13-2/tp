@@ -6,6 +6,7 @@ box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as LogicManager LOGIC_COLOR
 participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
 participant ":ScheduleCommandParser" as ScheduleCommandParser LOGIC_COLOR
+participant "ParserUtil" as ParserUtil LOGIC_COLOR
 participant "s:ScheduleCommand" as ScheduleCommand LOGIC_COLOR
 end box
 
@@ -13,21 +14,19 @@ box Model MODEL_COLOR_T1
 participant ":ModelManager" as ModelManager MODEL_COLOR
 end box
 
-box Storage STORAGE_COLOR_T1
-participant ":StorageManager" as StorageManager STORAGE_COLOR
-end box
-
-[-> LogicManager : execute("schedule")
+[-> LogicManager : execute("schedule student 1")
 activate LogicManager LOGIC_COLOR
 
-LogicManager -> AddressBookParser : parseCommand("schedule")
+LogicManager -> AddressBookParser : parseCommand("schedule student 1")
 activate AddressBookParser LOGIC_COLOR
 create ScheduleCommandParser
 AddressBookParser -> ScheduleCommandParser : new ScheduleCommandParser()
 activate ScheduleCommandParser LOGIC_COLOR
-AddressBookParser -> ScheduleCommandParser : parse("")
+AddressBookParser -> ScheduleCommandParser : parse(" student 1")
+ScheduleCommandParser -> ParserUtil : parseStudentId("1")
+ParserUtil --> ScheduleCommandParser : StudentId(1)
 create ScheduleCommand
-ScheduleCommandParser -> ScheduleCommand : new ScheduleCommand()
+ScheduleCommandParser -> ScheduleCommand : new ScheduleCommand(StudentId(1))
 ScheduleCommand --> ScheduleCommandParser : s
 ScheduleCommandParser --> AddressBookParser : s
 deactivate ScheduleCommandParser
@@ -36,17 +35,15 @@ deactivate AddressBookParser
 
 LogicManager -> ScheduleCommand : execute(ModelManager)
 activate ScheduleCommand LOGIC_COLOR
-ScheduleCommand -> ModelManager : getTuiTracker()
-ModelManager --> ScheduleCommand : current tracker
+ScheduleCommand -> ModelManager : findStudent(StudentId(1))
+ModelManager --> ScheduleCommand : Optional<Student>
+ScheduleCommand -> ModelManager : getLessonIdsOf(StudentId(1))
+ModelManager --> ScheduleCommand : lesson IDs
+ScheduleCommand -> ModelManager : setScheduleStudentId(Optional.of(StudentId(1)))
 ScheduleCommand -> ModelManager : setListView(SCHEDULE)
-ModelManager --> ScheduleCommand
 ScheduleCommand --> LogicManager : r:CommandResult
 deactivate ScheduleCommand
 
-LogicManager -> StorageManager : saveTuiTracker(current tracker)
-activate StorageManager STORAGE_COLOR
-StorageManager --> LogicManager : saved
-deactivate StorageManager
 [<-- LogicManager : r
 deactivate LogicManager
 

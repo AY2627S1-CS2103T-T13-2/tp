@@ -16,7 +16,9 @@ public class HelpCommand extends Command {
             DeleteCommand.MESSAGE_USAGE,
             ListCommand.MESSAGE_USAGE,
             MarkCommand.MESSAGE_USAGE,
+            UnmarkCommand.MESSAGE_USAGE,
             ScheduleCommand.MESSAGE_USAGE,
+            SortCommand.MESSAGE_USAGE,
             FilterCommand.MESSAGE_USAGE,
             COMMAND_WORD,
             ExitCommand.COMMAND_WORD);
