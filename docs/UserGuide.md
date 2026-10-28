@@ -340,55 +340,73 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 
 ### Marking a student as paid: `mark`
 
-Marks a student as paid for the current month using the student's ID. Use this command after receiving the student's payment for the current month.
+Marks one or more students, or all students enrolled in a lesson, as paid for the current month. Use this command after receiving payment for the current month.
 
-**Format:** `mark ID`
+**Format:** `mark ID [MORE_IDS]...` or `mark lesson LESSON_ID`
 
 **Parameters:**
 
-* `ID` — the student's positive whole-number ID, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
-* Leading and trailing spaces are ignored. No other text may follow the ID.
+* `ID` — one or more student positive whole-number IDs separated by spaces, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`). Duplicate IDs are merged.
+* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as paid.
+* Leading and trailing spaces are ignored.
 
 **Examples:**
 
-* `mark 1` — marks the student with ID 1 as paid for the current month.
-* `mark 0012` — marks student 12 as paid; leading zeros are ignored.
+* `mark 1` — marks student 1 as paid for the current month.
+* `mark 1 2 3` — marks students 1, 2, and 3 as paid for the current month.
+* `mark lesson 1` — marks all students enrolled in lesson 1 as paid for the current month.
 
 **Successful marking:**
 
-* The result box confirms the student's name, for example `Marked Alice Tan as paid for the current month.`
-* The student's payment status for the current month is updated to paid.
+* For a single student: `Marked Alice Tan as paid for the current month.`
+* For multiple students: `Marked Alice Tan, Bob Tan as paid for the current month.`
+* If some students were already marked as paid: `Marked Alice Tan as paid for the current month. (Already paid: Bob Tan)`
+* The payment status of the marked students for the current month is updated to paid.
 
 **Notes:**
 
 * The command records payment only for the current month.
-* A student who is already marked as paid for the current month cannot be marked again.
-* Student IDs and lesson IDs are separate. The ID must belong to a student.
+* If a single student is already marked as paid, the command fails and displays an error message.
+* When specifying multiple students or a lesson, if some students are already paid, the command marks the remaining unpaid students and informs you of those already paid. If all specified students or lesson students are already paid, no change is made and an error message is displayed.
+* Student IDs and lesson IDs are separate.
 * The ID must be a positive whole number. For example, `mark 0` and `mark -1` are invalid.
 
 **Errors:**
 
-* A missing ID or extra text after the ID — the app displays `Invalid command format. Use: mark ID`.
+* A missing ID or invalid format — the app displays `Invalid command format. Use: mark ID [MORE_IDS]... or mark lesson LESSON_ID`.
 * A malformed or non-positive ID — the app displays `ID must be a positive whole number.`
 * An ID above `2147483647` — the app displays `ID is too large. No student or lesson has an ID above 2147483647.`
-* No student has that ID — the app displays `No student found with ID 999.` (using the requested ID). An ID belonging only to a lesson does not match.
-* The student is already marked as paid for the current month — the app displays `Alice Tan is already marked as paid for the current month.` (using the student's name).
+* No student or lesson has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID).
+* No students are enrolled in the lesson — the app displays `No students are enrolled in Lesson 1.`
+* All specified students are already marked as paid — the app displays `Alice Tan is already marked as paid for the current month.` or `All specified students are already marked as paid for the current month.` or `All students in Lesson 1 are already marked as paid for the current month.`
 
 No data is changed on failure.
 
 ### Correcting a payment to unpaid: `unmark`
 
-Corrects an accidental payment entry by marking the student as unpaid for the current month.
+Marks one or more students, or all students enrolled in a lesson, as unpaid for the current month. Use this command to correct accidental payment entries.
 
-**Format:** `unmark ID`
+**Format:** `unmark ID [MORE_IDS]...` or `unmark lesson LESSON_ID`
 
-Examples:
+**Parameters:**
+
+* `ID` — one or more student positive whole-number IDs separated by spaces, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`). Duplicate IDs are merged.
+* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as unpaid.
+* Leading and trailing spaces are ignored.
+
+**Examples:**
 
 * `unmark 1` — marks student 1 as unpaid for the current month.
-* `unmark 0012` — marks student 12 as unpaid; leading zeros are ignored.
+* `unmark 1 2 3` — marks students 1, 2, and 3 as unpaid for the current month.
+* `unmark lesson 1` — marks all students enrolled in lesson 1 as unpaid for the current month.
 
-The student must exist and must currently be marked as paid. The change is saved immediately and is retained
-after restarting TuiTracker. The student's details and lesson enrollments are not changed.
+**Successful unmarking:**
+
+* For a single student: `Marked Alice Tan as unpaid for the current month.`
+* For multiple students: `Marked Alice Tan, Bob Tan as unpaid for the current month.`
+* If some students were already marked as unpaid: `Marked Alice Tan as unpaid for the current month. (Already unpaid: Bob Tan)`
+
+The change is saved immediately and is retained after restarting TuiTracker. The student's details and lesson enrollments are not changed.
 
 ### Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status: `filter`
 
@@ -518,8 +536,8 @@ Action     | Format, Examples
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
 **Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
-**Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
-**Unmark** | `unmark ID` <br> e.g., `unmark 1`, `unmark 0012`
+**Mark**   | `mark ID [MORE_IDS]...` or `mark lesson LESSON_ID` <br> e.g., `mark 1`, `mark 1 2 3`, `mark lesson 1`
+**Unmark** | `unmark ID [MORE_IDS]...` or `unmark lesson LESSON_ID` <br> e.g., `unmark 1`, `unmark 1 2 3`, `unmark lesson 1`
 **Schedule** | `schedule [student ID]` <br> e.g., `schedule`, `schedule student 1`; shows recurring lessons from Monday to Sunday
 **Sort** | `sort student id\|name\|level\|payment\|paid [asc\|desc]` or `sort lesson id\|subject\|level\|fee\|time [asc\|desc]` <br> e.g., `sort student payment`, `sort lesson fee desc`
 **Help**   | `help`
