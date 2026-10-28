@@ -167,4 +167,14 @@ public class ArgumentTokenizerTest {
         assertEquals(Optional.of("Olivia"), ArgumentTokenizer.tokenize(" s/Olivia", s, d).getValue(s));
         assertEquals(Optional.of("Monday"), ArgumentTokenizer.tokenize(" s/Ravi d/Monday", s, d).getValue(d));
     }
+
+    @Test
+    public void tokenize_studentNameStartingWithO_prefixRecognized() {
+        Prefix s = new Prefix("s/");
+        Prefix c = new Prefix("c/");
+
+        assertEquals(Optional.of("o"), ArgumentTokenizer.tokenize(" s/o", s).getValue(s));
+        assertEquals(Optional.of("o Tan"), ArgumentTokenizer.tokenize(" s/o Tan", s).getValue(s));
+        assertEquals(Optional.of("o Tan"), ArgumentTokenizer.tokenize(" c/91234567 s/o Tan", s, c).getValue(s));
+    }
 }

@@ -19,6 +19,9 @@ import seedu.address.logic.parser.exceptions.ParseException;
  */
 public class ArgumentMultimap {
 
+    public static final String MESSAGE_PREFIX_INSIDE_VALUE =
+            "%1$s was found inside the value of %2$s. Separate parameters with a space.";
+
     /** Prefixes mapped to their respective arguments */
     private final Map<Prefix, List<String>> argMultimap = new HashMap<>();
 
@@ -74,5 +77,34 @@ public class ArgumentMultimap {
         if (duplicatedPrefixes.length > 0) {
             throw new ParseException(Messages.getErrorMessageForDuplicatePrefixes(duplicatedPrefixes));
         }
+    }
+
+    /**
+     * Throws a {@code ParseException} if any supported prefix appears inside another prefix's value without a
+     * separating space.
+     */
+    public void verifyNoPrefixInsideValues(Prefix... prefixes) throws ParseException {
+        for (Prefix given : prefixes) {
+            Optional<String> value = getValue(given);
+            if (value.isEmpty()) {
+                continue;
+            }
+            for (Prefix inside : prefixes) {
+                if (containsGluedPrefix(value.get(), inside.getPrefix())) {
+                    throw new ParseException(String.format(MESSAGE_PREFIX_INSIDE_VALUE, inside, given));
+                }
+            }
+        }
+    }
+
+    /** Returns whether {@code prefix} appears inside {@code value} without whitespace immediately before it. */
+    static boolean containsGluedPrefix(String value, String prefix) {
+        for (int i = 1; i + prefix.length() <= value.length(); i++) {
+            if (value.regionMatches(true, i, prefix, 0, prefix.length())
+                    && !Character.isWhitespace(value.charAt(i - 1))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

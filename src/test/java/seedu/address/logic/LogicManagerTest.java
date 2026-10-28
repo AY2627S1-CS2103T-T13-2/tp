@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
+import static seedu.address.logic.commands.EditCommand.MESSAGE_NO_CHANGES;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalClock.CLOCK;
 import static seedu.address.testutil.TypicalLessons.MATHEMATICS;
@@ -189,14 +190,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_sortWhenStorageFails_stillSortsWithoutSaving() throws Exception {
-        JsonTuiTrackerStorage failingStorage = new JsonTuiTrackerStorage(temporaryFolder.resolve("failing.json")) {
-            @Override
-            public void saveTuiTracker(ReadOnlyTuiTracker tuiTracker, Path filePath) throws IOException {
-                throw DUMMY_IO_EXCEPTION;
-            }
-        };
-        Logic failingLogic = new LogicManager(model, new StorageManager(failingStorage,
-                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
+        Logic failingLogic = createLogicWithFailingStorage();
 
         CommandResult result = failingLogic.execute("sort student name desc");
 
@@ -204,6 +198,27 @@ public class LogicManagerTest {
                 result.getFeedbackToUser());
         assertEquals(ListView.STUDENTS, model.listViewProperty().get());
         assertEquals(CHLOE, model.getStudentList().get(0));
+    }
+
+    @Test
+    public void execute_noChangeEditWhenStorageFails_skipsSaveAndReportsNoChanges() throws Exception {
+        Logic failingLogic = createLogicWithFailingStorage();
+
+        CommandResult result = failingLogic.execute("edit student 1 s/Alice Tan");
+
+        assertEquals(MESSAGE_NO_CHANGES, result.getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_caseOnlyLevelEditWhenStorageFails_attemptsSaveAndRollsBack() {
+        Logic failingLogic = createLogicWithFailingStorage();
+
+        CommandException thrown = Assertions.assertThrows(CommandException.class, () ->
+                failingLogic.execute("edit student 1 slv/primary 6"));
+
+        assertEquals(String.format(LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()),
+                thrown.getMessage());
+        assertEquals("Primary 6", model.findStudent(ALICE.getId()).orElseThrow().getLevel().toString());
     }
 
     //// a command whose changes cannot be saved is undone
@@ -342,6 +357,17 @@ public class LogicManagerTest {
 
     private void assertParseException(String inputCommand, String expectedMessage) {
         assertThrows(ParseException.class, expectedMessage, () -> logic.execute(inputCommand));
+    }
+
+    private Logic createLogicWithFailingStorage() {
+        JsonTuiTrackerStorage failingStorage = new JsonTuiTrackerStorage(temporaryFolder.resolve("failing.json")) {
+            @Override
+            public void saveTuiTracker(ReadOnlyTuiTracker tuiTracker, Path filePath) throws IOException {
+                throw DUMMY_IO_EXCEPTION;
+            }
+        };
+        return new LogicManager(model, new StorageManager(failingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }
 
     /**

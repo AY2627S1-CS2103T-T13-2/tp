@@ -206,6 +206,7 @@ Command | Message
 `add s/Daniel Koh slv/Primary 6 l/1` | Missing required parameter: c/. s/Daniel Koh was read as a new student.
 `add s/1 l/2 extra words` | Missing required parameter: llv/, d/, st/, et/, f/. l/2 extra words was read as a new lesson. To use an existing lesson, give only its ID, such as l/2.
 `add s/Daniel Koh c/92223333slv/Primary 6 l/1` | slv/ was found inside the value of c/. Separate parameters with a space.
+`add s/1 l/2 x/value` | Unknown parameter: x/. Use: add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
 `add s/0 l/1` | s/0 is neither an ID nor a valid name. An ID is a positive whole number, such as s/3.
 `add s/2147483648 l/1` | ID is too large. No student or lesson has an ID above 2147483647.
 `add s/1 l/Art llv/Primary 6 d/Friday st/17:00 et/16:00 f/40` | Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start time.
@@ -275,6 +276,8 @@ Each one starts from the sample data and is followed by the result you should se
 * Changing a lesson fee to `0` goes ahead with a note asking you to check that it is meant to be free.
 * A change in letter case still counts as an edit, including for a student's or lesson's level.
 * No data is changed if the command fails validation.
+* If the supplied values already match the stored record, TuiTracker reports that no changes were made and does not
+  rewrite the data file.
 
 #### Possible sources of errors
 
@@ -285,6 +288,8 @@ Command | Message
 `edit teacher 1 s/Alice` | Invalid command format. Use: edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL] OR edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]
 `edit student 1` | At least one field to edit must be provided.
 `edit student 1 c/90001111 c/92223333` | A parameter can only be specified once.
+`edit student 1 s/Alicia x/value` | Unknown parameter: x/. Use: edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL] OR edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]
+`edit student 1 c/92345678slv/Secondary 1` | slv/ was found inside the value of c/. Separate parameters with a space.
 `edit student 1 l/English` | Only s/, c/ and slv/ can be used when editing a student.
 `edit lesson 1 c/90001111` | Only l/, llv/, d/, st/, et/ and f/ can be used when editing a lesson.
 `edit student 0 c/90001111` | ID must be a positive whole number.
@@ -468,7 +473,9 @@ Format: `exit`
 
 ### Saving the data
 
-TuiTracker automatically saves data after each data-changing command. You do not need to save manually. If the data file cannot be loaded at startup, data-changing commands are blocked until you repair or replace the file and restart TuiTracker.
+TuiTracker automatically saves data after each data-changing command. You do not need to save manually. 
+
+If the data file cannot be loaded at startup, data-changing commands are blocked until you repair or replace the file and restart TuiTracker.
 
 ### Editing the data file
 
@@ -478,6 +485,7 @@ TuiTracker data is saved automatically as a JSON file `[JAR file location]/data/
 
 **Caution:**
 If your changes make the data file invalid, TuiTracker warns you at the next launch and opens in read-only recovery mode. It shows an empty list, but leaves the invalid file untouched and blocks data-changing commands. Back up the file, repair or replace it, then restart TuiTracker to resume editing.<br>
+If your changes make the data file invalid, TuiTracker starts with no students or lessons at the next run. The invalid file remains on disk until you run a command that changes stored data. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause TuiTracker to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
