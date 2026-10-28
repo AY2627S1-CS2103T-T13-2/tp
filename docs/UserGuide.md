@@ -473,7 +473,9 @@ Format: `exit`
 
 ### Saving the data
 
-TuiTracker automatically saves data after every command that changes stored data. You do not need to save manually.
+TuiTracker automatically saves data after each data-changing command. You do not need to save manually. 
+
+If the data file cannot be loaded at startup, data-changing commands are blocked until you repair or replace the file and restart TuiTracker.
 
 ### Editing the data file
 
@@ -482,9 +484,8 @@ TuiTracker data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, TuiTracker starts with no students or lessons at the next run. The invalid
-file remains on disk until you run a command that changes stored data. Still, we recommend backing up the file before
-editing it.<br>
+If your changes make the data file invalid, TuiTracker warns you at the next launch and opens in read-only recovery mode. It shows an empty list, but leaves the invalid file untouched and blocks data-changing commands. Back up the file, repair or replace it, then restart TuiTracker to resume editing.<br>
+If your changes make the data file invalid, TuiTracker starts with no students or lessons at the next run. The invalid file remains on disk until you run a command that changes stored data. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause TuiTracker to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
