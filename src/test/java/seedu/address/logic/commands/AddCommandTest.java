@@ -6,13 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static seedu.address.logic.Messages.MESSAGE_LESSON_NOT_FOUND;
 import static seedu.address.logic.Messages.MESSAGE_STUDENT_NOT_FOUND;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_ADDED_LESSON;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_ADDED_STUDENT;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_ALREADY_ENROLLED;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_DUPLICATE_LESSON;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_DUPLICATE_STUDENT;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_LESSON_CLASH;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_LESSON_NEEDED;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_FREE_LESSON;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_LEVEL_MISMATCH;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_SAME_NAME;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_STUDENT_NEEDED;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -89,6 +93,8 @@ public class AddCommandTest {
     public void constructor_nullArguments_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new AddCommand(null, EXISTING_LESSON));
         assertThrows(NullPointerException.class, () -> new AddCommand(EXISTING_STUDENT, null));
+        assertThrows(NullPointerException.class, () -> new AddCommand((StudentRef) null));
+        assertThrows(NullPointerException.class, () -> new AddCommand((LessonRef) null));
     }
 
     @Test
@@ -131,6 +137,13 @@ public class AddCommandTest {
         assertFalse(command.equals(new AddCommand(new ExistingStudent(new StudentId(13)), NEW_LESSON)));
         assertFalse(command.equals(new AddCommand(NEW_STUDENT,
                 new NewLesson(new Subject("Science"), new Level("Primary 6"), MONDAY_AFTERNOON, new Fee("50.00")))));
+
+        // one side only
+        assertTrue(new AddCommand(NEW_STUDENT).equals(new AddCommand(NEW_STUDENT)));
+        assertTrue(new AddCommand(NEW_LESSON).equals(new AddCommand(NEW_LESSON)));
+        assertFalse(command.equals(new AddCommand(NEW_STUDENT)));
+        assertFalse(command.equals(new AddCommand(NEW_LESSON)));
+        assertFalse(new AddCommand(NEW_STUDENT).equals(new AddCommand(EXISTING_STUDENT)));
     }
 
     @Test
@@ -696,5 +709,114 @@ public class AddCommandTest {
     private static NewLesson newFreeLesson(String subject, String level, DayOfWeek day) {
         return new NewLesson(new Subject(subject), new Level(level),
                 new Timeslot(day, LocalTime.of(10, 0), LocalTime.of(11, 0)), new Fee("0"));
+    }
+
+    //// creating a student or a lesson on its own
+
+    @Test
+    public void execute_newStudentOnly_createsTheStudentWithoutEnrolling() {
+        Model model = typicalModel();
+        Model expectedModel = typicalModel();
+        expectedModel.addStudent(DANIEL.getName(), DANIEL.getContact(), DANIEL.getLevel());
+
+        assertCommandSuccess(new AddCommand(DANIEL_DETAILS), model,
+                String.format(MESSAGE_ADDED_STUDENT, DANIEL.getName(), 5), expectedModel);
+        Student created = model.findStudent(new StudentId(5)).orElseThrow();
+        assertTrue(model.getTuiTracker().getEnrollmentList().stream()
+                .noneMatch(enrollment -> enrollment.getStudentId().equals(created.getId())));
+    }
+
+    @Test
+    public void execute_newLessonOnly_createsTheLessonWithoutEnrolling() {
+        Model model = typicalModel();
+        Model expectedModel = typicalModel();
+        expectedModel.addLesson(HISTORY.getSubject(), HISTORY.getLevel(), HISTORY.getTimeslot(), HISTORY.getFee());
+
+        assertCommandSuccess(new AddCommand(HISTORY_DETAILS), model,
+                String.format(MESSAGE_ADDED_LESSON, HISTORY.getSubject(), 6), expectedModel);
+        assertTrue(model.getTuiTracker().getEnrollmentList().stream()
+                .noneMatch(enrollment -> enrollment.getLessonId().equals(new LessonId(6))));
+    }
+
+    @Test
+    public void execute_duplicateStudentOnly_throwsCommandException() {
+        NewStudent duplicate = new NewStudent(ALICE.getName(), ALICE.getContact(), ALICE.getLevel());
+
+        assertCommandFailure(new AddCommand(duplicate), typicalModel(),
+                String.format(MESSAGE_DUPLICATE_STUDENT, ALICE.getId()));
+    }
+
+    @Test
+    public void execute_duplicateLessonOnly_throwsCommandException() {
+        NewLesson duplicate = new NewLesson(MATHEMATICS.getSubject(), MATHEMATICS.getLevel(),
+                MATHEMATICS.getTimeslot(), MATHEMATICS.getFee());
+
+        assertCommandFailure(new AddCommand(duplicate), typicalModel(),
+                String.format(MESSAGE_DUPLICATE_LESSON, MATHEMATICS.getId()));
+    }
+
+    @Test
+    public void execute_clashingLessonOnly_createsNothingAndUsesNoId() {
+        Model model = typicalModel();
+
+        assertCommandFailure(new AddCommand(newLesson("History", "Primary 6", DayOfWeek.MONDAY, 16, 0, 17, 0)),
+                model, CLASH_WITH_MATHEMATICS);
+        assertEquals(6, model.getTuiTracker().getNextLessonId());
+    }
+
+    @Test
+    public void execute_newStudentOnlyWithANamesake_createsWithNote() {
+        NewStudent namesake = new NewStudent(ALICE.getName(), new Contact("99990000"), ALICE.getLevel());
+        Model model = typicalModel();
+        Model expectedModel = typicalModel();
+        expectedModel.addStudent(ALICE.getName(), new Contact("99990000"), ALICE.getLevel());
+
+        assertCommandSuccess(new AddCommand(namesake), model,
+                String.format(MESSAGE_ADDED_STUDENT, ALICE.getName(), 5) + "\n"
+                        + String.format(MESSAGE_NOTE_SAME_NAME, ALICE.getName(), ALICE.getId()),
+                expectedModel);
+    }
+
+    @Test
+    public void execute_freeLessonOnly_createsWithNote() throws Exception {
+        String feedback = new AddCommand(newFreeLesson("Art", "Primary 6", DayOfWeek.SUNDAY))
+                .execute(typicalModel()).getFeedbackToUser();
+
+        assertEquals(String.format(MESSAGE_ADDED_LESSON, "Art", 6) + "\n" + MESSAGE_NOTE_FREE_LESSON, feedback);
+    }
+
+    @Test
+    public void execute_existingStudentOnly_asksForALesson() {
+        Model model = typicalModel();
+
+        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId())), model,
+                String.format(MESSAGE_LESSON_NEEDED, ALICE.getName(), ALICE.getId()));
+    }
+
+    @Test
+    public void execute_existingLessonOnly_asksForAStudent() {
+        assertCommandFailure(new AddCommand(new ExistingLesson(MATHEMATICS.getId())), typicalModel(),
+                String.format(MESSAGE_STUDENT_NEEDED, MATHEMATICS.getSubject(), MATHEMATICS.getId()));
+    }
+
+    @Test
+    public void execute_missingStudentOnly_reportsNotFound() {
+        assertCommandFailure(new AddCommand(new ExistingStudent(new StudentId(99))), typicalModel(),
+                String.format(MESSAGE_STUDENT_NOT_FOUND, 99));
+        assertCommandFailure(new AddCommand(new ExistingLesson(new LessonId(99))), typicalModel(),
+                String.format(MESSAGE_LESSON_NOT_FOUND, 99));
+    }
+
+    @Test
+    public void execute_studentAndLessonCreatedApart_canBeEnrolledLater() throws Exception {
+        Model model = typicalModel();
+        new AddCommand(DANIEL_DETAILS).execute(model);
+        new AddCommand(HISTORY_DETAILS).execute(model);
+
+        String feedback = enroll(5, 6).execute(model).getFeedbackToUser();
+
+        assertEquals("Enrolled Daniel Koh [Student ID: 5] in History [Lesson ID: 6]. Payment status: Unpaid.",
+                feedback);
+        assertTrue(model.isEnrolled(new StudentId(5), new LessonId(6)));
     }
 }

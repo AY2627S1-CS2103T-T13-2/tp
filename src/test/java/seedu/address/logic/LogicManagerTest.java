@@ -140,6 +140,38 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_studentAndLessonAddedApart_persistAndCanBeEnrolledAfterRestart() throws Exception {
+        logic.execute("add s/Nora Lim c/90000000 slv/Primary 6");
+        logic.execute("add l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50");
+
+        // restart from what was saved
+        JsonTuiTrackerStorage storage = new JsonTuiTrackerStorage(temporaryFolder.resolve("tuitracker.json"));
+        ReadOnlyTuiTracker saved = storage.readTuiTracker().orElseThrow();
+        assertTrue(saved.getStudentList().stream().anyMatch(student -> student.getName().fullName.equals("Nora Lim")
+                && student.getId().value == 5));
+        assertTrue(saved.getLessonList().stream().anyMatch(lesson -> lesson.getId().value == 6));
+        assertTrue(saved.getEnrollmentList().stream().noneMatch(enrollment -> enrollment.getStudentId().value == 5
+                || enrollment.getLessonId().value == 6));
+        Model restarted = new ModelManager(saved, new UserPrefs(), CLOCK);
+        Logic restartedLogic = new LogicManager(restarted, new StorageManager(storage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
+
+        CommandResult result = restartedLogic.execute("add s/5 l/6");
+
+        assertEquals("Enrolled Nora Lim [Student ID: 5] in Mathematics [Lesson ID: 6]. Payment status: Unpaid.",
+                result.getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_existingStudentWithoutLesson_logsNoName() throws Throwable {
+        // the error message names the student, so that the tutor can check it is the right one
+        logic.execute("add s/Zara Quinn c/91112222 slv/Primary 6");
+        List<String> logged = logsDuring(() -> assertThrows(CommandException.class, () -> logic.execute("add s/5")));
+
+        assertNoPersonalData(logged);
+    }
+
+    @Test
     public void execute_helpWhenStorageFails_stillShowsHelp() throws Exception {
         JsonTuiTrackerStorage failingStorage = new JsonTuiTrackerStorage(temporaryFolder.resolve("failing.json")) {
             @Override
