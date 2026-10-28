@@ -371,23 +371,24 @@ Examples:
 The student must exist and must currently be marked as paid. The change is saved immediately and is retained
 after restarting TuiTracker. The student's details and lesson enrollments are not changed.
 
-### Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status: `filter`
+### Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status or level: `filter`
 
-Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, only the lessons on one day of the week, only the lessons with a given subject, level, or both, or only the students who are paid or unpaid for the current month.
+Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, only the lessons on one day of the week, only the lessons with a given subject, level, or both, only the students who are paid or unpaid for the current month, or only the students at a given level.
 
-Format: `filter student|lesson ID`, `filter day DAY`, `filter paid|unpaid` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]`
+Format: `filter student|lesson ID`, `filter day DAY`, `filter paid|unpaid`, `filter [l/SUBJECT] [llv/LESSON_LEVEL]` or `filter slv/STUDENT_LEVEL`
 
 * Shows a student's lessons: `filter student ID`.
 * Shows a lesson's students: `filter lesson ID`.
 * Shows a day's lessons: `filter day DAY`.
 * Shows students by payment status for the current month: `filter paid` or `filter unpaid`.
 * Shows lessons by subject, level, or both: `filter l/SUBJECT`, `filter llv/LESSON_LEVEL` or `filter l/SUBJECT llv/LESSON_LEVEL`. At least one of `l/` and `llv/` must be given, and they can be in any order. When both are given, only lessons matching both are shown.
-* `SUBJECT` and `LESSON_LEVEL` must match the lesson's subject and level exactly; letter case is ignored. For example, `l/mathematics` matches `Mathematics` but `l/Math` does not.
+* Shows students at a given level: `filter slv/STUDENT_LEVEL`. This matches the student's own level, not the level of any lesson they are enrolled in.
+* `SUBJECT` and `LESSON_LEVEL` must match the lesson's subject and level exactly; letter case is ignored. For example, `l/mathematics` matches `Mathematics` but `l/Math` does not. The same applies to `STUDENT_LEVEL`.
 * The `ID` refers to the student ID or lesson ID shown in the displayed list, not its position in the list.
 * The specified `ID` must belong to an existing student or lesson.
 * `DAY` is the full day name, e.g. `Monday`; letter case is ignored.
 * Filtering replaces any earlier filter; only one filter can be active at a time.
-* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson, or by payment status, switches it to **Students**; filtering by a day, subject or level also switches it to **Lessons**.
+* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson, by payment status, or by student level, switches it to **Students**; filtering by a day, subject or level also switches it to **Lessons**.
 * To clear the filter and show every student and lesson again, use `list`.
 
 Examples:
@@ -399,10 +400,12 @@ Examples:
 * `filter l/Mathematics` shows only the Mathematics lessons.
 * `filter llv/Primary 6` shows only the Primary 6 lessons.
 * `filter l/Mathematics llv/Primary 6` shows only the Primary 6 Mathematics lessons.
+* `filter slv/Primary 6` shows only the students at Primary 6.
 
 If a filter is incomplete or mixes incompatible forms, TuiTracker explains the specific problem and includes a
 valid example. For instance, `filter student` suggests `filter student 1`, while combining `day` with `l/` explains
-that keyword and prefix filters cannot be mixed.
+that keyword and prefix filters cannot be mixed. The same restriction applies to `slv/`: it cannot be combined with
+`student`, `lesson`, `day`, `l/`, or `llv/`.
 
 ### Sorting students and lessons: `sort`
 
@@ -491,7 +494,7 @@ Action     | Format, Examples
 **Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> _Examples to be added by the owner of `add`._
 **Edit**   | `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]` <br> `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]`
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
-**Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`
+**Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid`, `filter [l/SUBJECT] [llv/LESSON_LEVEL]` or `filter slv/STUDENT_LEVEL` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`, `filter slv/Primary 6`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
 **Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
 **Unmark** | `unmark ID` <br> e.g., `unmark 1`, `unmark 0012`
