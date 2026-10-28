@@ -7,6 +7,8 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import javafx.application.Application;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.stage.Stage;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
@@ -42,6 +44,7 @@ public class MainApp extends Application {
     protected Logic logic;
     protected Storage storage;
     protected Model model;
+    private boolean dataFileLoadFailed;
 
     @Override
     public void init() throws Exception {
@@ -55,7 +58,7 @@ public class MainApp extends Application {
 
         model = initModelManager(storage, userPrefs);
 
-        logic = new LogicManager(model, storage);
+        logic = new LogicManager(model, storage, dataFileLoadFailed);
 
         ui = new UiManager(logic, storage.getTuiTrackerFilePath());
     }
@@ -63,7 +66,7 @@ public class MainApp extends Application {
     /**
      * Returns a {@code ModelManager} with the data from {@code storage}'s TuiTracker and {@code userPrefs}. <br>
      * The sample data will be used instead if {@code storage}'s data file is not found,
-     * or an empty TuiTracker will be used instead if errors occur when reading {@code storage}'s data file.
+     * or an empty read-only TuiTracker will be used instead if errors occur when reading {@code storage}'s data file.
      */
     private Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
         logger.info("Using data file : " + storage.getTuiTrackerFilePath());
@@ -79,7 +82,8 @@ public class MainApp extends Application {
             initialData = tuiTrackerOptional.orElseGet(SampleDataUtil::getSampleTuiTracker);
         } catch (DataLoadingException e) {
             logger.warning("Data file at " + storage.getTuiTrackerFilePath() + " could not be loaded."
-                    + " Will be starting with an empty TuiTracker.");
+                    + " Starting in read-only recovery mode without changing the file.");
+            dataFileLoadFailed = true;
             initialData = new TuiTracker();
         }
 
@@ -122,6 +126,18 @@ public class MainApp extends Application {
     public void start(Stage primaryStage) {
         logger.info("Starting TuiTracker " + MainApp.VERSION);
         ui.start(primaryStage);
+        if (dataFileLoadFailed) {
+            primaryStage.setTitle(primaryStage.getTitle() + " (read-only)");
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.initOwner(primaryStage);
+            alert.getDialogPane().getStylesheets().add("view/DarkTheme.css");
+            alert.setTitle("Data file could not be loaded");
+            alert.setHeaderText("TuiTracker is in read-only recovery mode.");
+            alert.setContentText("The file " + storage.getTuiTrackerFilePath().toAbsolutePath()
+                    + " could not be loaded and has not been overwritten. Data-changing commands are disabled. "
+                    + "Back up the file, repair or replace it, then restart TuiTracker to resume editing.");
+            alert.showAndWait();
+        }
     }
 
     @Override
