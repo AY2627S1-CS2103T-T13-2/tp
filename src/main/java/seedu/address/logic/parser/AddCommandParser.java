@@ -61,8 +61,6 @@ public class AddCommandParser implements Parser<AddCommand> {
             "c/ and slv/ can only be used when adding a new student.";
     public static final String MESSAGE_LESSON_PARAMETERS_NOT_ALLOWED =
             "llv/, d/, st/, et/ and f/ can only be used when adding a new lesson.";
-    public static final String MESSAGE_PREFIX_INSIDE_VALUE =
-            "%1$s was found inside the value of %2$s. Separate parameters with a space.";
     public static final String MESSAGE_NOT_AN_ID =
             "%1$s%2$s is neither an ID nor a valid %3$s. An ID is a positive whole number, such as %1$s3.";
     /** Added to a missing-parameter message, to say which value was read as a new student or lesson. */
@@ -112,9 +110,10 @@ public class AddCommandParser implements Parser<AddCommand> {
 
     private AddCommand parseArguments(String args) throws ParseException {
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, ALL_PREFIXES);
+        argMultimap.verifyNoPrefixInsideValues(ALL_PREFIXES);
+        ArgumentTokenizer.verifyNoUnknownPrefixes(args, AddCommand.MESSAGE_USAGE, ALL_PREFIXES);
         checkWellFormed(argMultimap);
         argMultimap.verifyNoDuplicatePrefixesFor(ALL_PREFIXES);
-        checkNoPrefixInsideValues(argMultimap);
         checkStudentAndLessonGiven(argMultimap);
 
         String studentValue = requiredValue(argMultimap, PREFIX_STUDENT);
@@ -143,38 +142,6 @@ public class AddCommandParser implements Parser<AddCommand> {
         if (!argMultimap.getPreamble().isEmpty() || !anyGiven(argMultimap, ALL_PREFIXES)) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
         }
-    }
-
-    /**
-     * Throws if a parameter appears inside another parameter's value without a space before it, such as the
-     * {@code slv/} in {@code c/92223333slv/Primary 6}. Such a parameter would otherwise be reported as missing.
-     */
-    private static void checkNoPrefixInsideValues(ArgumentMultimap argMultimap) throws ParseException {
-        for (Prefix given : ALL_PREFIXES) {
-            Optional<String> value = argMultimap.getValue(given);
-            if (value.isEmpty()) {
-                continue;
-            }
-            for (Prefix inside : ALL_PREFIXES) {
-                if (containsGluedPrefix(value.get(), inside.getPrefix())) {
-                    throw new ParseException(String.format(MESSAGE_PREFIX_INSIDE_VALUE, inside, given));
-                }
-            }
-        }
-    }
-
-    /**
-     * Returns true if {@code prefix} appears in {@code value}, ignoring letter case, somewhere other than right after
-     * whitespace.
-     */
-    private static boolean containsGluedPrefix(String value, String prefix) {
-        for (int i = 1; i + prefix.length() <= value.length(); i++) {
-            if (value.regionMatches(true, i, prefix, 0, prefix.length())
-                    && !Character.isWhitespace(value.charAt(i - 1))) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

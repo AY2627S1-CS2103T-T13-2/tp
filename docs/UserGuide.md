@@ -193,6 +193,7 @@ Command | Message
 `add s/Daniel Koh slv/Primary 6 l/1` | Missing required parameter: c/. s/Daniel Koh was read as a new student.
 `add s/1 l/2 extra words` | Missing required parameter: llv/, d/, st/, et/, f/. l/2 extra words was read as a new lesson. To use an existing lesson, give only its ID, such as l/2.
 `add s/Daniel Koh c/92223333slv/Primary 6 l/1` | slv/ was found inside the value of c/. Separate parameters with a space.
+`add s/1 l/2 x/value` | Unknown parameter: x/. Use: add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
 `add s/0 l/1` | s/0 is neither an ID nor a valid name. An ID is a positive whole number, such as s/3.
 `add s/2147483648 l/1` | ID is too large. No student or lesson has an ID above 2147483647.
 `add s/1 l/Art llv/Primary 6 d/Friday st/17:00 et/16:00 f/40` | Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start time.

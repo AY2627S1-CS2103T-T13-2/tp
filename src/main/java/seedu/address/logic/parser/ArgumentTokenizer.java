@@ -2,6 +2,11 @@ package seedu.address.logic.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
  * Tokenizes arguments string of the form: {@code preamble <prefix>value <prefix>value ...}<br>
@@ -12,6 +17,10 @@ import java.util.List;
  *    in the above example.<br>
  */
 public class ArgumentTokenizer {
+
+    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter: %1$s. Use: %2$s";
+
+    private static final Pattern PREFIX_LIKE_TOKEN = Pattern.compile("(?i)(?<!\\S)([a-z][a-z0-9-]*/)");
 
     /**
      * Tokenizes an arguments string and returns an {@code ArgumentMultimap} object that maps prefixes to their
@@ -27,7 +36,25 @@ public class ArgumentTokenizer {
     }
 
     /**
-     * Finds all zero-based prefix positions in the given arguments string.
+     * Throws a {@code ParseException} if {@code argsString} contains a prefix-like token that is not in
+     * {@code prefixes}.
+     */
+    public static void verifyNoUnknownPrefixes(String argsString, String commandUsage, Prefix... prefixes)
+            throws ParseException {
+        Matcher matcher = PREFIX_LIKE_TOKEN.matcher(argsString);
+        while (matcher.find()) {
+            String candidate = matcher.group(1);
+            boolean isKnown = Stream.of(prefixes)
+                    .anyMatch(prefix -> prefix.getPrefix().equalsIgnoreCase(candidate));
+            if (!isKnown) {
+                throw new ParseException(String.format(MESSAGE_UNKNOWN_PARAMETER, candidate, commandUsage));
+            }
+        }
+    }
+
+    /**
+     * Finds all zero-based prefix positions in the given arguments string. A prefix is recognized only when it is
+     * preceded by whitespace, and letter case is ignored.
      *
      * @param argsString Arguments string of the form: {@code preamble <prefix>value <prefix>value ...}
      * @param prefixes   Prefixes to find in the arguments string

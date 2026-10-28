@@ -6,9 +6,10 @@ import static seedu.address.logic.parser.AddCommandParser.MESSAGE_ID_TOO_LARGE;
 import static seedu.address.logic.parser.AddCommandParser.MESSAGE_LESSON_PARAMETERS_NOT_ALLOWED;
 import static seedu.address.logic.parser.AddCommandParser.MESSAGE_MISSING_PARAMETER_FORMAT;
 import static seedu.address.logic.parser.AddCommandParser.MESSAGE_NOT_AN_ID;
-import static seedu.address.logic.parser.AddCommandParser.MESSAGE_PREFIX_INSIDE_VALUE;
 import static seedu.address.logic.parser.AddCommandParser.MESSAGE_READ_AS_NEW;
 import static seedu.address.logic.parser.AddCommandParser.MESSAGE_STUDENT_PARAMETERS_NOT_ALLOWED;
+import static seedu.address.logic.parser.ArgumentMultimap.MESSAGE_PREFIX_INSIDE_VALUE;
+import static seedu.address.logic.parser.ArgumentTokenizer.MESSAGE_UNKNOWN_PARAMETER;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -355,6 +356,13 @@ public class AddCommandParserTest {
                 String.format(MESSAGE_PREFIX_INSIDE_VALUE, "slv/", "c/"));
         assertParseFailure(parser, " s/Daniel Kohc/92223333 slv/Primary 6 l/1",
                 String.format(MESSAGE_PREFIX_INSIDE_VALUE, "c/", "s/"));
+    }
+
+    @Test
+    public void parse_unknownParameter_throwsSpecificParseException() {
+        String expectedMessage = String.format(MESSAGE_UNKNOWN_PARAMETER, "x/", AddCommand.MESSAGE_USAGE);
+
+        assertParseFailure(parser, " s/1 l/2 x/value", expectedMessage);
     }
 
     @Test

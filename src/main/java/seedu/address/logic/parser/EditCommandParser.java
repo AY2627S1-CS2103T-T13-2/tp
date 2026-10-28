@@ -16,8 +16,6 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import seedu.address.logic.commands.EditCommand;
@@ -36,12 +34,6 @@ import seedu.address.model.student.StudentId;
 /** Parses input arguments and creates an {@link EditCommand}. */
 public class EditCommandParser implements Parser<EditCommand> {
 
-    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter: %s. Use: " + EditCommand.MESSAGE_USAGE;
-    public static final String MESSAGE_PREFIX_INSIDE_VALUE =
-            "%1$s was found inside the value of %2$s. Separate parameters with a space.";
-
-    private static final Pattern PREFIX_LIKE_TOKEN = Pattern.compile("(?i)(?<!\\S)([a-z][a-z0-9-]*/)");
-
     private static final Prefix[] ALL_PREFIXES = {PREFIX_STUDENT, PREFIX_LESSON, PREFIX_CONTACT,
         PREFIX_STUDENT_LEVEL, PREFIX_LESSON_LEVEL, PREFIX_DAY, PREFIX_START_TIME, PREFIX_END_TIME, PREFIX_FEE};
     private static final Prefix[] STUDENT_PREFIXES = {PREFIX_STUDENT, PREFIX_CONTACT, PREFIX_STUDENT_LEVEL};
@@ -51,9 +43,9 @@ public class EditCommandParser implements Parser<EditCommand> {
     @Override
     public EditCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        checkNoUnknownPrefixes(args);
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(args, ALL_PREFIXES);
-        checkNoPrefixInsideValues(arguments);
+        arguments.verifyNoPrefixInsideValues(ALL_PREFIXES);
+        ArgumentTokenizer.verifyNoUnknownPrefixes(args, EditCommand.MESSAGE_USAGE, ALL_PREFIXES);
         String[] target = arguments.getPreamble().trim().split("\\s+");
         if (target.length != 2 || !isKind(target[0]) || containsKnownGluedPrefix(target[1])) {
             throw invalidFormat();
@@ -154,47 +146,9 @@ public class EditCommandParser implements Parser<EditCommand> {
                 : Optional.empty();
     }
 
-    /** Throws if an unsupported prefix-like token, such as {@code x/value}, appears in the command. */
-    private static void checkNoUnknownPrefixes(String args) throws ParseException {
-        Matcher matcher = PREFIX_LIKE_TOKEN.matcher(args);
-        while (matcher.find()) {
-            String candidate = matcher.group(1);
-            boolean isKnown = Stream.of(ALL_PREFIXES)
-                    .anyMatch(prefix -> prefix.getPrefix().equalsIgnoreCase(candidate));
-            if (!isKnown) {
-                throw new ParseException(String.format(MESSAGE_UNKNOWN_PARAMETER, candidate));
-            }
-        }
-    }
-
-    /** Throws if a known prefix appears inside another parameter's value without a separating space. */
-    private static void checkNoPrefixInsideValues(ArgumentMultimap arguments) throws ParseException {
-        for (Prefix given : ALL_PREFIXES) {
-            Optional<String> value = arguments.getValue(given);
-            if (value.isEmpty()) {
-                continue;
-            }
-            for (Prefix inside : ALL_PREFIXES) {
-                if (containsGluedPrefix(value.get(), inside.getPrefix())) {
-                    throw new ParseException(String.format(MESSAGE_PREFIX_INSIDE_VALUE, inside, given));
-                }
-            }
-        }
-    }
-
     private static boolean containsKnownGluedPrefix(String value) {
-        return Stream.of(ALL_PREFIXES).anyMatch(prefix -> containsGluedPrefix(value, prefix.getPrefix()));
-    }
-
-    /** Returns whether {@code prefix} appears without whitespace immediately before it inside {@code value}. */
-    private static boolean containsGluedPrefix(String value, String prefix) {
-        for (int i = 1; i + prefix.length() <= value.length(); i++) {
-            if (value.regionMatches(true, i, prefix, 0, prefix.length())
-                    && !Character.isWhitespace(value.charAt(i - 1))) {
-                return true;
-            }
-        }
-        return false;
+        return Stream.of(ALL_PREFIXES)
+                .anyMatch(prefix -> ArgumentMultimap.containsGluedPrefix(value, prefix.getPrefix()));
     }
 
     private static boolean anyGiven(ArgumentMultimap arguments, Prefix... prefixes) {

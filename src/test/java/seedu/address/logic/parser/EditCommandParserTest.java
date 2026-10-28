@@ -6,10 +6,10 @@ import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_LESSON_PARAMETERS_NOT_ALLOWED;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_NO_FIELDS;
 import static seedu.address.logic.commands.EditCommand.MESSAGE_STUDENT_PARAMETERS_NOT_ALLOWED;
+import static seedu.address.logic.parser.ArgumentMultimap.MESSAGE_PREFIX_INSIDE_VALUE;
+import static seedu.address.logic.parser.ArgumentTokenizer.MESSAGE_UNKNOWN_PARAMETER;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
-import static seedu.address.logic.parser.EditCommandParser.MESSAGE_PREFIX_INSIDE_VALUE;
-import static seedu.address.logic.parser.EditCommandParser.MESSAGE_UNKNOWN_PARAMETER;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_ID_TOO_LARGE;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_ID;
 
@@ -115,7 +115,7 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_unknownParameter_throwsSpecificParseException() {
-        String expectedMessage = String.format(MESSAGE_UNKNOWN_PARAMETER, "x/");
+        String expectedMessage = String.format(MESSAGE_UNKNOWN_PARAMETER, "x/", EditCommand.MESSAGE_USAGE);
 
         assertParseFailure(parser, " student 1 s/Alicia x/value", expectedMessage);
         assertParseFailure(parser, " student 1 c/92345678 x/value", expectedMessage);
