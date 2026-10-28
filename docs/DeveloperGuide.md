@@ -719,12 +719,12 @@ Use case ends.
 * **CLI (Command Line Interface)**: A way of using the application by typing text commands, rather than clicking with the mouse.
 * **Command**: A text instruction that the user types into TuiTracker to perform an action, made up of a command word (e.g., `add`, `list`) followed by any required parameters, e.g., `delete student 12`.
 * **Command word**: The first word of a command, which specifies the action to perform, e.g., `add`, `delete`, `list` or `mark`.
-* **Contact**: The Singaporean phone number of a student (or of the student's parent or guardian), containing 8 digits.
+* **Contact**: The phone number of a student (or of the student's parent or guardian), with 3 to 15 digits and at most 25 characters in all, e.g., `91234567` or `+65 (9123) 4567`. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a `+` can start the number.
 * **Current month**: The calendar month given by the date on the user's computer. Payment statuses apply only to the current month.
 * **Data file**: The local, human-editable file in which TuiTracker stores all students, lessons and enrollments.
 * **Display index**: The position of a record in a currently displayed list, starting from 1. It can change whenever the displayed list changes. Commands use permanent student and lesson IDs instead.
-* **Duplicate lesson**: A lesson with the same subject, level, day, start time and end time as an existing lesson.
-* **Duplicate student**: A student with the same name and contact as an existing student.
+* **Duplicate lesson**: A lesson with the same subject, level, day, start time and end time as an existing lesson. Subjects and levels are compared without considering letter case or extra spaces, so `Mathematics` and `mathematics` are the same subject.
+* **Duplicate student**: A student with the same name and contact as an existing student. Names are compared without considering letter case or extra spaces, and contacts by their digits only, so `alice  tan` with `9123 4567` duplicates `Alice Tan` with `91234567`.
 * **Enrollment**: The link between a student and a lesson that the student attends. A student can be enrolled in many lessons, and a lesson can have many students.
 * **Lesson**: A weekly class conducted by the tutor, defined by its subject, level, day, start time, end time and fee.
 * **Lesson clash**: The situation where two lessons on the same day have overlapping timeslots, e.g., `15:00-16:30` and `16:00-17:00` on Monday. A lesson that starts exactly when another ends (e.g., `15:00-16:00` and `16:00-17:00`) does not clash with it.
