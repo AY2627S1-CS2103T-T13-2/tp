@@ -20,6 +20,9 @@ public class SortCommandParser implements Parser<SortCommand> {
         if (parts.length == 3 && !parts[2].equalsIgnoreCase("asc") && !parts[2].equalsIgnoreCase("desc")) {
             throw invalidFormat();
         }
+        if (entity.equals("student") && (fieldName.equals("paid") || fieldName.equals("unpaid"))) {
+            fieldName = "payment";
+        }
         SortField field;
         try {
             field = SortField.valueOf((entity + "_" + fieldName).toUpperCase());
