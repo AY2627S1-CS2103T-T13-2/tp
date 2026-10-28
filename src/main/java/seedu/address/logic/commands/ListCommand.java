@@ -22,6 +22,8 @@ public class ListCommand extends Command {
 
     public static final String MESSAGE_VIEW_GIVEN_TWICE = "The view can only be specified once.";
 
+    public static final String MESSAGE_CONFLICTING_VIEWS = "Choose either students or lessons, not both.";
+
     public static final String MESSAGE_LISTED_STUDENTS = "Listed %d students.";
 
     public static final String MESSAGE_LISTED_ONE_STUDENT = "Listed 1 student.";

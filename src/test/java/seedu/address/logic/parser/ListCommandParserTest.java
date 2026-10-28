@@ -49,6 +49,11 @@ public class ListCommandParserTest {
     public void parse_viewGivenTwice_throwsParseException() {
         assertParseFailure(parser, " students students", ListCommand.MESSAGE_VIEW_GIVEN_TWICE);
         assertParseFailure(parser, " lessons LESSONS", ListCommand.MESSAGE_VIEW_GIVEN_TWICE);
-        assertParseFailure(parser, " students lessons", ListCommand.MESSAGE_VIEW_GIVEN_TWICE);
+    }
+
+    @Test
+    public void parse_conflictingViews_throwsSpecificParseException() {
+        assertParseFailure(parser, " students lessons", ListCommand.MESSAGE_CONFLICTING_VIEWS);
+        assertParseFailure(parser, " LESSONS students", ListCommand.MESSAGE_CONFLICTING_VIEWS);
     }
 }

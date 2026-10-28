@@ -118,7 +118,8 @@ Displays either all students or all lessons. Use this command to switch between 
 **Errors:**
 
 * An unknown view or extra text — the app displays `Invalid view. Use: list [students|lessons]`.
-* More than one view — the app displays `The view can only be specified once.`
+* The same view repeated — the app displays `The view can only be specified once.`
+* Both `students` and `lessons` — the app displays `Choose either students or lessons, not both.`
 
 ### Adding a student to a lesson: `add`
 

@@ -30,10 +30,14 @@ public class ListCommandParser implements Parser<ListCommand> {
         String[] arguments = trimmedArgs.split("\\s+");
         if (arguments.length > 1) {
             boolean containsOnlyViews = Arrays.stream(arguments).allMatch(ListCommandParser::isView);
-            String message = containsOnlyViews
+            if (!containsOnlyViews) {
+                throw new ParseException(ListCommand.MESSAGE_INVALID_VIEW);
+            }
+            boolean repeatedView = Arrays.stream(arguments)
+                    .allMatch(argument -> argument.equalsIgnoreCase(arguments[0]));
+            throw new ParseException(repeatedView
                     ? ListCommand.MESSAGE_VIEW_GIVEN_TWICE
-                    : ListCommand.MESSAGE_INVALID_VIEW;
-            throw new ParseException(message);
+                    : ListCommand.MESSAGE_CONFLICTING_VIEWS);
         }
 
         return switch (arguments[0].toLowerCase(Locale.ROOT)) {
