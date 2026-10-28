@@ -107,8 +107,8 @@ Displays either all students or all lessons. Use this command to switch between 
 
 **Displayed information:**
 
-* The student list shows each student's name, ID, contact number, level, payment status for the current month, and enrolled lesson IDs. Students are ordered by ascending ID.
-* The lesson list shows each lesson's subject, ID, level, weekly timeslot, fee per session, and enrolled students. Lessons are ordered by day of the week (Monday first), start time, then ID.
+* The student list shows each student's name, ID, contact number, level, payment status for the current month, and enrolled lesson IDs. Students are ordered by ascending ID by default, but any active sort order selected using the `sort` command is preserved.
+* The lesson list shows each lesson's subject, ID, level, weekly timeslot, fee per session, and enrolled students. Lessons are ordered by day of the week (Monday first), start time, then ID by default, but any active sort order selected using the `sort` command is preserved.
 
 **Notes:**
 

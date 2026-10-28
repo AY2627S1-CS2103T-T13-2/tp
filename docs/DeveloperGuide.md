@@ -208,7 +208,7 @@ The order is deliberate. Duplicates are checked **before** clashes because an id
 
 The `edit` command changes the specified fields of one existing student or lesson while preserving its ID and related data. `EditCommandParser` creates an `EditCommand` containing either a `StudentEdit` or a `LessonEdit`; fields that were not supplied remain empty in that edit request and retain their existing values during execution. `EditCommand` builds the complete updated record and validates duplicates, the final timeslot and clashes before asking the `Model` to replace the original.
 
-Duplicate students are matched using `Name#isSameName` and `Contact#isSameContact`; duplicate lessons use `Subject#isSameSubject`, level equality and the final timeslot. Edit's private lookup helpers exclude the record being edited, so that changing only formatting or letter case is not mistaken for a duplicate or a clash. A different student/lesson level, a namesake with a different contact and a fee of `0` are allowed but appended to the success message as notes.
+Duplicate students are matched using `Name#isSameName` and `Contact#isSameContact`; duplicate lessons use `Subject#isSameSubject`, level equality and the final timeslot. Edit's private lookup helpers exclude the record being edited, so that changing only formatting or letter case is not mistaken for a duplicate or a clash. Warning notes are appended to the success message under specific conditions: a level-mismatch note is added only when the edited level differs from an enrolled lesson or student, a namesake note is added only when the final name matches another student while the contact differs, and a free-lesson note is added only when the edit explicitly supplies `f/0`.
 
 If the requested details are identical to the stored record, `EditCommand` returns `No changes were made.` and marks the result so that `LogicManager` skips saving. A case-only level edit is still treated as a real edit because it changes the stored spelling, so it follows the normal save-and-rollback path.
 
@@ -492,9 +492,19 @@ Use case ends.
 
 **Extensions**
 
-* 2a. The user specifies an invalid, repeated or conflicting view.
+* 2a. The user specifies an invalid view or extra text.
 
-    * 2a1. System displays an error specific to the invalid or repeated view, or asks the user to choose one view.
+    * 2a1. System displays `Invalid view. Use: list [students|lessons]`.
+    * Use case ends.
+
+* 2b. The user specifies the same view repeatedly.
+
+    * 2b1. System displays `The view can only be specified once.`.
+    * Use case ends.
+
+* 2c. The user specifies both students and lessons.
+
+    * 2c1. System displays `Choose either students or lessons, not both.`.
     * Use case ends.
 
 * 4a. There are no records of the requested type.
