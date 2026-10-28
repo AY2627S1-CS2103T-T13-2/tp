@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import seedu.address.commons.core.LogsCenter;
@@ -57,6 +58,7 @@ public class ListCommand extends Command {
         logger.fine("Executing list command for the " + view + " view");
 
         model.resetFilters();
+        model.setScheduleStudentId(Optional.empty());
         model.setListView(view);
 
         return switch (view) {

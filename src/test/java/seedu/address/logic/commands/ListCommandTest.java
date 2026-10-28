@@ -10,6 +10,8 @@ import static seedu.address.testutil.TypicalLessons.MATHEMATICS;
 import static seedu.address.testutil.TypicalStudents.ALICE;
 import static seedu.address.testutil.TypicalTuiTracker.getTypicalTuiTracker;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.model.ListView;
@@ -46,6 +48,16 @@ public class ListCommandTest {
         String expectedMessage = String.format(ListCommand.MESSAGE_LISTED_STUDENTS, 3);
 
         assertCommandSuccess(new ListCommand(ListView.STUDENTS), model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_clearsScheduleStudentSelection() {
+        model.setScheduleStudentId(Optional.of(ALICE.getId()));
+        Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+        String expectedMessage = String.format(ListCommand.MESSAGE_LISTED_STUDENTS, 3);
+
+        assertCommandSuccess(new ListCommand(ListView.STUDENTS), model, expectedMessage, expectedModel);
+        assertTrue(model.getScheduleStudentId().isEmpty());
     }
 
     @Test
