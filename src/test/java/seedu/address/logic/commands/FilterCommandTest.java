@@ -150,6 +150,21 @@ public class FilterCommandTest {
     }
 
     @Test
+    public void execute_studentLevelGiven_showsStudentsAtThatLevel() {
+        Level primary6 = new Level("Primary 6");
+        FilterCommand filterCommand = new FilterCommand(primary6);
+
+        Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+        expectedModel.filterStudentsByLevel(primary6);
+        expectedModel.setListView(ListView.STUDENTS);
+
+        String expectedMessage = String.format(FilterCommand.MESSAGE_SHOWING_STUDENTS_BY_LEVEL,
+                expectedModel.getStudentList().size(), primary6);
+
+        assertCommandSuccess(filterCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
     public void execute_studentIdNotFound_throwsCommandException() {
         StudentId missingId = new StudentId(999);
         FilterCommand filterCommand = new FilterCommand(missingId);
@@ -177,6 +192,7 @@ public class FilterCommandTest {
         FilterCommand filterByScienceP6 = new FilterCommand(new Subject("Science"), new Level("Primary 6"));
         FilterCommand filterByPaid = new FilterCommand(true);
         FilterCommand filterByUnpaid = new FilterCommand(false);
+        FilterCommand filterByStudentLevelP6 = new FilterCommand(new Level("Primary 6"));
 
         // same object -> returns true
         assertTrue(filterByAlice.equals(filterByAlice));
@@ -213,6 +229,18 @@ public class FilterCommandTest {
 
         // paid vs student -> returns false
         assertFalse(filterByPaid.equals(filterByAlice));
+
+        // same student level -> returns true
+        assertTrue(filterByStudentLevelP6.equals(new FilterCommand(new Level("Primary 6"))));
+
+        // different student level -> returns false
+        assertFalse(filterByStudentLevelP6.equals(new FilterCommand(new Level("Secondary 2"))));
+
+        // student level vs lesson level -> returns false
+        assertFalse(filterByStudentLevelP6.equals(filterByPrimary6));
+
+        // student level vs paid -> returns false
+        assertFalse(filterByStudentLevelP6.equals(filterByPaid));
 
         // null -> returns false
         assertFalse(filterByAlice.equals(null));

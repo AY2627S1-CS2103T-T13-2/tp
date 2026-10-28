@@ -190,6 +190,11 @@ public class ModelStub implements Model {
     }
 
     @Override
+    public void filterStudentsByLevel(Level level) {
+        throw new AssertionError("This method should not be called.");
+    }
+
+    @Override
     public void resetFilters() {
         throw new AssertionError("This method should not be called.");
     }
