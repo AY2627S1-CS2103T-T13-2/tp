@@ -4,7 +4,7 @@
   pageNav: 3
 ---
 
-# AB-3 Developer Guide
+# TuiTracker Developer Guide
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -13,7 +13,8 @@
 
 ## **Acknowledgements**
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
+* TuiTracker was built from [AddressBook Level 3 (AB3)](https://github.com/se-edu/addressbook-level3). We adapted its JavaFX app lifecycle, command and component structure, JSON storage pattern, shared utilities, build setup, and parts of the [AB3 Developer Guide](https://github.com/se-edu/addressbook-level3/blob/master/docs/DeveloperGuide.md). We replaced the contact model with students, lessons, enrollments, payment status and a weekly schedule; the feature descriptions and diagrams below describe TuiTracker unless explicitly labelled as a reference design.
+* The application uses [JavaFX](https://openjfx.io/) for its interface and [Jackson](https://github.com/FasterXML/jackson) for JSON. The project uses [JUnit 5](https://junit.org/junit5/), [Gradle](https://gradle.org/), [Checkstyle](https://checkstyle.org/), [JaCoCo](https://www.jacoco.org/jacoco/) and the [Shadow plugin](https://gradleup.com/shadow/) for testing and builds. Documentation is written with [MarkBind](https://markbind.org/) and [PlantUML](https://plantuml.com/).
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -29,29 +30,29 @@ Refer to the guide [_Setting up and getting started_](SettingUp.md).
 
 <puml src="diagrams/ArchitectureDiagram.puml" width="280" />
 
-The ***Architecture Diagram*** given above explains the high-level design of the App.
+The ***Architecture Diagram*** shows the high-level design of TuiTracker.
 
 The following provides a quick overview of the main components and their interactions.
 
 **Main components of the architecture**
 
-**`Main`** (consisting of classes [`Main`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
+**`Main`** (classes [`Main`](https://github.com/AY2627S1-CS2103T-T13-2/tp/blob/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/AY2627S1-CS2103T-T13-2/tp/blob/master/src/main/java/seedu/address/MainApp.java)) handles app launch and shutdown.
 * At app launch, it initializes the other components in the correct sequence, and connects them up with each other.
 * At shut down, it shuts down the other components and invokes cleanup methods where necessary.
 
 The bulk of the app's work is done by the following four components:
 
-* [**`UI`**](#ui-component): The UI of the App.
+* [**`UI`**](#ui-component): The JavaFX interface, including the student and lesson lists and weekly schedule.
 * [**`Logic`**](#logic-component): The command executor.
-* [**`Model`**](#model-component): Holds the data of the App in memory.
+* [**`Model`**](#model-component): Holds students, lessons, enrollments, payment status, and view state in memory.
 * [**`Storage`**](#storage-component): Reads data from, and writes data to, the hard disk.
 
 [**`Commons`**](#common-classes) represents a collection of classes used by multiple other components.
 
 Each of the four main components (also shown in the diagram above),
 
-* defines its *API* in an `interface` with the same name as the Component.
-* provides its functionality through a concrete `{Component Name}Manager` class that implements the corresponding API interface.
+* defines its *API* in an interface with the same name as the component.
+* provides its functionality through a concrete `{Component Name}Manager` class that implements the corresponding interface.
 
 For example, the `Logic` component defines its API in `Logic.java` and implements it in `LogicManager.java`. Other components interact with a component through its interface rather than its concrete class, preventing them from coupling to that component's implementation, as illustrated in the following partial class diagram.
 
@@ -61,24 +62,24 @@ The sections below give more details of each component.
 
 ### UI component
 
-The **API** of this component is specified in [`Ui.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/Ui.java)
+The **API** is specified in [`Ui.java`](https://github.com/AY2627S1-CS2103T-T13-2/tp/blob/master/src/main/java/seedu/address/ui/Ui.java).
 
 <puml src="diagrams/UiClassDiagram.puml" alt="Structure of the UI Component"/>
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+`MainWindow` owns a `CommandBox`, `ResultDisplay`, `StudentListPanel`, `LessonListPanel`, `SchedulePanel` and `StatusBarFooter`. The list panels create `StudentCard` and `LessonCard` instances for displayed records. `MainWindow` and these visible parts extend the abstract `UiPart` class, which handles common FXML loading behavior.
 
-The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
+The layouts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-T13-2/tp/blob/master/src/main/resources/view/MainWindow.fxml) defines the main window's placeholders.
 
 The `UI` component,
 
 * executes user commands using the `Logic` component.
-* listens for changes to `Model` data so that the UI can be updated with the modified data.
+* observes the lists and view property exposed by `Logic` so that lists and the schedule refresh after commands.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
-* depends on some classes in the `Model` component because it displays `Person` objects from the model.
+* displays `Student` and `Lesson` objects from the `Model` component.
 
 ### Logic component
 
-**API** : [`Logic.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/logic/Logic.java)
+**API**: [`Logic.java`](https://github.com/AY2627S1-CS2103T-T13-2/tp/blob/master/src/main/java/seedu/address/logic/Logic.java)
 
 Here's a (partial) class diagram of the `Logic` component:
 
@@ -100,37 +101,29 @@ How the parsing works:
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
 
 ### Model component
-**API** : [`Model.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/model/Model.java)
+**API**: [`Model.java`](https://github.com/AY2627S1-CS2103T-T13-2/tp/blob/master/src/main/java/seedu/address/model/Model.java)
 
-<puml src="diagrams/ModelClassDiagram.puml" width="450" />
+<puml src="diagrams/ModelClassDiagram.puml" alt="Students, lessons and enrollments in the Model component" />
 
 
 The `Model` component,
 
-* stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
-* stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
-* stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
-* does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
-
-
-<box type="info" seamless>
-
-**Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `AddressBook`, and each `Person` references tags from that list. This lets `AddressBook` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
-
-<puml src="diagrams/BetterModelClassDiagram.puml" width="450" />
-</box>
+* stores a `TuiTracker` containing unique student and lesson lists, enrollments linking their IDs, and counters for the next IDs. An `Enrollment` stores a student ID and a lesson ID rather than direct object references. Deleting a student or lesson also removes its enrollments.
+* exposes sorted, filtered observable student and lesson lists. It keeps the selected list view, schedule student and active filters as view state, separate from the saved tracker data.
+* stores `UserPrefs` for GUI settings and uses the current month when determining payment status.
+* does not depend on UI, Logic or Storage; those components call the model through its interfaces.
 
 
 ### Storage component
 
-**API** : [`Storage.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/storage/Storage.java)
+**API**: [`Storage.java`](https://github.com/AY2627S1-CS2103T-T13-2/tp/blob/master/src/main/java/seedu/address/storage/Storage.java)
 
-<puml src="diagrams/StorageClassDiagram.puml" width="550" />
+<puml src="diagrams/StorageClassDiagram.puml" alt="JSON tracker and preferences storage classes" />
 
 The `Storage` component,
-* can save both address book data and user preference data in JSON format, and read them back into corresponding objects.
-* is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
-* depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
+* reads and writes tracker data and user preferences as separate JSON files.
+* is implemented by `StorageManager`, which delegates to `JsonTuiTrackerStorage` and `JsonUserPrefsStorage`.
+* converts students, lessons and enrollments through `JsonSerializableTuiTracker` and its adapted record classes, while the model checks that loaded IDs and enrollments are consistent.
 
 ### Common classes
 
@@ -144,7 +137,7 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Add feature
 
-The `add` command enrolls a student in a lesson, and creates the student, the lesson, or both if they are new. It can also create a new student or a new lesson on its own, without enrolling anyone. It is the only command that creates students and lessons. It has six forms (each of the student and the lesson is new or existing, or the student or the lesson is new and given alone) and many ways to fail, so its work is split into two steps: the parser works out **what the user asked for**, and the command checks that request and carries it out.
+The `add` command enrolls a student in a lesson, creating either record if it is new. It can also create a new student or lesson on its own, without an enrollment. The four enrollment combinations and two standalone forms share validation, so the parser works out **what the user asked for** and the command checks that request before changing the model.
 
 #### Parsing the arguments
 
@@ -217,7 +210,7 @@ The sequence diagram below shows `execute("add s/Daniel Koh c/92223333 slv/Prima
 
 **Aspect: the order of the checks**
 
-The order is deliberate. Duplicates are checked **before** clashes because an identical lesson always overlaps the original: if the clash were checked first, the more helpful message "an identical lesson already exists" could never be shown. Existence is checked first because the other checks need the records: the message for an existing record given alone, for example, names that record. A different level is not checked at all: it only gives a note, because a student may attend a lesson of another level on purpose, for example a stronger student in a higher-level class.
+The order is deliberate. Duplicates are checked **before** clashes because an identical lesson always overlaps the original: if the clash were checked first, the more helpful message "an identical lesson already exists" could never be shown. Existence is checked first because the other checks need the records: the message for an existing record given alone, for example, names that record. A different level is reported as a note rather than rejected, because a student may attend a lesson of another level on purpose, for example a stronger student in a higher-level class.
 
 #### Testing
 
@@ -228,6 +221,8 @@ The order is deliberate. Duplicates are checked **before** clashes because an id
 The `edit` command changes the specified fields of one existing student or lesson while preserving its ID and related data. `EditCommandParser` creates an `EditCommand` containing either a `StudentEdit` or a `LessonEdit`; fields that were not supplied remain empty in that edit request and retain their existing values during execution. `EditCommand` builds the complete updated record and validates duplicates, the final timeslot and clashes before asking the `Model` to replace the original.
 
 Duplicate students are matched using `Name#isSameName` and `Contact#isSameContact`; duplicate lessons use `Subject#isSameSubject`, level equality and the final timeslot. Edit's private lookup helpers exclude the record being edited, so that changing only formatting or letter case is not mistaken for a duplicate or a clash. A different student/lesson level, a namesake with a different contact and a fee of `0` are allowed but appended to the success message as notes.
+
+If the requested details are identical to the stored record, `EditCommand` returns `No changes were made.` and marks the result so that `LogicManager` skips saving. A case-only level edit is still treated as a real edit because it changes the stored spelling, so it follows the normal save-and-rollback path.
 
 The sequence diagram below shows `execute("edit student 1 c/90001111")`, which updates only an existing student's contact number. Less-important method parameters, duplicate checking, note generation, the no-change path and the error paths are omitted to keep the diagram focused. Editing a lesson follows the same overall flow, with validation of its final timeslot, duplicates and clashes before the update.
 
@@ -387,100 +382,6 @@ The lesson details dialog starts with its scroll area focused. Its cards can be 
 
 `ScheduleCommandParserTest` covers accepted and malformed arguments. `ScheduleCommandTest` checks student selection, empty and missing students, unchanged list filters, and resetting to the full schedule.
 
-### \[Proposed\] Undo/redo feature
-
-#### Proposed Implementation
-
-The proposed undo/redo mechanism is facilitated by `VersionedAddressBook`. It extends `AddressBook` with an undo/redo history, stored internally as an `addressBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
-
-* `VersionedAddressBook#commit()` -- Saves the current address book state in its history.
-* `VersionedAddressBook#undo()` -- Restores the previous address book state from its history.
-* `VersionedAddressBook#redo()` -- Restores a previously undone address book state from its history.
-
-These operations are exposed in the `Model` interface as `Model#commitAddressBook()`, `Model#undoAddressBook()` and `Model#redoAddressBook()` respectively.
-
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
-
-Step 1. The user launches the application for the first time. The `VersionedAddressBook` will be initialized with the initial address book state, and the `currentStatePointer` pointing to that single address book state.
-
-<puml src="diagrams/UndoRedoState0.puml" alt="UndoRedoState0" />
-
-Step 2. The user executes `delete 5` command to delete the 5th person in the address book. The `delete` command calls `Model#commitAddressBook()`, causing the modified state of the address book after the `delete 5` command executes to be saved in the `addressBookStateList`, and the `currentStatePointer` is shifted to the newly inserted address book state.
-
-<puml src="diagrams/UndoRedoState1.puml" alt="UndoRedoState1" />
-
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitAddressBook()`, causing another modified address book state to be saved into the `addressBookStateList`.
-
-<puml src="diagrams/UndoRedoState2.puml" alt="UndoRedoState2" />
-
-<box type="info" seamless>
-
-**Note:** If a command fails its execution, it will not call `Model#commitAddressBook()`, so the address book state will not be saved into the `addressBookStateList`.
-</box>
-
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoAddressBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous address book state, and restores the address book to that state.
-
-<puml src="diagrams/UndoRedoState3.puml" alt="UndoRedoState3" />
-
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index 0, pointing to the initial AddressBook state, then there are no previous AddressBook states to restore. The `undo` command uses `Model#canUndoAddressBook()` to check if this is the case. If so, it will return an error to the user rather
-than attempting to perform the undo.
-</box>
-
-The following sequence diagram shows how an undo operation goes through the `Logic` component:
-
-<puml src="diagrams/UndoSequenceDiagram-Logic.puml" alt="UndoSequenceDiagram-Logic" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `UndoCommand` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-</box>
-
-Similarly, how an undo operation goes through the `Model` component is shown below:
-
-<puml src="diagrams/UndoSequenceDiagram-Model.puml" alt="UndoSequenceDiagram-Model" />
-
-The `redo` command does the opposite — it calls `Model#redoAddressBook()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the address book to that state.
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index `addressBookStateList.size() - 1`, pointing to the latest address book state, then there are no undone AddressBook states to restore. The `redo` command uses `Model#canRedoAddressBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
-</box>
-
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the address book, such as `list`, will usually not call `Model#commitAddressBook()`, `Model#undoAddressBook()` or `Model#redoAddressBook()`. Thus, the `addressBookStateList` remains unchanged.
-
-<puml src="diagrams/UndoRedoState4.puml" alt="UndoRedoState4" />
-
-Step 6. The user executes `clear`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …` command. This is the behavior that most modern desktop applications follow.
-
-<puml src="diagrams/UndoRedoState5.puml" alt="UndoRedoState5" />
-
-The following activity diagram summarizes what happens when a user executes a new command:
-
-<puml src="diagrams/CommitActivityDiagram.puml" width="250" />
-
-#### Design considerations:
-
-**Aspect: How undo & redo execute:**
-
-* **Alternative 1 (current choice):** Saves the entire address book.
-  * Pros: Easy to implement.
-  * Cons: May have performance issues in terms of memory usage.
-
-* **Alternative 2:** Individual command knows how to undo/redo by
-  itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
-  * Cons: We must ensure that the implementation of each individual command is correct.
-
-_{more aspects and alternatives to be added}_
-
-### \[Proposed\] Data archiving
-
-_{Explain here how the data archiving feature will be implemented}_
-
-
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Documentation, logging, testing, dev-ops**
@@ -498,13 +399,13 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
-* has a need to manage a significant number of contacts
+* is a private tutor who manages students, recurring lessons, enrollments and monthly payments
 * prefers desktop apps over other types of applications
 * can type fast
 * prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
+**Value proposition**: Manage tuition records quickly with typed commands while viewing students, lessons and a weekly schedule in one desktop app.
 
 
 ### User stories
@@ -515,7 +416,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 |----------|--------|-------------|-----------------|
 | `* * *` | new tutor | see instructions for the available commands | learn how to use the application and check a command when I forget it |
 | `* * *` | tutor | enrol a student in a lesson whether the student or lesson is new or existing | set up my records without unnecessary separate steps |
-| `* * *` | tutor | be prevented from enrolling a student in a lesson at a different level | avoid assigning them to an unsuitable lesson |
+| `* * *` | tutor | be warned when enrolling a student in a lesson at a different level | check whether the mismatch is intentional |
 | `* * *` | tutor | be warned when a new lesson overlaps another lesson on the same day | avoid double-booking my teaching time |
 | `* * *` | tutor | be prevented from creating duplicate students, lessons, or enrollments | keep my records accurate |
 | `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
@@ -545,11 +446,11 @@ For all use cases below, the System is the tuition management application and th
 1.  User enters an add command containing a student and a lesson.
 2.  System validates the command format and required parameters.
 3.  System retrieves the existing student and lesson, or prepares new records using the supplied details.
-4.  System checks that the student level matches the lesson level.
+4.  System checks whether the student level matches the lesson level and prepares a note if it does not.
 5.  System checks that the student, lesson and enrolment are not duplicates.
 6.  System checks that a newly created lesson does not clash with another lesson on the same day.
 7.  System creates any required student or lesson records and assigns unique IDs.
-8.  System enrols the student in the lesson with payment status set to unpaid.
+8.  System enrols the student in the lesson; a new student's payment status starts unpaid, while an existing student's current-month status is retained.
 9.  System saves the changes and displays the student and lesson IDs.
 
 Use case ends.
@@ -568,9 +469,7 @@ Use case ends.
 
 * 4a. The student level does not match the lesson level.
 
-    * 4a1. System displays `Student level does not match lesson level`.
-    * 4a2. System makes no changes.
-    * Use case ends.
+    * 4a1. System continues the enrollment and adds a note naming both levels so the user can check the mismatch.
 
 * 5a. The student or lesson is a duplicate.
 
@@ -580,13 +479,13 @@ Use case ends.
 
 * 5b. The student is already enrolled in the lesson.
 
-    * 5b1. System displays `The student is already added to this lesson`.
+    * 5b1. System reports that the student is already enrolled in this lesson.
     * 5b2. System makes no changes.
     * Use case ends.
 
 * 6a. The new lesson clashes with an existing lesson.
 
-    * 6a1. System displays `Lesson clashes with an existing lesson`.
+    * 6a1. System displays a clash message naming the existing lesson and its timeslot.
     * 6a2. System makes no changes.
     * Use case ends.
 
@@ -596,18 +495,18 @@ Use case ends.
 
 1.  User enters `list`, `list students`, or `list lessons`.
 2.  System validates the requested view.
-3.  System clears any active filter or search.
+3.  System clears any active list filter.
 4.  System retrieves the requested records.
-5.  System sorts students by student ID, or lessons by day, start time and lesson ID.
+5.  System shows records in their current sort order (by ID for students and by day and time for lessons by default).
 6.  System displays the records and the total count.
 
     Use case ends.
 
 **Extensions**
 
-* 2a. The user specifies an invalid, repeated or unknown view.
+* 2a. The user specifies an invalid, repeated or conflicting view.
 
-    * 2a1. System displays `Invalid view. Use: list [students|lessons]`.
+    * 2a1. System displays an error specific to the invalid or repeated view, or asks the user to choose one view.
     * Use case ends.
 
 * 4a. There are no records of the requested type.
@@ -747,200 +646,117 @@ Use case ends.
 
 ## **Appendix: Instructions for manual testing**
 
-Given below are instructions to test the app manually.
+These steps give testers a path through every current command. For complete syntax and input rules, see the [User Guide](UserGuide.md). Run each section in a fresh empty folder containing only the release `tuitracker.jar`, unless a step says to continue in the same folder. Launch with `java -jar tuitracker.jar` using Java 25. This keeps earlier saved changes from changing the sample IDs and expected results.
 
-<box type="info" seamless>
+On first launch, the sample data has Alice Tan (student ID 1), Bryan Lim (ID 2), Chloe Ng (ID 3), and four lessons: Mathematics (lesson ID 1), Primary 6 Science (ID 2), Secondary 2 Science (ID 3), and English (ID 4). Bryan is paid for the current month. Type each command in the command box and press Enter.
 
-**Note:** These instructions only provide a starting point for testers to work on;
-testers are expected to do more *exploratory* testing.
-</box>
+### Launch, help and exit
 
-### Launch and shutdown
+1. Launch the JAR in a fresh folder. Expected: the Students view shows three sample students, not contacts.
+2. Enter `help`. Expected: the help window shows the available command formats. Close it, then press `F1` to open it again.
+3. Resize and move the main window, enter `exit`, and relaunch the JAR in the same folder. Expected: the window reopens with the saved size and location when that location is still available.
 
-1. Initial launch
+### Listing and filtering
 
-   1. Download the JAR file and copy it into an empty folder.
-
-   1. Double-click the JAR file.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
-
-1. Saving window preferences
-
-   1. Resize the window to an optimal size. Move the window to a different location. Close the window.
-
-   1. Relaunch the app by double-clicking the JAR file.<br>
-       Expected: The most recent window size and location are retained.
-
-1. _{ more test cases … }_
+1. Enter `list lessons`. Expected: all four sample lessons appear, and the result says `Listed 4 lessons.`
+2. Enter `filter student 1`. Expected: only Alice's Mathematics and Primary 6 Science lessons appear.
+3. Enter `list lessons`. Expected: the filter is cleared and all four lessons appear again.
+4. Enter `filter paid`. Expected: the Students view shows Bryan, who is paid in the sample data.
+5. Enter `list students`. Expected: the filter is cleared and all three students appear.
 
 ### Adding students, lessons and enrollments
 
-Prerequisites: Start from the sample data. Close TuiTracker, delete `[JAR file location]/data/tuitracker.json`, and launch it again. Run the test cases below in order in one session, as the IDs in the expected messages depend on the records added by earlier test cases. Enter `list students` or `list lessons` at any time to see what has been added. A command that is rejected adds nothing.
+Run all the steps in this section in order, in one fresh folder, as the IDs in the expected messages depend on the records added by earlier steps. Enter `list students` or `list lessons` at any time to see what has been added. A command that is rejected adds nothing.
 
-1. Enrolling an existing student in an existing lesson
+**An existing student and an existing lesson**
 
-   1. Test case: `add s/2 l/1`<br>
-      Expected: `Enrolled Bryan Lim [Student ID: 2] in Mathematics [Lesson ID: 1]. Payment status: Paid.`, followed by `Note: Bryan Lim's level (Secondary 2) differs from the lesson's level (Primary 6).`
+1. Enter `add s/2 l/1`. Expected: `Enrolled Bryan Lim [Student ID: 2] in Mathematics [Lesson ID: 1]. Payment status: Paid.`, followed by `Note: Bryan Lim's level (Secondary 2) differs from the lesson's level (Primary 6).`
+2. Enter `add s/1 l/1`. Expected: `The student is already enrolled in this lesson.`
+3. Enter `add s/99 l/1`. Expected: `No student found with ID 99.`
+4. Enter `add s/1 l/99`. Expected: `No lesson found with ID 99.`
 
-   1. Test case: `add s/1 l/1`<br>
-      Expected: `The student is already enrolled in this lesson.`
+**A new student and an existing lesson**
 
-   1. Test case: `add s/99 l/1`<br>
-      Expected: `No student found with ID 99.`
+1. Enter `add s/Daniel Koh c/92223333 slv/Primary 6 l/1`. Expected: `Enrolled Daniel Koh [Student ID: 4] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.` Daniel Koh appears in the student list.
+2. Enter `add s/daniel  koh c/9222 3333 slv/Primary 6 l/2`. Expected: `A student with the same name and contact already exists (Student ID: 4). Use the existing student ID.`
+3. Enter `add s/Eve Lee slv/Primary 6 l/1`. Expected: `Missing required parameter: c/. s/Eve Lee was read as a new student.`
+4. Enter `add s/Eve Lee c/12 slv/Primary 6 l/1`. Expected: `Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a + can start the number, such as +65 (9123) 4567.`
 
-   1. Test case: `add s/1 l/99`<br>
-      Expected: `No lesson found with ID 99.`
+**An existing student and a new lesson**
 
-1. Enrolling a new student in an existing lesson
+1. Enter `add s/1 l/Art llv/Primary 6 d/Tuesday st/10:00 et/11:00 f/40`. Expected: `Enrolled Alice Tan [Student ID: 1] in Art [Lesson ID: 5]. Payment status: Unpaid.` Art appears in the lesson list.
+2. Enter `add s/2 l/art llv/primary 6 d/Tue st/10:00 et/11:00 f/40`. Expected: `An identical lesson already exists (Lesson ID: 5). Use the existing lesson ID.`
+3. Enter `add s/1 l/Music llv/Primary 6 d/Monday st/16:00 et/17:00 f/40`. Expected: `Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).`
+4. Enter `add s/1 l/Music llv/Primary 6 d/Tuesday`. Expected: `Missing required parameter: st/, et/, f/. l/Music was read as a new lesson.`
+5. Enter `add s/1 l/Music llv/Primary 6 d/Tuesday st/12:00 et/11:00 f/40`. Expected: `Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start time.`
 
-   1. Test case: `add s/Daniel Koh c/92223333 slv/Primary 6 l/1`<br>
-      Expected: `Enrolled Daniel Koh [Student ID: 4] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.` Daniel Koh appears in the student list.
+**A new student and a new lesson**
 
-   1. Test case: `add s/daniel  koh c/9222 3333 slv/Primary 6 l/2`<br>
-      Expected: `A student with the same name and contact already exists (Student ID: 4). Use the existing student ID.`
+1. Enter `add s/Farah Aziz c/93334444 slv/Secondary 1 l/History llv/Secondary 1 d/Friday st/14:00 et/15:00 f/55`. Expected: `Enrolled Farah Aziz [Student ID: 5] in History [Lesson ID: 6]. Payment status: Unpaid.`
+2. Enter `add s/Gina Ho c/94445555 slv/Primary 5 l/Music llv/Primary 5 d/Monday st/15:30 et/16:30 f/40`. Expected: `Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).` Gina Ho is not added either, even though nothing is wrong with her details.
 
-   1. Test case: `add s/Eve Lee slv/Primary 6 l/1`<br>
-      Expected: `Missing required parameter: c/. s/Eve Lee was read as a new student.`
+**A new student on their own**
 
-   1. Test case: `add s/Eve Lee c/12 slv/Primary 6 l/1`<br>
-      Expected: `Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a + can start the number, such as +65 (9123) 4567.`
+1. Enter `add s/Hana Yusof c/95556666 slv/Primary 3`. Expected: `Added student Hana Yusof [Student ID: 6].` Hana Yusof appears in the student list, with no lessons.
+2. Enter `add s/Hana Yusof c/95556666 slv/Primary 3` again. Expected: `A student with the same name and contact already exists (Student ID: 6). Use the existing student ID.`
+3. Enter `add s/Ivan Teo c/96667777`. Expected: `Missing required parameter: slv/. s/Ivan Teo was read as a new student.`
+4. Enter `add c/96667777 slv/Primary 3`. Expected: `Missing required parameter: s/.`
+5. Enter `add s/1`. Expected: `Alice Tan [Student ID: 1] already exists. To enroll them, add l/ with a lesson ID or the details of a new lesson.`
 
-1. Enrolling an existing student in a new lesson
+**A new lesson on its own**
 
-   1. Test case: `add s/1 l/Art llv/Primary 6 d/Tuesday st/10:00 et/11:00 f/40`<br>
-      Expected: `Enrolled Alice Tan [Student ID: 1] in Art [Lesson ID: 5]. Payment status: Unpaid.` Art appears in the lesson list.
+1. Enter `add l/Chinese llv/Primary 3 d/Sunday st/9:00 et/10:00 f/35`. Expected: `Added lesson Chinese [Lesson ID: 7].` Chinese appears in the lesson list, with no students.
+2. Enter `add l/Chinese llv/Primary 3 d/Sunday st/9:00 et/10:00 f/35` again. Expected: `An identical lesson already exists (Lesson ID: 7). Use the existing lesson ID.`
+3. Enter `add l/Music llv/Primary 3 d/Sunday st/9:30 et/10:30 f/35`. Expected: `Lesson clashes with lesson 7 (Chinese, Sunday 09:00-10:00).`
+4. Enter `add llv/Primary 3 d/Sunday st/11:00 et/12:00 f/35`. Expected: `Missing required parameter: l/.`
+5. Enter `add l/1`. Expected: `Mathematics [Lesson ID: 1] already exists. To enroll a student in it, add s/ with a student ID or the details of a new student.`
 
-   1. Test case: `add s/2 l/art llv/primary 6 d/Tue st/10:00 et/11:00 f/40`<br>
-      Expected: `An identical lesson already exists (Lesson ID: 5). Use the existing lesson ID.`
+**Notes added to a successful `add`**
 
-   1. Test case: `add s/1 l/Music llv/Primary 6 d/Monday st/16:00 et/17:00 f/40`<br>
-      Expected: `Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).`
+1. Enter `add s/Alice Tan c/90001111 slv/Primary 6 l/1`. Expected: `Enrolled Alice Tan [Student ID: 7] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.`, followed by `Note: another student named Alice Tan already exists (Student ID: 1).`
+2. Enter `add s/1 l/Drawing llv/Primary 6 d/Wednesday st/9:00 et/10:00 f/0`. Expected: `Enrolled Alice Tan [Student ID: 1] in Drawing [Lesson ID: 8]. Payment status: Unpaid.`, followed by `Note: the fee is 0. Check that this lesson is meant to be free.`
 
-   1. Test case: `add s/1 l/Music llv/Primary 6 d/Tuesday`<br>
-      Expected: `Missing required parameter: st/, et/, f/. l/Music was read as a new lesson.`
+**Typing mistakes**
 
-   1. Test case: `add s/1 l/Music llv/Primary 6 d/Tuesday st/12:00 et/11:00 f/40`<br>
-      Expected: `Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start time.`
+1. Enter `add s/Jay Ong c/97778888slv/Primary 6 l/1` (no space before `slv/`). Expected: `slv/ was found inside the value of c/. Separate parameters with a space.`
+2. Enter `add s/0 l/2`. Expected: `s/0 is neither an ID nor a valid name. An ID is a positive whole number, such as s/3.`
+3. Enter `add s/2147483648 l/2`. Expected: `ID is too large. No student or lesson has an ID above 2147483647.`
+4. Enter `add s/1 l/2 extra words`. Expected: `Missing required parameter: llv/, d/, st/, et/, f/. l/2 extra words was read as a new lesson. To use an existing lesson, give only its ID, such as l/2.`
+5. Enter `add s/1 l/Art llv/Primary 6 d/Friday st/22:00 et/24:00 f/40`. Expected: `A lesson cannot end at 24:00 or 00:00. To end at midnight, use 23:59.`
+6. Enter `add s/1 s/2 l/1`. Expected: `A parameter can only be specified once.`
+7. Enter `add`. Expected: `Invalid command format. Use: add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]`
 
-1. Enrolling a new student in a new lesson
+### Editing a student and a lesson
 
-   1. Test case: `add s/Farah Aziz c/93334444 slv/Secondary 1 l/History llv/Secondary 1 d/Friday st/14:00 et/15:00 f/55`<br>
-      Expected: `Enrolled Farah Aziz [Student ID: 5] in History [Lesson ID: 6]. Payment status: Unpaid.`
+1. Enter `edit student 1 c/90001111`. Expected: Alice's contact changes while her ID and enrollments stay the same.
+2. Enter `edit lesson 1 f/55`, then `list lessons`. Expected: Mathematics keeps lesson ID 1 and its enrollments, but its displayed fee becomes 55.
+3. Enter `edit student 1 s/Alice Tan`. Expected: the result says `No changes were made.`
 
-   1. Test case: `add s/Gina Ho c/94445555 slv/Primary 5 l/Music llv/Primary 5 d/Monday st/15:30 et/16:30 f/40`<br>
-      Expected: `Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).` Gina Ho is not added either, even though nothing is wrong with her details.
+### Deleting a student or lesson
 
-1. Adding a new student on their own
+1. Enter `schedule student 1`, then `delete student 1`. Expected: Alice and her enrollments are removed; the schedule switches to all lessons and the result says `The schedule now shows all lessons.`
+2. In a fresh folder, enter `delete lesson 4`, then `list lessons`. Expected: English is absent from the lesson list and its enrollments are removed, while Chloe remains a student.
 
-   1. Test case: `add s/Hana Yusof c/95556666 slv/Primary 3`<br>
-      Expected: `Added student Hana Yusof [Student ID: 6].` Hana Yusof appears in the student list, with no lessons.
+### Marking and correcting payment
 
-   1. Test case: `add s/Hana Yusof c/95556666 slv/Primary 3` again<br>
-      Expected: `A student with the same name and contact already exists (Student ID: 6). Use the existing student ID.`
+1. Enter `mark 1`. Expected: Alice is marked paid for the current month.
+2. Enter `unmark 1`. Expected: Alice is marked unpaid for the current month again.
 
-   1. Test case: `add s/Ivan Teo c/96667777`<br>
-      Expected: `Missing required parameter: slv/. s/Ivan Teo was read as a new student.`
+### Sorting
 
-   1. Test case: `add c/96667777 slv/Primary 3`<br>
-      Expected: `Missing required parameter: s/.`
-
-   1. Test case: `add s/1`<br>
-      Expected: `Alice Tan [Student ID: 1] already exists. To enroll them, add l/ with a lesson ID or the details of a new lesson.`
-
-1. Adding a new lesson on its own
-
-   1. Test case: `add l/Chinese llv/Primary 3 d/Sunday st/9:00 et/10:00 f/35`<br>
-      Expected: `Added lesson Chinese [Lesson ID: 7].` Chinese appears in the lesson list, with no students.
-
-   1. Test case: `add l/Chinese llv/Primary 3 d/Sunday st/9:00 et/10:00 f/35` again<br>
-      Expected: `An identical lesson already exists (Lesson ID: 7). Use the existing lesson ID.`
-
-   1. Test case: `add l/Music llv/Primary 3 d/Sunday st/9:30 et/10:30 f/35`<br>
-      Expected: `Lesson clashes with lesson 7 (Chinese, Sunday 09:00-10:00).`
-
-   1. Test case: `add llv/Primary 3 d/Sunday st/11:00 et/12:00 f/35`<br>
-      Expected: `Missing required parameter: l/.`
-
-   1. Test case: `add l/1`<br>
-      Expected: `Mathematics [Lesson ID: 1] already exists. To enroll a student in it, add s/ with a student ID or the details of a new student.`
-
-1. Notes added to a successful `add`
-
-   1. Test case: `add s/Alice Tan c/90001111 slv/Primary 6 l/1`<br>
-      Expected: `Enrolled Alice Tan [Student ID: 7] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.`, followed by `Note: another student named Alice Tan already exists (Student ID: 1).`
-
-   1. Test case: `add s/1 l/Drawing llv/Primary 6 d/Wednesday st/9:00 et/10:00 f/0`<br>
-      Expected: `Enrolled Alice Tan [Student ID: 1] in Drawing [Lesson ID: 8]. Payment status: Unpaid.`, followed by `Note: the fee is 0. Check that this lesson is meant to be free.`
-
-1. Typing mistakes
-
-   1. Test case: `add s/Jay Ong c/97778888slv/Primary 6 l/1` (no space before `slv/`)<br>
-      Expected: `slv/ was found inside the value of c/. Separate parameters with a space.`
-
-   1. Test case: `add s/0 l/2`<br>
-      Expected: `s/0 is neither an ID nor a valid name. An ID is a positive whole number, such as s/3.`
-
-   1. Test case: `add s/2147483648 l/2`<br>
-      Expected: `ID is too large. No student or lesson has an ID above 2147483647.`
-
-   1. Test case: `add s/1 l/2 extra words`<br>
-      Expected: `Missing required parameter: llv/, d/, st/, et/, f/. l/2 extra words was read as a new lesson. To use an existing lesson, give only its ID, such as l/2.`
-
-   1. Test case: `add s/1 l/Art llv/Primary 6 d/Friday st/22:00 et/24:00 f/40`<br>
-      Expected: `A lesson cannot end at 24:00 or 00:00. To end at midnight, use 23:59.`
-
-   1. Test case: `add s/1 s/2 l/1`<br>
-      Expected: `A parameter can only be specified once.`
-
-   1. Test case: `add`<br>
-      Expected: `Invalid command format. Use: add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]`
-
-### Deleting a student or a lesson
-
-_To be written by the owner of `delete`._
-
-### Listing students or lessons
-
-_To be written by the owner of `list`._
-
-### Marking a student as paid
-
-_To be written by the owner of `mark`._
-
-### Showing a student's lessons or a lesson's students
-
-_To be written by the owner of `filter`._
+1. Enter `sort lesson fee desc`. Expected: the Secondary 2 Science lesson (ID 3, fee 60) appears first.
+2. Enter `sort student name desc`. Expected: the view switches to Students and Chloe appears first.
 
 ### Viewing the weekly schedule
 
-1. Enter `schedule student 1` with the sample data.<br>
-   Expected: The weekly schedule shows only student 1's enrolled lessons, while retaining all seven days. The result names the student and ID.
+1. Enter `schedule student 1`. Expected: the seven-day schedule shows Alice's lessons on Monday and Thursday.
+2. Enter `schedule`. Expected: all four lessons appear in the weekly schedule.
+3. Enter `schedule student 999`. Expected: `No student found with ID 999.` The displayed schedule stays unchanged.
+4. Press `F6`, use Left/Right to choose a day, then Enter or Space to focus or open a lesson. Expected: the focused day or lesson has a visible highlight; Escape returns focus to the command box.
 
-1. Enter `schedule`.<br>
-   Expected: The same weekly view now shows all lessons again.
+### Saving and loading data
 
-1. Enter `schedule student 999`.<br>
-   Expected: `No student found with ID 999.` The displayed schedule is unchanged.
-
-1. Enter `schedule student`, `schedule student abc`, and `schedule student 1 extra` separately.<br>
-   Expected: Each command is rejected with a format or ID error. The displayed schedule is unchanged.
-
-1. Create a student who is not enrolled in any lesson, then enter `schedule student ID` using their assigned ID.<br>
-   Expected: All seven days say `No lessons`; the result names the student and says no lessons are scheduled for them.
-
-1. Enter `schedule`, then press `F6` without using the mouse.<br>
-   Expected: Monday's heading receives a visible focus highlight. Use Left/Right to reach Sunday, and Enter or Space on a day with lessons to focus its first lesson.
-
-1. Use Up/Down to move between lessons, then press Enter.<br>
-   Expected: Focus and scrolling follow the selected lesson, and its details window opens. Use Tab to reach each card and the Close button. Press Escape to close it; focus returns to that lesson. Press Escape again to focus the command box.
-
-1. Focus an empty day and use Page Down, Page Up, Home, and End.<br>
-   Expected: Its timeline can be scrolled from 00:00 to 23:59 without using the mouse. Other day columns keep their own scroll positions.
-
-### Saving data
-
-1. Dealing with missing/corrupted data files
-
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
-
-1. _{ more test cases … }_
+1. In a fresh folder, enter `add s/Nora Lim c/90000000 slv/Primary 6`, then `exit`. Expected: `data/tuitracker.json` is created beside the JAR.
+2. Relaunch the JAR in the same folder and enter `list students`. Expected: Nora is still present with student ID 4.
+3. Close the app, rename `data/tuitracker.json` to a backup name, and relaunch. Expected: the three sample students appear because the data file is missing. Close the app before restoring the backup.
+4. To examine a corrupted file, use a separate disposable folder: create a saved data file, close the app, and remove a closing brace from its JSON. Relaunch. The current app logs a loading warning and starts with an empty tracker. **Do not enter a data-changing command against that file**: it could overwrite the corrupted file.

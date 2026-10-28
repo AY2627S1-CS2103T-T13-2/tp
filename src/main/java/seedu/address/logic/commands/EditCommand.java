@@ -95,7 +95,7 @@ public class EditCommand extends Command {
 
         if (updated.equals(original) && !hasDifferentLevelSpelling(original.getLevel(), edit.level())) {
             logger.fine("Student " + original.getId() + " already has the requested details");
-            return new CommandResult(MESSAGE_NO_CHANGES);
+            return CommandResult.createWithoutDataChange(MESSAGE_NO_CHANGES);
         }
 
         Optional<Student> duplicate = findDuplicateStudent(model, original.getId(), name, contact);
@@ -132,7 +132,7 @@ public class EditCommand extends Command {
 
         if (updated.equals(original) && !hasDifferentLevelSpelling(original.getLevel(), edit.level())) {
             logger.fine("Lesson " + original.getId() + " already has the requested details");
-            return new CommandResult(MESSAGE_NO_CHANGES);
+            return CommandResult.createWithoutDataChange(MESSAGE_NO_CHANGES);
         }
 
         Optional<Lesson> duplicate = findDuplicateLesson(model, original.getId(), subject, level, timeslot);

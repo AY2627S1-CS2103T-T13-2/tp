@@ -31,32 +31,6 @@ public class LessonTest {
     }
 
     @Test
-    public void isSameLesson() {
-        // same object
-        assertTrue(MATHEMATICS.isSameLesson(MATHEMATICS));
-
-        // null
-        assertFalse(MATHEMATICS.isSameLesson(null));
-
-        // same subject, level and timeslot, but a different ID and fee: a duplicate
-        assertTrue(MATHEMATICS.isSameLesson(new LessonBuilder(MATHEMATICS).withId(9).withFee("99.00").build()));
-
-        // each of subject, level and timeslot makes it a different lesson
-        assertFalse(MATHEMATICS.isSameLesson(new LessonBuilder(MATHEMATICS).withId(9).withSubject("Science")
-                .build()));
-        assertFalse(MATHEMATICS.isSameLesson(new LessonBuilder(MATHEMATICS).withId(9).withLevel("Primary 5")
-                .build()));
-        assertFalse(MATHEMATICS.isSameLesson(new LessonBuilder(MATHEMATICS).withId(9)
-                .withTimeslot(DayOfWeek.TUESDAY, LocalTime.of(15, 0), LocalTime.of(16, 30)).build()));
-        assertFalse(MATHEMATICS.isSameLesson(new LessonBuilder(MATHEMATICS).withId(9)
-                .withTimeslot(DayOfWeek.MONDAY, LocalTime.of(15, 0), LocalTime.of(16, 0)).build()));
-
-        // a level that differs only in case and spacing is the same level
-        assertTrue(MATHEMATICS.isSameLesson(new LessonBuilder(MATHEMATICS).withId(9).withLevel("primary   6")
-                .build()));
-    }
-
-    @Test
     public void equals() {
         // same values
         assertTrue(MATHEMATICS.equals(new LessonBuilder(MATHEMATICS).build()));

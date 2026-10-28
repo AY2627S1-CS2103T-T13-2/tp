@@ -86,15 +86,6 @@ public class Student {
         return new Student(id, name, contact, level);
     }
 
-    /**
-     * Returns true if both students have the same name and contact. This is the duplicate rule used by
-     * {@code add}; it is separate from the ID, which always differs between two students.
-     */
-    public boolean isSameStudent(Student other) {
-        return other == this
-                || (other != null && name.equals(other.name) && contact.equals(other.contact));
-    }
-
     @Override
     public boolean equals(Object other) {
         if (other == this) {

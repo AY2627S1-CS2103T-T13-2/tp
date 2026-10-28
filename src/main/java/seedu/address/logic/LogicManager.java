@@ -37,18 +37,28 @@ public class LogicManager implements Logic {
 
     public static final String FILE_OPS_PERMISSION_ERROR_FORMAT = "Could not save data to file %s due to "
             + "insufficient permissions to write to the file or the folder. No changes were made.";
+    public static final String DATA_FILE_UNREADABLE_MESSAGE = "Cannot change data because the data file could not be "
+            + "loaded. The file has not been overwritten. Back it up, repair or replace it, then restart TuiTracker.";
 
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
 
     private final Model model;
     private final Storage storage;
     private final AddressBookParser addressBookParser;
+    private final boolean dataFileReadOnly;
 
     /**
      * Constructs a {@code LogicManager} with the given {@code Model} and {@code Storage}.
      */
     public LogicManager(Model model, Storage storage) {
-        this(model, storage, new AddressBookParser());
+        this(model, storage, new AddressBookParser(), false);
+    }
+
+    /**
+     * Constructs a {@code LogicManager} that blocks data-changing commands when the data file could not be loaded.
+     */
+    public LogicManager(Model model, Storage storage, boolean dataFileReadOnly) {
+        this(model, storage, new AddressBookParser(), dataFileReadOnly);
     }
 
     /**
@@ -56,9 +66,14 @@ public class LogicManager implements Logic {
      * a command with known behaviour.
      */
     public LogicManager(Model model, Storage storage, AddressBookParser addressBookParser) {
+        this(model, storage, addressBookParser, false);
+    }
+
+    private LogicManager(Model model, Storage storage, AddressBookParser addressBookParser, boolean dataFileReadOnly) {
         this.model = model;
         this.storage = storage;
         this.addressBookParser = addressBookParser;
+        this.dataFileReadOnly = dataFileReadOnly;
     }
 
     @Override
@@ -67,8 +82,12 @@ public class LogicManager implements Logic {
         logger.info("----------------[USER COMMAND][" + commandWordOf(commandText) + "]");
 
         Command command = addressBookParser.parseCommand(commandText);
+        boolean isDataMutating = command.isDataMutating();
+        if (dataFileReadOnly && isDataMutating) {
+            throw new CommandException(DATA_FILE_UNREADABLE_MESSAGE);
+        }
 
-        if (!command.isDataMutating()) {
+        if (!isDataMutating) {
             return command.execute(model);
         }
 
@@ -77,6 +96,11 @@ public class LogicManager implements Logic {
         Optional<StudentId> scheduleStudentBefore = model.getScheduleStudentId();
 
         CommandResult commandResult = command.execute(model);
+
+        if (commandResult.shouldSkipSave()) {
+            logger.fine("Command made no persistent data changes; skipping save");
+            return commandResult;
+        }
 
         try {
             storage.saveTuiTracker(model.getTuiTracker());

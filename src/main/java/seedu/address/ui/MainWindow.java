@@ -1,16 +1,19 @@
 package seedu.address.ui;
 
+import java.awt.Point;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
@@ -27,6 +30,8 @@ import seedu.address.model.ListView;
 public class MainWindow extends UiPart<Stage> {
 
     private static final String FXML = "MainWindow.fxml";
+    private static final double MIN_VISIBLE_TITLE_WIDTH = 100;
+    private static final double MIN_VISIBLE_TITLE_HEIGHT = 40;
 
     private final Logger logger = LogsCenter.getLogger(getClass());
 
@@ -151,16 +156,41 @@ public class MainWindow extends UiPart<Stage> {
         paymentMonthRefresher.start();
     }
 
-    /**
-     * Sets the default size based on {@code guiSettings}.
-     */
+    /** Sets the saved size and restores the position only when the window remains visible on a connected screen. */
     private void setWindowDefaultSize(GuiSettings guiSettings) {
-        primaryStage.setHeight(guiSettings.getWindowHeight());
-        primaryStage.setWidth(guiSettings.getWindowWidth());
-        if (guiSettings.getWindowCoordinates() != null) {
-            primaryStage.setX(guiSettings.getWindowCoordinates().getX());
-            primaryStage.setY(guiSettings.getWindowCoordinates().getY());
+        GuiSettings defaults = new GuiSettings();
+        double width = guiSettings.getWindowWidth();
+        double height = guiSettings.getWindowHeight();
+        width = Double.isFinite(width) && width > 0 ? width : defaults.getWindowWidth();
+        height = Double.isFinite(height) && height > 0 ? height : defaults.getWindowHeight();
+        primaryStage.setWidth(width);
+        primaryStage.setHeight(height);
+
+        Point savedPosition = guiSettings.getWindowCoordinates();
+        if (savedPosition != null && isPositionVisible(savedPosition, width, height)) {
+            primaryStage.setX(savedPosition.getX());
+            primaryStage.setY(savedPosition.getY());
+            return;
         }
+
+        Rectangle2D primaryBounds = Screen.getPrimary().getVisualBounds();
+        double centeredWidth = Math.max(primaryStage.getMinWidth(), Math.min(width, primaryBounds.getWidth()));
+        double centeredHeight = Math.max(primaryStage.getMinHeight(), Math.min(height, primaryBounds.getHeight()));
+        primaryStage.setWidth(centeredWidth);
+        primaryStage.setHeight(centeredHeight);
+        primaryStage.setX(primaryBounds.getMinX()
+                + Math.max(0, (primaryBounds.getWidth() - centeredWidth) / 2));
+        primaryStage.setY(primaryBounds.getMinY()
+                + Math.max(0, (primaryBounds.getHeight() - centeredHeight) / 2));
+    }
+
+    private static boolean isPositionVisible(Point position, double width, double height) {
+        double visibleTitleWidth = Math.min(width, MIN_VISIBLE_TITLE_WIDTH);
+        double visibleTitleHeight = Math.min(height, MIN_VISIBLE_TITLE_HEIGHT);
+        return Screen.getScreens().stream().map(Screen::getVisualBounds).anyMatch(bounds ->
+                position.getX() >= bounds.getMinX() && position.getY() >= bounds.getMinY()
+                && position.getX() + visibleTitleWidth <= bounds.getMaxX()
+                && position.getY() + visibleTitleHeight <= bounds.getMaxY());
     }
 
     /**

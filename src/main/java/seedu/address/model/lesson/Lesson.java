@@ -51,18 +51,6 @@ public class Lesson {
         return fee;
     }
 
-    /**
-     * Returns true if both lessons have the same subject, level and timeslot. This is the duplicate rule used by
-     * {@code add}; it is separate from the ID, which always differs between two lessons.
-     */
-    public boolean isSameLesson(Lesson other) {
-        return other == this
-                || (other != null
-                && subject.equals(other.subject)
-                && level.equals(other.level)
-                && timeslot.equals(other.timeslot));
-    }
-
     @Override
     public boolean equals(Object other) {
         if (other == this) {
