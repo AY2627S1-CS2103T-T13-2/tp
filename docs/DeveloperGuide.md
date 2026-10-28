@@ -208,11 +208,19 @@ The order is deliberate. Duplicates are checked **before** clashes because an id
 
 The `edit` command changes the specified fields of one existing student or lesson while preserving its ID and related data. `EditCommandParser` creates an `EditCommand` containing either a `StudentEdit` or a `LessonEdit`; fields that were not supplied remain empty in that edit request and retain their existing values during execution. `EditCommand` builds the complete updated record and validates duplicates, the final timeslot and clashes before asking the `Model` to replace the original.
 
-Duplicate students are matched using `Name#isSameName` and `Contact#isSameContact`; duplicate lessons use `Subject#isSameSubject`, level equality and the final timeslot. Edit's private lookup helpers exclude the record being edited, so that changing only formatting or letter case is not mistaken for a duplicate or a clash. A different student/lesson level, a namesake with a different contact and a fee of `0` are allowed but appended to the success message as notes.
+Duplicate students are matched using `Name#isSameName` and `Contact#isSameContact`; duplicate lessons use
+`Subject#isSameSubject`, level equality and the final timeslot. Edit's private lookup helpers exclude the record being
+edited, so that changing only formatting or letter case is not mistaken for a duplicate or a clash. The success
+message includes a note only when an edited level mismatches an enrollment, the student's final name matches another
+student's name but their contacts differ, or the edit explicitly changes a lesson's fee to `0`.
 
 If the requested details are identical to the stored record, `EditCommand` returns `No changes were made.` and marks the result so that `LogicManager` skips saving. A case-only level edit is still treated as a real edit because it changes the stored spelling, so it follows the normal save-and-rollback path.
 
-The sequence diagram below shows `execute("edit student 1 c/90001111")`, which updates only an existing student's contact number. Less-important method parameters, duplicate checking, note generation, the no-change path and the error paths are omitted to keep the diagram focused. Editing a lesson follows the same overall flow, with validation of its final timeslot, duplicates and clashes before the update.
+The sequence diagram below shows `execute("edit student 1 c/90001111")`, which updates only an existing student's
+contact number. Less-important method parameters, duplicate checking, note generation, the no-change path and the
+error paths are omitted to keep the diagram focused. The common model snapshot, storage save and rollback interactions
+performed by `LogicManager` are also omitted. Editing a lesson follows the same overall flow, with validation of its
+final timeslot, duplicates and clashes before the update.
 
 <puml src="diagrams/EditSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `edit` Command" />
 
@@ -408,7 +416,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | be warned when a new lesson overlaps another lesson on the same day | avoid double-booking my teaching time |
 | `* * *` | tutor | be prevented from creating duplicate students, lessons, or enrollments | keep my records accurate |
 | `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
-| `* * *` | tutor | list my students with their contact details, levels, lessons, monthly fees, and payment statuses | review my roster and outstanding payments |
+| `* * *` | tutor | list my students with their contact details, levels, lessons, and payment statuses | review my roster and outstanding payments |
 | `* * *` | tutor | list my lessons with their timeslots, fees, and enrolled students | review my teaching schedule |
 | `* * *` | tutor | correct or update an existing student or lesson without changing its identity or related records | keep details accurate without recreating the record and its enrollments |
 | `* * *` | tutor | view the weekly schedule for one student | see when that student's lessons take place |
@@ -486,10 +494,11 @@ Use case ends.
 2.  System validates the requested view.
 3.  System clears any active list filter.
 4.  System retrieves the requested records.
-5.  System shows records in their current sort order (by ID for students and by day and time for lessons by default).
+5.  System shows records in their current sort order (by ID for students and by weekday, start time, then ID for
+    lessons by default).
 6.  System displays the records and the total count.
 
-    Use case ends.
+Use case ends.
 
 **Extensions**
 
@@ -525,7 +534,7 @@ Use case ends.
 6. System replaces the record while retaining its ID, enrollments, and, for a student, payment status.
 7. System saves the change and confirms the edited record.
 
-    Use case ends.
+Use case ends.
 
 **Extensions**
 
@@ -567,6 +576,12 @@ Use case ends.
 
     * 5c1. System displays a clash message naming the other lesson and its timeslot.
     * 5c2. System makes no changes.
+    * Use case ends.
+
+* 7a. The change cannot be saved.
+
+    * 7a1. System restores the original data.
+    * 7a2. System displays the applicable file-write or permission error.
     * Use case ends.
 
 **Use case: Delete a student or lesson**
