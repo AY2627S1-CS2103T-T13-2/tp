@@ -34,6 +34,9 @@ public class DeleteCommandParser implements Parser<DeleteCommand> {
                 return new DeleteCommand(ParserUtil.parseLessonId(id));
             }
         } catch (ParseException e) {
+            if (ParserUtil.MESSAGE_ID_TOO_LARGE.equals(e.getMessage())) {
+                throw e;
+            }
             throw new ParseException(MESSAGE_INVALID_FORMAT, e);
         }
         throw new ParseException(MESSAGE_INVALID_FORMAT);

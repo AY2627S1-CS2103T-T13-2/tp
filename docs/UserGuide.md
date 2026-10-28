@@ -315,6 +315,7 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 **Errors:**
 
 * Missing or unknown kind, an abbreviation, a repeated kind, a missing or malformed ID, or extra text after the ID — the app displays `Invalid command format. Use: delete student|lesson ID`.
+* An ID above `2147483647` — the app displays `ID is too large. No student or lesson has an ID above 2147483647.`
 * No record of the requested kind has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID). An ID belonging only to the other kind does not match. No data is changed on failure.
 
 ### Marking a student as paid: `mark`
