@@ -22,9 +22,15 @@ public class ListCommand extends Command {
 
     public static final String MESSAGE_VIEW_GIVEN_TWICE = "The view can only be specified once.";
 
+    public static final String MESSAGE_CONFLICTING_VIEWS = "Choose either students or lessons, not both.";
+
     public static final String MESSAGE_LISTED_STUDENTS = "Listed %d students.";
 
+    public static final String MESSAGE_LISTED_ONE_STUDENT = "Listed 1 student.";
+
     public static final String MESSAGE_LISTED_LESSONS = "Listed %d lessons.";
+
+    public static final String MESSAGE_LISTED_ONE_LESSON = "Listed 1 lesson.";
 
     public static final String MESSAGE_NO_STUDENTS = "No students found. Use the add command to create one.";
 
@@ -67,19 +73,27 @@ public class ListCommand extends Command {
 
     private static CommandResult listStudents(Model model) {
         int studentCount = model.getStudentList().size();
-        String message = studentCount == 0
-                ? MESSAGE_NO_STUDENTS
-                : String.format(MESSAGE_LISTED_STUDENTS, studentCount);
-        logger.info("Displayed the student list with " + studentCount + " entries");
-        return new CommandResult(message);
+        return createListResult(studentCount, "student", MESSAGE_NO_STUDENTS,
+                MESSAGE_LISTED_ONE_STUDENT, MESSAGE_LISTED_STUDENTS);
     }
 
     private static CommandResult listLessons(Model model) {
         int lessonCount = model.getLessonList().size();
-        String message = lessonCount == 0
-                ? MESSAGE_NO_LESSONS
-                : String.format(MESSAGE_LISTED_LESSONS, lessonCount);
-        logger.info("Displayed the lesson list with " + lessonCount + " entries");
+        return createListResult(lessonCount, "lesson", MESSAGE_NO_LESSONS,
+                MESSAGE_LISTED_ONE_LESSON, MESSAGE_LISTED_LESSONS);
+    }
+
+    private static CommandResult createListResult(int count, String recordType, String emptyMessage,
+                                                   String singularMessage, String pluralMessage) {
+        String message;
+        if (count == 0) {
+            message = emptyMessage;
+        } else if (count == 1) {
+            message = singularMessage;
+        } else {
+            message = String.format(pluralMessage, count);
+        }
+        logger.info("Displayed the " + recordType + " list with " + count + " entries");
         return new CommandResult(message);
     }
 

@@ -27,7 +27,8 @@ import seedu.address.model.student.Student;
 import seedu.address.model.student.StudentId;
 
 /**
- * Enrolls a student in a lesson. The student and the lesson can each be new or existing.
+ * Enrolls a student in a lesson, or creates a student or a lesson on its own. The student and the lesson can each be
+ * new or existing, and either can be left out if the other is new.
  *
  * <p>The command records what the user asked for: an existing record by ID, or the details of a new one. Nothing is
  * created until {@link #execute(Model)} has checked that the whole request is valid. See specification codes ADD-1
@@ -37,11 +38,17 @@ public class AddCommand extends Command {
 
     public static final String COMMAND_WORD = "add";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + " s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] "
+    public static final String MESSAGE_USAGE = COMMAND_WORD + " [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] "
             + "[llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]";
 
     public static final String MESSAGE_SUCCESS =
             "Enrolled %1$s [Student ID: %2$s] in %3$s [Lesson ID: %4$s]. Payment status: %5$s.";
+    public static final String MESSAGE_ADDED_STUDENT = "Added student %1$s [Student ID: %2$s].";
+    public static final String MESSAGE_ADDED_LESSON = "Added lesson %1$s [Lesson ID: %2$s].";
+    public static final String MESSAGE_LESSON_NEEDED = "%1$s [Student ID: %2$s] already exists. To enroll them, "
+            + "add l/ with a lesson ID or the details of a new lesson.";
+    public static final String MESSAGE_STUDENT_NEEDED = "%1$s [Lesson ID: %2$s] already exists. To enroll a student "
+            + "in it, add s/ with a student ID or the details of a new student.";
     public static final String MESSAGE_DUPLICATE_STUDENT = "A student with the same name and contact already "
             + "exists (Student ID: %1$s). Use the existing student ID.";
     public static final String MESSAGE_DUPLICATE_LESSON =
@@ -60,6 +67,7 @@ public class AddCommand extends Command {
 
     private static final Logger logger = LogsCenter.getLogger(AddCommand.class);
 
+    // Either one is null when the command creates only the other. They are never both null.
     private final StudentRef student;
     private final LessonRef lesson;
 
@@ -73,11 +81,34 @@ public class AddCommand extends Command {
     }
 
     /**
-     * Enrolls the student in the lesson, creating the student and the lesson first if they are new.
+     * Creates a command that creates {@code student} without enrolling them. If {@code student} already exists, the
+     * command asks for a lesson instead.
+     */
+    public AddCommand(StudentRef student) {
+        requireNonNull(student);
+        this.student = student;
+        this.lesson = null;
+    }
+
+    /**
+     * Creates a command that creates {@code lesson} without any student. If {@code lesson} already exists, the
+     * command asks for a student instead.
+     */
+    public AddCommand(LessonRef lesson) {
+        requireNonNull(lesson);
+        this.student = null;
+        this.lesson = lesson;
+    }
+
+    /**
+     * Enrolls the student in the lesson, creating the student and the lesson first if they are new. If only one of
+     * them was given, it is created without any enrollment.
      * Every check runs before anything is created or changed, so a command that fails leaves everything as it was
      * and uses up no ID. The first problem found is the one reported, in this order:
      * <ol>
      *   <li>the student exists, then the lesson exists (only for an existing student or lesson)</li>
+     *   <li>an existing student or lesson given on its own has the other side given too: there is nothing to
+     *       create</li>
      *   <li>a new student is not a duplicate, then a new lesson is not a duplicate, then the student is not
      *       already enrolled in the lesson (only possible when both already exist)</li>
      *   <li>the student's level is the same as the lesson's level</li>
@@ -91,7 +122,11 @@ public class AddCommand extends Command {
         requireNonNull(model);
         logger.fine("Executing add command: " + describeReferences());
         try {
-            return checkAndEnroll(model);
+            return checkAndAdd(model);
+        } catch (OtherSideNeededException e) {
+            // The message names the student, so only the IDs are logged.
+            logger.info("Rejected add command: nothing to create for " + describeReferences());
+            throw e;
         } catch (CommandException e) {
             // A rejected command is the user's mistake and not a fault, so it is logged at info and not warning.
             // These messages hold IDs, subjects and times, never names or contact numbers.
@@ -100,7 +135,7 @@ public class AddCommand extends Command {
         }
     }
 
-    private CommandResult checkAndEnroll(Model model) throws CommandException {
+    private CommandResult checkAndAdd(Model model) throws CommandException {
         Optional<Student> existingStudent = findExistingStudent(model);
         Optional<Lesson> existingLesson = findExistingLesson(model);
         // A student or lesson is resolved exactly when it was referred to by ID; the steps below rely on this.
@@ -109,6 +144,7 @@ public class AddCommand extends Command {
         assert (lesson instanceof ExistingLesson) == existingLesson.isPresent()
                 : "An existing lesson must be found if, and only if, the lesson was given by ID";
 
+        checkOtherSideGiven(existingStudent, existingLesson);
         checkForDuplicates(model, existingStudent, existingLesson);
         checkForClash(model);
 
@@ -120,10 +156,37 @@ public class AddCommand extends Command {
         noteForFreeLesson().ifPresent(notes::add);
 
         // The whole request is valid, so create what is new and enroll.
+        if (lesson == null) {
+            Student created = createStudentIfNew(model, existingStudent);
+            return new CommandResult(withNotes(
+                    String.format(MESSAGE_ADDED_STUDENT, created.getName(), created.getId()), notes));
+        }
+        if (student == null) {
+            Lesson created = createLessonIfNew(model, existingLesson);
+            return new CommandResult(withNotes(
+                    String.format(MESSAGE_ADDED_LESSON, created.getSubject(), created.getId()), notes));
+        }
         Student studentToEnroll = createStudentIfNew(model, existingStudent);
         Lesson lessonToJoin = createLessonIfNew(model, existingLesson);
         enroll(model, studentToEnroll, lessonToJoin);
         return new CommandResult(successMessage(model, studentToEnroll, lessonToJoin, notes));
+    }
+
+    /**
+     * Throws if an existing student is given without a lesson, or an existing lesson without a student, since there
+     * is then nothing to create and no one to enroll.
+     */
+    private void checkOtherSideGiven(Optional<Student> existingStudent, Optional<Lesson> existingLesson)
+            throws CommandException {
+        if (lesson == null && existingStudent.isPresent()) {
+            Student found = existingStudent.get();
+            throw new OtherSideNeededException(String.format(MESSAGE_LESSON_NEEDED, found.getName(), found.getId()));
+        }
+        if (student == null && existingLesson.isPresent()) {
+            Lesson found = existingLesson.get();
+            throw new OtherSideNeededException(
+                    String.format(MESSAGE_STUDENT_NEEDED, found.getSubject(), found.getId()));
+        }
     }
 
     /**
@@ -141,8 +204,12 @@ public class AddCommand extends Command {
     /**
      * Returns a note if the student's level is not the same as the lesson's level. A student may still join a
      * lesson of another level, for example a stronger student in a higher-level class, so this is not an error.
+     * There is no note when only one of them is given.
      */
     private Optional<String> noteForLevelMismatch(Optional<Student> existingStudent, Optional<Lesson> existingLesson) {
+        if (student == null || lesson == null) {
+            return Optional.empty();
+        }
         Level studentLevel = levelOfStudent(existingStudent);
         Level lessonLevel = levelOfLesson(existingLesson);
         if (studentLevel.equals(lessonLevel)) {
@@ -212,8 +279,15 @@ public class AddCommand extends Command {
     private static String successMessage(Model model, Student enrolled, Lesson joined, List<String> notes) {
         String success = String.format(MESSAGE_SUCCESS, enrolled.getName(), enrolled.getId(), joined.getSubject(),
                 joined.getId(), model.isPaid(enrolled.getId()) ? PAID : UNPAID);
+        return withNotes(success, notes);
+    }
+
+    /**
+     * Returns {@code message}, followed by each note on its own line.
+     */
+    private static String withNotes(String message, List<String> notes) {
         List<String> lines = new ArrayList<>();
-        lines.add(success);
+        lines.add(message);
         lines.addAll(notes);
         return String.join("\n", lines);
     }
@@ -222,9 +296,11 @@ public class AddCommand extends Command {
      * Returns a description of what the command refers to, for the log. It has IDs only, never names or contacts.
      */
     private String describeReferences() {
-        String studentDescription = student instanceof ExistingStudent existing ? "student " + existing.id()
+        String studentDescription = student == null ? "no student"
+                : student instanceof ExistingStudent existing ? "student " + existing.id()
                 : "new student";
-        String lessonDescription = lesson instanceof ExistingLesson existing ? "lesson " + existing.id()
+        String lessonDescription = lesson == null ? "no lesson"
+                : lesson instanceof ExistingLesson existing ? "lesson " + existing.id()
                 : "new lesson";
         return studentDescription + ", " + lessonDescription;
     }
@@ -326,7 +402,7 @@ public class AddCommand extends Command {
             return false;
         }
 
-        return student.equals(otherCommand.student) && lesson.equals(otherCommand.lesson);
+        return Objects.equals(student, otherCommand.student) && Objects.equals(lesson, otherCommand.lesson);
     }
 
     @Override
@@ -340,6 +416,16 @@ public class AddCommand extends Command {
                 .add("student", student)
                 .add("lesson", lesson)
                 .toString();
+    }
+
+    /**
+     * Thrown when an existing student or lesson is given on its own. Its message names the student, so it is not
+     * logged.
+     */
+    private static class OtherSideNeededException extends CommandException {
+        OtherSideNeededException(String message) {
+            super(message);
+        }
     }
 
     /**

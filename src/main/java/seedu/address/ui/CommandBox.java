@@ -1,5 +1,7 @@
 package seedu.address.ui;
 
+import java.util.List;
+
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
@@ -16,6 +18,8 @@ import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.MarkCommand;
 import seedu.address.logic.commands.ScheduleCommand;
+import seedu.address.logic.commands.SortCommand;
+import seedu.address.logic.commands.UnmarkCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 
@@ -26,10 +30,11 @@ public class CommandBox extends UiPart<Region> {
 
     public static final String ERROR_STYLE_CLASS = "error";
     private static final String FXML = "CommandBox.fxml";
-    private static final java.util.List<String> COMMAND_WORDS = java.util.List.of(
+    private static final List<String> COMMAND_WORDS = List.of(
             AddCommand.COMMAND_WORD, DeleteCommand.COMMAND_WORD, EditCommand.COMMAND_WORD,
             ExitCommand.COMMAND_WORD, FilterCommand.COMMAND_WORD, HelpCommand.COMMAND_WORD,
-            ListCommand.COMMAND_WORD, MarkCommand.COMMAND_WORD, ScheduleCommand.COMMAND_WORD);
+            ListCommand.COMMAND_WORD, MarkCommand.COMMAND_WORD, ScheduleCommand.COMMAND_WORD,
+            SortCommand.COMMAND_WORD, UnmarkCommand.COMMAND_WORD);
 
     private final CommandExecutor commandExecutor;
     private final CommandHistory commandHistory = new CommandHistory();
@@ -45,6 +50,11 @@ public class CommandBox extends UiPart<Region> {
         this.commandExecutor = commandExecutor;
         // calls #setStyleToDefault() whenever there is a change to the text of the command box.
         commandTextField.textProperty().addListener((unused1, unused2, unused3) -> setStyleToDefault());
+    }
+
+    /** Moves keyboard focus back to the command input. */
+    public void focus() {
+        commandTextField.requestFocus();
     }
 
     /**

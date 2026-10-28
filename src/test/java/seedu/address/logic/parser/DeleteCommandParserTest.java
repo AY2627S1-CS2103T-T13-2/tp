@@ -27,12 +27,18 @@ class DeleteCommandParserTest {
     void parse_invalidFormat_throwsParseException() {
         String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DeleteCommand.MESSAGE_USAGE);
         String[] invalidInputs = {"", "teacher 12", "stu 12", "student", "12", "student 0",
-            "student -1", "student abc", "student 12 now", "student student 12", "lesson lesson 7",
-            "student 2147483648", "lesson 99999999999999999999"};
+            "student -1", "student abc", "student 12 now", "student student 12", "lesson lesson 7"};
 
         for (String input : invalidInputs) {
             assertThrows(ParseException.class, expectedMessage, () -> parser.parse(input));
         }
+    }
+
+    @Test
+    void parse_idTooLarge_reportsSpecificError() {
+        String expectedMessage = ParserUtil.MESSAGE_ID_TOO_LARGE;
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parse("student 2147483648"));
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parse("lesson 99999999999999999999"));
     }
 }
 

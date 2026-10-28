@@ -56,6 +56,9 @@ public class ModelManager implements Model {
     private final SortedList<Student> sortedStudents;
     private final SortedList<Lesson> sortedLessons;
     private final ObjectProperty<ListView> listView = new SimpleObjectProperty<>(ListView.STUDENTS);
+    private Optional<StudentId> scheduleStudentId = Optional.empty();
+    private SortField studentSortField;
+    private boolean studentSortAscending = true;
 
     /**
      * The filter that is currently active, if any. Only one kind is set at a time: the student, the lesson,
@@ -195,12 +198,24 @@ public class ModelManager implements Model {
 
     @Override
     public Student markPaid(StudentId studentId) {
-        return tuiTracker.markPaid(studentId, currentMonth());
+        Student updated = tuiTracker.markPaid(studentId, currentMonth());
+        refreshPaymentStatus();
+        return updated;
     }
 
     @Override
     public Student unmarkPaid(StudentId studentId) {
-        return tuiTracker.unmarkPaid(studentId);
+        Student updated = tuiTracker.unmarkPaid(studentId);
+        refreshPaymentStatus();
+        return updated;
+    }
+
+    @Override
+    public void refreshPaymentStatus() {
+        refreshFilters();
+        if (studentSortField == SortField.STUDENT_PAYMENT) {
+            sort(studentSortField, studentSortAscending);
+        }
     }
 
     //=========== Create, edit and delete ====================================================================
@@ -243,6 +258,9 @@ public class ModelManager implements Model {
     public Student deleteStudent(StudentId studentId) {
         requireNonNull(studentId);
         Student deleted = tuiTracker.deleteStudent(studentId);
+        if (scheduleStudentId.equals(Optional.of(studentId))) {
+            scheduleStudentId = Optional.empty();
+        }
         refreshFilters();
         return deleted;
     }
@@ -324,6 +342,8 @@ public class ModelManager implements Model {
             @SuppressWarnings("unchecked")
             Comparator<Student> studentComparator = (Comparator<Student>) comparator;
             sortedStudents.setComparator(studentComparator);
+            studentSortField = field;
+            studentSortAscending = ascending;
         } else {
             @SuppressWarnings("unchecked")
             Comparator<Lesson> lessonComparator = (Comparator<Lesson>) comparator;
@@ -401,6 +421,16 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public Optional<StudentId> getScheduleStudentId() {
+        return scheduleStudentId;
+    }
+
+    @Override
+    public void setScheduleStudentId(Optional<StudentId> studentId) {
+        scheduleStudentId = requireNonNull(studentId);
+    }
+
+    @Override
     public ReadOnlyObjectProperty<ListView> listViewProperty() {
         return listView;
     }
@@ -420,12 +450,13 @@ public class ModelManager implements Model {
                 && userPrefs.equals(otherModelManager.userPrefs)
                 && filteredStudents.equals(otherModelManager.filteredStudents)
                 && filteredLessons.equals(otherModelManager.filteredLessons)
+                && scheduleStudentId.equals(otherModelManager.scheduleStudentId)
                 && getListView() == otherModelManager.getListView();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tuiTracker, userPrefs, getListView());
+        return Objects.hash(tuiTracker, userPrefs, scheduleStudentId, getListView());
     }
 
 }

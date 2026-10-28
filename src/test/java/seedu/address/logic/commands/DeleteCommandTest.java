@@ -8,12 +8,16 @@ import static seedu.address.testutil.TypicalClock.CLOCK;
 import static seedu.address.testutil.TypicalLessons.MATHEMATICS;
 import static seedu.address.testutil.TypicalLessons.getTypicalLessons;
 import static seedu.address.testutil.TypicalStudents.ALICE;
+import static seedu.address.testutil.TypicalStudents.BRYAN;
 import static seedu.address.testutil.TypicalStudents.getTypicalStudents;
 import static seedu.address.testutil.TypicalTuiTracker.getTypicalTuiTracker;
+
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.model.ListView;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -47,6 +51,29 @@ class DeleteCommandTest {
         assertTrue(model.findStudent(ALICE.getId()).isEmpty());
         assertFalse(model.isEnrolled(ALICE.getId(), MATHEMATICS.getId()));
         assertTrue(model.findLesson(MATHEMATICS.getId()).isPresent());
+    }
+
+    @Test
+    void execute_deleteSelectedScheduleStudent_reportsAllLessons() throws Exception {
+        model.setScheduleStudentId(Optional.of(ALICE.getId()));
+        model.setListView(ListView.SCHEDULE);
+
+        CommandResult result = new DeleteCommand(ALICE.getId()).execute(model);
+
+        assertEquals("Deleted student: Alice Tan (ID: 1)\nThe schedule now shows all lessons.",
+                result.getFeedbackToUser());
+        assertTrue(model.getScheduleStudentId().isEmpty());
+    }
+
+    @Test
+    void execute_deleteOtherStudent_keepsUsualMessage() throws Exception {
+        model.setScheduleStudentId(Optional.of(ALICE.getId()));
+        model.setListView(ListView.SCHEDULE);
+
+        CommandResult result = new DeleteCommand(BRYAN.getId()).execute(model);
+
+        assertEquals("Deleted student: Bryan Lim (ID: 2)", result.getFeedbackToUser());
+        assertEquals(Optional.of(ALICE.getId()), model.getScheduleStudentId());
     }
 
     @Test

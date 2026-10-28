@@ -7,6 +7,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputControl;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
@@ -37,6 +38,7 @@ public class MainWindow extends UiPart<Stage> {
     private StudentListPanel studentListPanel;
     private LessonListPanel lessonListPanel;
     private SchedulePanel schedulePanel;
+    private CommandBox commandBox;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
     private PaymentMonthRefresher paymentMonthRefresher;
@@ -118,9 +120,10 @@ public class MainWindow extends UiPart<Stage> {
      * Fills up all the placeholders of this window.
      */
     void fillInnerParts() {
+        commandBox = new CommandBox(this::executeCommand);
         studentListPanel = new StudentListPanel(logic.getStudentList(), logic);
         lessonListPanel = new LessonListPanel(logic.getLessonList(), logic);
-        schedulePanel = new SchedulePanel(logic);
+        schedulePanel = new SchedulePanel(logic, commandBox::focus);
         listPanelPlaceholder.getChildren().addAll(studentListPanel.getRoot(), lessonListPanel.getRoot(),
                 schedulePanel.getRoot());
         showList(logic.listViewProperty().get());
@@ -132,10 +135,19 @@ public class MainWindow extends UiPart<Stage> {
         StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath);
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
 
-        CommandBox commandBox = new CommandBox(this::executeCommand);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
 
-        paymentMonthRefresher = new PaymentMonthRefresher(studentListPanel::refresh);
+        getRoot().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.F6 && logic.listViewProperty().get() == ListView.SCHEDULE) {
+                schedulePanel.focusFirstDay();
+                event.consume();
+            }
+        });
+
+        paymentMonthRefresher = new PaymentMonthRefresher(() -> {
+            logic.refreshPaymentStatus();
+            studentListPanel.refresh();
+        });
         paymentMonthRefresher.start();
     }
 

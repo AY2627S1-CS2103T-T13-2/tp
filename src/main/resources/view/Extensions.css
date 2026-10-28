@@ -59,9 +59,17 @@
 }
 
 .schedule-day-heading {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-padding: 0;
     -fx-font-size: 15px;
     -fx-font-weight: bold;
     -fx-text-fill: #f5f7fa;
+}
+
+.schedule-day-heading:focused {
+    -fx-border-color: #8edaf1;
 }
 
 .schedule-day-scroll,
@@ -106,6 +114,7 @@
     -fx-background-color: #3e6479;
     -fx-border-color: transparent;
     -fx-border-width: 0;
+    -fx-effect: dropshadow(gaussian, #8edaf1, 8, 0.3, 0, 0);
 }
 
 .schedule-short-lesson {
@@ -161,6 +170,10 @@
     -fx-background-color: #383e45;
     -fx-background-radius: 6px;
     -fx-padding: 12px;
+}
+
+.schedule-details-card:focused {
+    -fx-effect: dropshadow(gaussian, #8edaf1, 8, 0.3, 0, 0);
 }
 
 .schedule-details-card-title {

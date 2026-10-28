@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -73,6 +74,7 @@ public class LogicManager implements Logic {
 
         // Kept so that a command whose changes cannot be saved is undone, leaving the data as it was.
         ReadOnlyTuiTracker before = new TuiTracker(model.getTuiTracker());
+        Optional<StudentId> scheduleStudentBefore = model.getScheduleStudentId();
 
         CommandResult commandResult = command.execute(model);
 
@@ -86,11 +88,13 @@ public class LogicManager implements Logic {
         } catch (AccessDeniedException e) {
             logger.log(Level.WARNING, "Could not save data; reverting command changes", e);
             model.setTuiTracker(before);
+            model.setScheduleStudentId(scheduleStudentBefore);
             throw new CommandException(command.getSaveFailureMessage(
                     String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage())), e);
         } catch (IOException ioe) {
             logger.log(Level.WARNING, "Could not save data; reverting command changes", ioe);
             model.setTuiTracker(before);
+            model.setScheduleStudentId(scheduleStudentBefore);
             throw new CommandException(command.getSaveFailureMessage(
                     String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage())), ioe);
         }
@@ -122,6 +126,11 @@ public class LogicManager implements Logic {
     }
 
     @Override
+    public Optional<StudentId> getScheduleStudentId() {
+        return model.getScheduleStudentId();
+    }
+
+    @Override
     public ReadOnlyObjectProperty<ListView> listViewProperty() {
         return model.listViewProperty();
     }
@@ -139,6 +148,11 @@ public class LogicManager implements Logic {
     @Override
     public boolean isPaid(StudentId studentId) {
         return model.isPaid(studentId);
+    }
+
+    @Override
+    public void refreshPaymentStatus() {
+        model.refreshPaymentStatus();
     }
 
     @Override

@@ -169,9 +169,54 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_studentOrLessonMissing_throwsParseException() {
-        assertParseFailure(parser, EXISTING_LESSON, missing("s/"));
-        assertParseFailure(parser, EXISTING_STUDENT, missing("l/"));
-        assertParseFailure(parser, " c/91234567 slv/Primary 6", missing("s/, l/"));
+        // parameters of a side whose s/ or l/ is missing
+        assertParseFailure(parser, " c/91234567 slv/Primary 6", missing("s/"));
+        assertParseFailure(parser, " llv/Primary 6 d/Monday st/15:00 et/16:30 f/50.00", missing("l/"));
+        assertParseFailure(parser, " c/91234567 llv/Primary 6", missing("s/, l/"));
+        assertParseFailure(parser, NEW_STUDENT + " llv/Primary 6", missing("l/"));
+        assertParseFailure(parser, NEW_LESSON + " c/91234567", missing("s/"));
+    }
+
+    //// one side only
+
+    @Test
+    public void parse_newStudentOnly_success() {
+        assertParseSuccess(parser, NEW_STUDENT, new AddCommand(NEW_STUDENT_REF));
+    }
+
+    @Test
+    public void parse_newLessonOnly_success() {
+        assertParseSuccess(parser, NEW_LESSON, new AddCommand(NEW_LESSON_REF));
+    }
+
+    @Test
+    public void parse_existingStudentOrLessonOnly_success() {
+        // whether the other side is needed is decided once the student or lesson is found
+        assertParseSuccess(parser, EXISTING_STUDENT, new AddCommand(EXISTING_STUDENT_REF));
+        assertParseSuccess(parser, EXISTING_LESSON, new AddCommand(EXISTING_LESSON_REF));
+    }
+
+    @Test
+    public void parse_oneSideOnlyWithMissingParameters_throwsParseException() {
+        assertParseFailure(parser, " s/Nora Lim c/90000000", missing("slv/") + readAsNewStudent("Nora Lim"));
+        assertParseFailure(parser, " l/Mathematics llv/Primary 6 d/Friday",
+                missing("st/, et/, f/") + readAsNewLesson("Mathematics"));
+    }
+
+    @Test
+    public void parse_oneSideOnlyWithInvalidValue_throwsParseException() {
+        assertParseFailure(parser, " s/Nora Lim c/12 slv/Primary 6", Contact.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, " s/0", String.format(MESSAGE_NOT_AN_ID, "s/", "0", "name"));
+        assertParseFailure(parser, " l/2147483648", MESSAGE_ID_TOO_LARGE);
+    }
+
+    @Test
+    public void parse_issueExamples_success() {
+        assertParseSuccess(parser, " s/Nora Lim c/90000000 slv/Primary 6", new AddCommand(
+                new NewStudent(new Name("Nora Lim"), new Contact("90000000"), new Level("Primary 6"))));
+        assertParseSuccess(parser, " l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50",
+                new AddCommand(new NewLesson(new Subject("Mathematics"), new Level("Primary 6"),
+                        new Timeslot(DayOfWeek.FRIDAY, LocalTime.of(15, 0), LocalTime.of(16, 0)), new Fee("50"))));
     }
 
     @Test

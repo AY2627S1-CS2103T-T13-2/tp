@@ -19,12 +19,14 @@ import static seedu.address.testutil.TypicalTuiTracker.getTypicalTuiTracker;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
@@ -362,6 +364,26 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void deleteStudent_selectedForSchedule_clearsScheduleSelection() {
+        modelManager.setScheduleStudentId(Optional.of(ALICE.getId()));
+        modelManager.setListView(ListView.SCHEDULE);
+
+        modelManager.deleteStudent(ALICE.getId());
+
+        assertEquals(Optional.empty(), modelManager.getScheduleStudentId());
+        assertEquals(ListView.SCHEDULE, modelManager.getListView());
+    }
+
+    @Test
+    public void deleteStudent_otherThanScheduleSelection_keepsScheduleSelection() {
+        modelManager.setScheduleStudentId(Optional.of(ALICE.getId()));
+
+        modelManager.deleteStudent(BRYAN.getId());
+
+        assertEquals(Optional.of(ALICE.getId()), modelManager.getScheduleStudentId());
+    }
+
+    @Test
     public void filterStudentsByPaidStatus_paid_showsOnlyPaidStudents() {
         modelManager.filterStudentsByPaidStatus(true);
 
@@ -375,6 +397,49 @@ public class ModelManagerTest {
         modelManager.filterStudentsByPaidStatus(false);
 
         assertEquals(Arrays.asList(ALICE, CHLOE), modelManager.getStudentList());
+    }
+
+    @Test
+    public void paymentChanges_refreshActivePaidFilter() {
+        modelManager.filterStudentsByPaidStatus(true);
+
+        Student paidAlice = modelManager.markPaid(ALICE.getId());
+        assertEquals(Arrays.asList(paidAlice, BRYAN), modelManager.getStudentList());
+
+        modelManager.unmarkPaid(BRYAN.getId());
+        assertEquals(Collections.singletonList(paidAlice), modelManager.getStudentList());
+    }
+
+    @Test
+    public void refreshPaymentStatus_newMonthUpdatesFilterAndSort() {
+        AtomicReference<Instant> now = new AtomicReference<>(Instant.parse("2026-10-15T04:00:00Z"));
+        Clock clock = new Clock() {
+            @Override
+            public ZoneId getZone() {
+                return ZoneOffset.UTC;
+            }
+
+            @Override
+            public Clock withZone(ZoneId zone) {
+                return Clock.fixed(now.get(), zone);
+            }
+
+            @Override
+            public Instant instant() {
+                return now.get();
+            }
+        };
+        ModelManager model = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), clock);
+        model.filterStudentsByPaidStatus(true);
+        assertEquals(Collections.singletonList(BRYAN), model.getStudentList());
+        model.sort(SortField.STUDENT_PAYMENT, false);
+
+        now.set(Instant.parse("2026-11-01T00:00:00Z"));
+        model.refreshPaymentStatus();
+        assertEquals(Collections.emptyList(), model.getStudentList());
+
+        model.resetFilters();
+        assertEquals(Arrays.asList(CHLOE, BRYAN, ALICE), model.getStudentList());
     }
 
     @Test
