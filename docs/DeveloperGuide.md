@@ -144,7 +144,7 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Add feature
 
-The `add` command enrolls a student in a lesson, and creates the student, the lesson, or both if they are new. It is the only command that creates students and lessons. It has four forms (each of the student and the lesson is new or existing) and many ways to fail, so its work is split into two steps: the parser works out **what the user asked for**, and the command checks that request and carries it out.
+The `add` command enrolls a student in a lesson, and creates the student, the lesson, or both if they are new. It can also create a new student or a new lesson on its own, without enrolling anyone. It is the only command that creates students and lessons. It has six forms (each of the student and the lesson is new or existing, or the student or the lesson is new and given alone) and many ways to fail, so its work is split into two steps: the parser works out **what the user asked for**, and the command checks that request and carries it out.
 
 #### Parsing the arguments
 
@@ -153,14 +153,14 @@ The `add` command enrolls a student in a lesson, and creates the student, the le
 * `AddCommand.StudentRef` is either an `ExistingStudent` (an ID) or a `NewStudent` (a name, a contact and a level).
 * `AddCommand.LessonRef` is either an `ExistingLesson` (an ID) or a `NewLesson` (a subject, a level, a timeslot and a fee).
 
-These are `sealed` interfaces implemented by records, so the compiler checks that every case is handled and `equals` comes for free, which the parser tests rely on.
+These are `sealed` interfaces implemented by records, so the compiler checks that every case is handled and `equals` comes for free, which the parser tests rely on. When only one side is given, `AddCommand` is built with that side alone, and the other side is `null`.
 
 The parser works in this order, and reports the first problem it finds:
 
 1. The command is well formed: no text before the first parameter, and at least one parameter.
 2. No parameter is given more than once.
 3. No parameter is joined to another value without a space, such as the `slv/` in `c/92223333slv/Primary 6`. Without this check, the joined parameter would be reported as missing.
-4. Both `s/` and `l/` are given. Whether each is a whole number (an existing record) or not (a new one) decides everything after this.
+4. `s/` is given if any student parameter (`c/`, `slv/`) is, and `l/` is given if any lesson parameter (`llv/`, `d/`, `st/`, `et/`, `f/`) is. Which of `s/` and `l/` are given, and whether each is a whole number (an existing record) or not (a new one), decides everything after this.
 5. Neither `s/` nor `l/` is a number that is not a valid ID, such as `0`, `-1` or `1.5`, and neither is an ID larger than any record can have. Without this check, such a number would be read as the name of a new student or the subject of a new lesson.
 6. No parameter is given that does not belong to the form. For example, `c/` is not allowed with an existing student.
 7. No required parameter is missing, for example `c/` and `slv/` for a new student. The message also says which value was read as a new student or lesson, and suggests giving only the ID when the value is an ID followed by more text.
@@ -171,12 +171,13 @@ The parser works in this order, and reports the first problem it finds:
 `AddCommand#execute(Model)` checks the whole request **before it creates or changes anything**, in this order, and reports the first problem it finds:
 
 1. The student exists, then the lesson exists (only for an existing student or lesson).
-2. A new student is not a duplicate, a new lesson is not a duplicate, and the student is not already enrolled in the lesson. Duplicates are found with `Name#isSameName`, `Contact#isSameContact` and `Subject#isSameSubject`, which ignore letter case, extra spaces and (for contacts) everything but the digits. `equals` on these classes stays exact, so that `edit` can still change only the letter case of a value.
-3. A new lesson does not clash with an existing lesson.
+2. An existing student or lesson is not given alone. There would be nothing to create and no one to enroll, so the message names the record and asks for the other side.
+3. A new student is not a duplicate, a new lesson is not a duplicate, and the student is not already enrolled in the lesson. Duplicates are found with `Name#isSameName`, `Contact#isSameContact` and `Subject#isSameSubject`, which ignore letter case, extra spaces and (for contacts) everything but the digits. `equals` on these classes stays exact, so that `edit` can still change only the letter case of a value.
+4. A new lesson does not clash with an existing lesson. This also applies to a new lesson given alone.
 
-It then works out the notes for things that are probably mistakes but might be intended, in this order: a new student with the same name as an existing student, a student whose level differs from the lesson's level, and a new lesson whose fee is 0. Notes do not stop the command; each one is added to the result on its own line.
+It then works out the notes for things that are probably mistakes but might be intended, in this order: a new student with the same name as an existing student, a student whose level differs from the lesson's level (only when both sides are given), and a new lesson whose fee is 0. Notes do not stop the command; each one is added to the result on its own line.
 
-Only then does it create what is new (`Model#addStudent`, `Model#addLesson`) and call `Model#enroll`. The IDs in the result message come from the objects that the `Model` returns.
+Only then does it create what is new (`Model#addStudent`, `Model#addLesson`). When both sides are given, it then calls `Model#enroll`. When one side is given alone, it creates that record and stops there, and the result reports the new ID, such as `Added student Nora Lim [Student ID: 4].` The IDs in the result message come from the objects that the `Model` returns.
 
 The sequence diagram below shows `execute("add s/Daniel Koh c/92223333 slv/Primary 6 l/1")`, a new student joining an existing lesson. The checks that do not apply to this form (the clash check, which is only for a new lesson, and the notes, which are worked out inside `AddCommand`) are left out to keep the diagram readable.
 
@@ -202,9 +203,21 @@ The sequence diagram below shows `execute("add s/Daniel Koh c/92223333 slv/Prima
   * Pros: Each check could sit next to the code that depends on it.
   * Cons: Undoing must also put the ID counters back. `LogicManager` only undoes a command when saving fails, so this would need a second mechanism.
 
+**Aspect: how a side that was left out is represented**
+
+* **Alternative 1 (current choice):** the side that was left out is `null` in `AddCommand`, which has one constructor for each of the three combinations.
+  * Pros: `StudentRef` and `LessonRef` keep meaning "a student" and "a lesson", so the code that handles them stays as it was. Only the few places that depend on both sides, such as the level note and the enrollment, test for `null`.
+  * Cons: Each of those places must remember the `null` case; the compiler does not check it.
+* **Alternative 2:** a third kind of reference, such as `NoStudent` and `NoLesson`, in the `sealed` interfaces.
+  * Pros: The compiler checks that every `switch` on a reference handles the missing side.
+  * Cons: Every method that takes a `StudentRef` would also have to handle "no student", including the ones that only make sense when there is one, such as the level check.
+* **Alternative 3:** separate commands for creating a student and creating a lesson.
+  * Pros: Each command is simpler.
+  * Cons: The duplicate and clash checks, and their messages, would be repeated or moved out of `AddCommand`, and a user would have two more command words to learn.
+
 **Aspect: the order of the checks**
 
-The order is deliberate. Duplicates are checked **before** clashes because an identical lesson always overlaps the original: if the clash were checked first, the more helpful message "an identical lesson already exists" could never be shown. Existence is checked first because the other checks need the records. A different level is not checked at all: it only gives a note, because a student may attend a lesson of another level on purpose, for example a stronger student in a higher-level class.
+The order is deliberate. Duplicates are checked **before** clashes because an identical lesson always overlaps the original: if the clash were checked first, the more helpful message "an identical lesson already exists" could never be shown. Existence is checked first because the other checks need the records: the message for an existing record given alone, for example, names that record. A different level is not checked at all: it only gives a note, because a student may attend a lesson of another level on purpose, for example a stronger student in a higher-level class.
 
 #### Testing
 
