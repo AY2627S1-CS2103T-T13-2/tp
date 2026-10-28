@@ -179,7 +179,7 @@ It then works out the notes for things that are probably mistakes but might be i
 
 Only then does it create what is new (`Model#addStudent`, `Model#addLesson`). When both sides are given, it then calls `Model#enroll`. When one side is given alone, it creates that record and stops there, and the result reports the new ID, such as `Added student Nora Lim [Student ID: 4].` The IDs in the result message come from the objects that the `Model` returns.
 
-The sequence diagram below shows `execute("add s/Daniel Koh c/92223333 slv/Primary 6 l/1")`, a new student joining an existing lesson. The checks that do not apply to this form (the clash check, which is only for a new lesson, and the notes, which are worked out inside `AddCommand`) are left out to keep the diagram readable.
+The sequence diagram below shows `execute("add s/Daniel Koh c/92223333 slv/Primary 6 l/1")`, a new student joining an existing lesson. `findStudentWithSameName` looks for a student with the same name, for the note; there is none here, so the result has no note. The clash check is only for a new lesson, and the level note compares two levels that `AddCommand` already has, so neither calls the `Model` in this form.
 
 <puml src="diagrams/AddSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `add` Command" />
 

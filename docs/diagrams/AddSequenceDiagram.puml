@@ -59,6 +59,11 @@ activate Model
 Model --> AddCommand
 deactivate Model
 
+AddCommand -> Model : findStudentWithSameName(name)
+activate Model
+Model --> AddCommand
+deactivate Model
+
 AddCommand -> Model : addStudent(name, contact, level)
 activate Model
 Model --> AddCommand : student
