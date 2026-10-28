@@ -303,7 +303,7 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 
 **Successful deletion:**
 
-* The result box confirms the deleted record, for example `Deleted student: Alice Tan (ID: 12)`.
+* The result box confirms the deleted record, for example `Deleted student: Alice Tan (ID: 12)`. If the deleted student was selected in the schedule, the result also says `The schedule now shows all lessons.`
 * Deleting a lesson confirms its subject, level, timeslot and ID, for example `Deleted lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 7)`.
 
 **Notes:**

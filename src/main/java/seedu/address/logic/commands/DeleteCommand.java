@@ -5,6 +5,7 @@ import static seedu.address.logic.Messages.MESSAGE_LESSON_NOT_FOUND;
 import static seedu.address.logic.Messages.MESSAGE_STUDENT_NOT_FOUND;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
@@ -21,6 +22,7 @@ public class DeleteCommand extends Command {
     public static final String MESSAGE_USAGE = COMMAND_WORD + " student|lesson ID";
     public static final String MESSAGE_DELETE_STUDENT_SUCCESS = "Deleted student: %s (ID: %s)";
     public static final String MESSAGE_DELETE_LESSON_SUCCESS = "Deleted lesson: %s (ID: %s)";
+    public static final String MESSAGE_SCHEDULE_SHOWS_ALL_LESSONS = "The schedule now shows all lessons.";
 
     /** Exactly one ID is set, according to the requested record kind. */
     private final StudentId studentId;
@@ -52,9 +54,14 @@ public class DeleteCommand extends Command {
     private CommandResult deleteStudent(Model model) throws CommandException {
         Student student = model.findStudent(studentId)
                 .orElseThrow(() -> new CommandException(String.format(MESSAGE_STUDENT_NOT_FOUND, studentId)));
+        boolean wasSelectedForSchedule = model.getScheduleStudentId().equals(Optional.of(studentId));
         Student deleted = model.deleteStudent(studentId);
         assert student.equals(deleted) : "The deleted student must match the requested student";
-        return new CommandResult(String.format(MESSAGE_DELETE_STUDENT_SUCCESS, deleted.getName(), deleted.getId()));
+        String feedback = String.format(MESSAGE_DELETE_STUDENT_SUCCESS, deleted.getName(), deleted.getId());
+        if (wasSelectedForSchedule) {
+            feedback += "\n" + MESSAGE_SCHEDULE_SHOWS_ALL_LESSONS;
+        }
+        return new CommandResult(feedback);
     }
 
     private CommandResult deleteLesson(Model model) throws CommandException {
