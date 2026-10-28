@@ -97,7 +97,10 @@ public class JsonSerializableTuiTrackerTest {
         TuiTracker fromFile = read("duplicateStudentsWithDifferentIds.json").toModelType();
 
         assertEquals(2, fromFile.getStudentList().size());
-        assertTrue(fromFile.getStudentList().get(0).isSameStudent(fromFile.getStudentList().get(1)));
+        assertTrue(fromFile.getStudentList().get(0).getName()
+                .isSameName(fromFile.getStudentList().get(1).getName()));
+        assertTrue(fromFile.getStudentList().get(0).getContact()
+                .isSameContact(fromFile.getStudentList().get(1).getContact()));
     }
 
     @Test
