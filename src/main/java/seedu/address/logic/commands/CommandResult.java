@@ -19,13 +19,21 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean exit;
 
+    /** Whether Logic should skip saving after a data-mutating command. */
+    private final boolean shouldSkipSave;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
+        this(feedbackToUser, showHelp, exit, false);
+    }
+
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean shouldSkipSave) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
+        this.shouldSkipSave = shouldSkipSave;
     }
 
     /**
@@ -34,6 +42,11 @@ public class CommandResult {
      */
     public CommandResult(String feedbackToUser) {
         this(feedbackToUser, false, false);
+    }
+
+    /** Creates a result for a data-mutating command that completed without changing persistent data. */
+    public static CommandResult createWithoutDataChange(String feedbackToUser) {
+        return new CommandResult(feedbackToUser, false, false, true);
     }
 
     public String getFeedbackToUser() {
@@ -46,6 +59,10 @@ public class CommandResult {
 
     public boolean isExit() {
         return exit;
+    }
+
+    public boolean shouldSkipSave() {
+        return shouldSkipSave;
     }
 
     @Override
@@ -61,12 +78,13 @@ public class CommandResult {
 
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && showHelp == otherCommandResult.showHelp
-                && exit == otherCommandResult.exit;
+                && exit == otherCommandResult.exit
+                && shouldSkipSave == otherCommandResult.shouldSkipSave;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit);
+        return Objects.hash(feedbackToUser, showHelp, exit, shouldSkipSave);
     }
 
     @Override
@@ -75,6 +93,7 @@ public class CommandResult {
                 .add("feedbackToUser", feedbackToUser)
                 .add("showHelp", showHelp)
                 .add("exit", exit)
+                .add("shouldSkipSave", shouldSkipSave)
                 .toString();
     }
 

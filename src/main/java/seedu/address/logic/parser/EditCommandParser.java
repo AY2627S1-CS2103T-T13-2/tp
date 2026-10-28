@@ -44,8 +44,10 @@ public class EditCommandParser implements Parser<EditCommand> {
     public EditCommand parse(String args) throws ParseException {
         requireNonNull(args);
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(args, ALL_PREFIXES);
+        arguments.verifyNoPrefixInsideValues(ALL_PREFIXES);
+        ArgumentTokenizer.verifyNoUnknownPrefixes(args, EditCommand.MESSAGE_USAGE, ALL_PREFIXES);
         String[] target = arguments.getPreamble().trim().split("\\s+");
-        if (target.length != 2 || !isKind(target[0])) {
+        if (target.length != 2 || !isKind(target[0]) || containsKnownGluedPrefix(target[1])) {
             throw invalidFormat();
         }
 
@@ -142,6 +144,11 @@ public class EditCommandParser implements Parser<EditCommand> {
         return arguments.getValue(PREFIX_FEE).isPresent()
                 ? Optional.of(ParserUtil.parseFee(arguments.getValue(PREFIX_FEE).get()))
                 : Optional.empty();
+    }
+
+    private static boolean containsKnownGluedPrefix(String value) {
+        return Stream.of(ALL_PREFIXES)
+                .anyMatch(prefix -> ArgumentMultimap.containsGluedPrefix(value, prefix.getPrefix()));
     }
 
     private static boolean anyGiven(ArgumentMultimap arguments, Prefix... prefixes) {

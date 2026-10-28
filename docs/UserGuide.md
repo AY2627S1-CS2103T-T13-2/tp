@@ -121,11 +121,13 @@ Displays either all students or all lessons. Use this command to switch between 
 * The same view repeated — the app displays `The view can only be specified once.`
 * Both `students` and `lessons` — the app displays `Choose either students or lessons, not both.`
 
-### Adding a student to a lesson: `add`
+### Adding a student, a lesson, or a student to a lesson: `add`
 
 Enrolls a student in a lesson. The student and the lesson can each be **new** (the app creates them) or **existing** (you refer to them by their ID).
 
-Format: `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]`
+You can also add a new student or a new lesson **on its own**, without enrolling anyone, by leaving out the other side. Enroll them later with `add s/ID l/ID`.
+
+Format: `add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]`
 
 <box type="tip" seamless>
 
@@ -146,13 +148,17 @@ existing | existing | `s/ID l/ID`
 new | existing | `s/NAME c/CONTACT slv/STUDENT_LEVEL l/ID`
 existing | new | `s/ID l/SUBJECT llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE`
 new | new | all of the above
+new | none | `s/NAME c/CONTACT slv/STUDENT_LEVEL`
+none | new | `l/SUBJECT llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE`
+
+At least one of `s/` and `l/` is needed. An existing student or lesson given on its own, such as `add s/3`, is an error that asks you for the other side, since there is nothing new to add.
 
 #### Parameters
 
 Parameter | Meaning | Needed when | Rules
 ----------|---------|-------------|------
-`s/` | The student: an ID, or the name of a new student | always | A name has at most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter. The words `s/o` and `d/o` can be part of a name, such as `Ravi s/o Kumar`; a name cannot start with the single word `O`.
-`l/` | The lesson: an ID, or the subject of a new lesson | always | A subject has at most 50 characters: letters, numbers, spaces and `.` `,` `-` `(` `)` `&` `@`, with at least one letter.
+`s/` | The student: an ID, or the name of a new student | you enroll a student, or add one | A name has at most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter. The words `s/o` and `d/o` can be part of a name, such as `Ravi s/o Kumar`; a name cannot start with the single word `O`.
+`l/` | The lesson: an ID, or the subject of a new lesson | you enroll a student in a lesson, or add one | A subject has at most 50 characters: letters, numbers, spaces and `.` `,` `-` `(` `)` `&` `@`, with at least one letter.
 `c/` | The student's contact number | the student is new | 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a `+` can start the number, such as `+65 (9123) 4567`. Duplicates are compared by the digits only.
 `slv/` | The student's level, such as `Primary 6` | the student is new | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
 `llv/` | The lesson's level, such as `Primary 6` | the lesson is new | The same as `slv/`.
@@ -179,6 +185,11 @@ Each one is followed by the result you should see.
 1. `add s/4 l/2`: Enrolled Daniel Koh [Student ID: 4] in Science [Lesson ID: 2]. Payment status: Unpaid.
 1. `add s/2 l/Physics llv/Secondary 2 d/Friday st/14:00 et/15:00 f/55`: Enrolled Bryan Lim [Student ID: 2] in Physics [Lesson ID: 7]. Payment status: Paid.
 1. `add s/1 l/4`: Enrolled Alice Tan [Student ID: 1] in English [Lesson ID: 4]. Payment status: Unpaid. The result ends with `Note: Alice Tan's level (Primary 6) differs from the lesson's level (Primary 4).` A student can join a lesson of another level, but the note asks you to check that this is intended.
+1. `add s/Nora Lim c/90000000 slv/Primary 6`: Added student Nora Lim [Student ID: 6]. Nora is not enrolled in any lesson yet, so the student list shows `Lessons: none`.
+1. `add l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50`: Added lesson Mathematics [Lesson ID: 8]. No student is enrolled yet.
+1. `add s/6 l/8`: Enrolled Nora Lim [Student ID: 6] in Mathematics [Lesson ID: 8]. Payment status: Unpaid.
+
+The result always gives the new ID, so you can use it even if an active filter hides the new record.
 
 #### Possible sources of errors
 
@@ -195,6 +206,7 @@ Command | Message
 `add s/Daniel Koh slv/Primary 6 l/1` | Missing required parameter: c/. s/Daniel Koh was read as a new student.
 `add s/1 l/2 extra words` | Missing required parameter: llv/, d/, st/, et/, f/. l/2 extra words was read as a new lesson. To use an existing lesson, give only its ID, such as l/2.
 `add s/Daniel Koh c/92223333slv/Primary 6 l/1` | slv/ was found inside the value of c/. Separate parameters with a space.
+`add s/1 l/2 x/value` | Unknown parameter: x/. Use: add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
 `add s/0 l/1` | s/0 is neither an ID nor a valid name. An ID is a positive whole number, such as s/3.
 `add s/2147483648 l/1` | ID is too large. No student or lesson has an ID above 2147483647.
 `add s/1 l/Art llv/Primary 6 d/Friday st/17:00 et/16:00 f/40` | Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start time.
@@ -202,9 +214,12 @@ Command | Message
 `add s/1 l/1 c/91234567` | c/ and slv/ can only be used when adding a new student.
 `add s/1 l/1 d/Monday` | llv/, d/, st/, et/ and f/ can only be used when adding a new lesson.
 `add s/1 s/2 l/1` | A parameter can only be specified once.
+`add s/1` | Alice Tan [Student ID: 1] already exists. To enroll them, add l/ with a lesson ID or the details of a new lesson.
+`add l/1` | Mathematics [Lesson ID: 1] already exists. To enroll a student in it, add s/ with a student ID or the details of a new student.
+`add c/90000000 slv/Primary 6` | Missing required parameter: s/.
 `add s/Daniel Koh c/12 slv/Primary 6 l/1` | Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a + can start the number, such as +65 (9123) 4567.
 `add s/1 l/History llv/Primary 6 d/Monday st/9:60 et/10:00 f/35` | Invalid start time. Use the 24-hour format, such as 9:00 or 14:30.
-`add` | Invalid command format. Use: add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
+`add` | Invalid command format. Use: add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
 
 ### Editing a student or lesson: `edit`
 
@@ -261,6 +276,8 @@ Each one starts from the sample data and is followed by the result you should se
 * Changing a lesson fee to `0` goes ahead with a note asking you to check that it is meant to be free.
 * A change in letter case still counts as an edit, including for a student's or lesson's level.
 * No data is changed if the command fails validation.
+* If the supplied values already match the stored record, TuiTracker reports that no changes were made and does not
+  rewrite the data file.
 
 #### Possible sources of errors
 
@@ -271,6 +288,8 @@ Command | Message
 `edit teacher 1 s/Alice` | Invalid command format. Use: edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL] OR edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]
 `edit student 1` | At least one field to edit must be provided.
 `edit student 1 c/90001111 c/92223333` | A parameter can only be specified once.
+`edit student 1 s/Alicia x/value` | Unknown parameter: x/. Use: edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL] OR edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]
+`edit student 1 c/92345678slv/Secondary 1` | slv/ was found inside the value of c/. Separate parameters with a space.
 `edit student 1 l/English` | Only s/, c/ and slv/ can be used when editing a student.
 `edit lesson 1 c/90001111` | Only l/, llv/, d/, st/, et/ and f/ can be used when editing a lesson.
 `edit student 0 c/90001111` | ID must be a positive whole number.
@@ -304,7 +323,7 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 
 **Successful deletion:**
 
-* The result box confirms the deleted record, for example `Deleted student: Alice Tan (ID: 12)`.
+* The result box confirms the deleted record, for example `Deleted student: Alice Tan (ID: 12)`. If the deleted student was selected in the schedule, the result also says `The schedule now shows all lessons.`
 * Deleting a lesson confirms its subject, level, timeslot and ID, for example `Deleted lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 7)`.
 
 **Notes:**
@@ -429,6 +448,8 @@ Shows all recurring lessons in a Monday-to-Sunday weekly timeline. Each day runs
 
 Use `schedule` to show all lessons, or `schedule student 1` to show only the lessons attended by student `1`. The `student` keyword ignores letter case. The ID must be a positive whole number belonging to an existing student. An empty schedule for an existing student still shows all seven days with `No lessons`. Neither form changes an active list filter; entering plain `schedule` removes any earlier student selection from the schedule.
 
+If you delete the student whose schedule is displayed, the schedule switches to showing all lessons.
+
 The schedule repeats each week because lessons are stored by weekday and time, without calendar dates. The current weekday is outlined. Scroll horizontally to see all seven day columns, and scroll within a day to move through its 24-hour timeline. Lessons whose labels would overlap are grouped into one clickable bar or marker; the details window keeps every lesson separate. A group does not necessarily mean a timetable clash. Actual overlapping times are highlighted, with a warning naming the affected day. Use `list` or `filter` to switch back to a student or lesson list.
 
 The schedule can be explored entirely from the keyboard:
@@ -455,7 +476,9 @@ Format: `exit`
 
 ### Saving the data
 
-TuiTracker automatically saves data after every command. You do not need to save manually.
+TuiTracker automatically saves data after each data-changing command. You do not need to save manually. 
+
+If the data file cannot be loaded at startup, data-changing commands are blocked until you repair or replace the file and restart TuiTracker.
 
 ### Editing the data file
 
@@ -464,7 +487,8 @@ TuiTracker data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, TuiTracker starts with no students or lessons at the next run. The invalid file remains on disk until you run a command (TuiTracker saves after every command). Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, TuiTracker warns you at the next launch and opens in read-only recovery mode. It shows an empty list, but leaves the invalid file untouched and blocks data-changing commands. Back up the file, repair or replace it, then restart TuiTracker to resume editing.<br>
+If your changes make the data file invalid, TuiTracker starts with no students or lessons at the next run. The invalid file remains on disk until you run a command that changes stored data. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause TuiTracker to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
@@ -481,17 +505,11 @@ _Details coming soon ..._
 
 --------------------------------------------------------------------------------------------------------------------
 
-## Known issues
-
-1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
-
---------------------------------------------------------------------------------------------------------------------
-
 ## Command summary
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> _Examples to be added by the owner of `add`._
+**Add**    | `add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> e.g., `add s/Daniel Koh c/92223333 slv/Primary 6 l/1`, `add s/Nora Lim c/90000000 slv/Primary 6`, `add l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50`
 **Edit**   | `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]` <br> `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]`
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
 **Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid`, `filter [l/SUBJECT] [llv/LESSON_LEVEL]` or `filter slv/STUDENT_LEVEL` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`, `filter slv/Primary 6`

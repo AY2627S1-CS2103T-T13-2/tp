@@ -1,54 +1,41 @@
 @startuml
 !include style.puml
-skinparam arrowThickness 1.1
-skinparam arrowColor MODEL_COLOR
 skinparam classBackgroundColor MODEL_COLOR
+skinparam arrowColor MODEL_COLOR
 
-Package Model as ModelPackage <<Rectangle>>{
-Class "<<interface>>\nReadOnlyAddressBook" as ReadOnlyAddressBook
-Class "<<interface>>\nReadOnlyUserPrefs" as ReadOnlyUserPrefs
-Class "<<interface>>\nModel" as Model
-Class AddressBook
-Class ModelManager
-Class UserPrefs
-
-Class UniquePersonList
-Class Person
-Class Address
-Class Email
-Class Name
-Class Phone
-Class Tag
-
-Class I #FFFFFF
+package Model <<Rectangle>> {
+interface "Model" as ModelApi
+interface ReadOnlyTuiTracker
+interface ReadOnlyUserPrefs
+class ModelManager
+class TuiTracker
+class UserPrefs
+class UniqueStudentList
+class UniqueLessonList
+class EnrollmentList
+class IdGenerator
+class Student
+class Lesson
+class Enrollment
+class StudentId
+class LessonId
 }
 
-Class HiddenOutside #FFFFFF
-HiddenOutside ..> Model
+ModelManager ..|> ModelApi
+TuiTracker ..|> ReadOnlyTuiTracker
+UserPrefs ..|> ReadOnlyUserPrefs
+ModelManager *--> TuiTracker
+ModelManager *--> UserPrefs
+TuiTracker *--> UniqueStudentList
+TuiTracker *--> UniqueLessonList
+TuiTracker *--> EnrollmentList
+TuiTracker *--> IdGenerator
 
-AddressBook .up.|> ReadOnlyAddressBook
-
-ModelManager .up.|> Model
-Model .right.> ReadOnlyUserPrefs
-Model .left.> ReadOnlyAddressBook
-ModelManager -left-> "1" AddressBook
-ModelManager -right-> "1" UserPrefs
-UserPrefs .up.|> ReadOnlyUserPrefs
-
-AddressBook *--> "1" UniquePersonList
-UniquePersonList --> "~* all" Person
-Person *--> Name
-Person *--> Phone
-Person *--> Email
-Person *--> Address
-Person *--> "*" Tag
-
-Person -[hidden]up--> I
-UniquePersonList -[hidden]right-> I
-
-Name -[hidden]right-> Phone
-Phone -[hidden]right-> Address
-Address -[hidden]right-> Email
-
-ModelManager --> "~* filtered" Person
+UniqueStudentList --> "0..*" Student
+UniqueLessonList --> "0..*" Lesson
+EnrollmentList --> "0..*" Enrollment
+Student --> StudentId
+Lesson --> LessonId
+Enrollment --> StudentId : studentId
+Enrollment --> LessonId : lessonId
 @enduml

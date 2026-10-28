@@ -122,7 +122,8 @@ public class EditCommandTest {
         StudentEdit edit = new StudentEdit(ALICE.getId(), Optional.of(ALICE.getName()),
                 Optional.of(ALICE.getContact()), Optional.of(ALICE.getLevel()));
 
-        assertCommandSuccess(new EditCommand(edit), model, MESSAGE_NO_CHANGES, typicalModel());
+        assertCommandSuccess(new EditCommand(edit), model,
+                CommandResult.createWithoutDataChange(MESSAGE_NO_CHANGES), typicalModel());
     }
 
     @Test
@@ -221,7 +222,8 @@ public class EditCommandTest {
         LessonEdit edit = new LessonEdit(MATHEMATICS.getId(), Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.of(MATHEMATICS.getFee()));
 
-        assertCommandSuccess(new EditCommand(edit), typicalModel(), MESSAGE_NO_CHANGES, typicalModel());
+        assertCommandSuccess(new EditCommand(edit), typicalModel(),
+                CommandResult.createWithoutDataChange(MESSAGE_NO_CHANGES), typicalModel());
     }
 
     @Test

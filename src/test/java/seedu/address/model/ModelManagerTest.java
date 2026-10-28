@@ -364,6 +364,26 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void deleteStudent_selectedForSchedule_clearsScheduleSelection() {
+        modelManager.setScheduleStudentId(Optional.of(ALICE.getId()));
+        modelManager.setListView(ListView.SCHEDULE);
+
+        modelManager.deleteStudent(ALICE.getId());
+
+        assertEquals(Optional.empty(), modelManager.getScheduleStudentId());
+        assertEquals(ListView.SCHEDULE, modelManager.getListView());
+    }
+
+    @Test
+    public void deleteStudent_otherThanScheduleSelection_keepsScheduleSelection() {
+        modelManager.setScheduleStudentId(Optional.of(ALICE.getId()));
+
+        modelManager.deleteStudent(BRYAN.getId());
+
+        assertEquals(Optional.of(ALICE.getId()), modelManager.getScheduleStudentId());
+    }
+
+    @Test
     public void filterStudentsByPaidStatus_paid_showsOnlyPaidStudents() {
         modelManager.filterStudentsByPaidStatus(true);
 
