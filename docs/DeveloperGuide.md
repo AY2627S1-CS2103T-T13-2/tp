@@ -223,15 +223,47 @@ The order is deliberate. Duplicates are checked **before** clashes because an id
 
 ### Edit feature
 
-The `edit` command changes the specified fields of one existing student or lesson while preserving its ID and related data. `EditCommandParser` creates an `EditCommand` containing either a `StudentEdit` or a `LessonEdit`; fields that were not supplied remain empty in that edit request and retain their existing values during execution. `EditCommand` builds the complete updated record and validates duplicates, the final timeslot and clashes before asking the `Model` to replace the original.
+The `edit` command changes the specified fields of one existing student or lesson while preserving its ID and related data.
 
-Duplicate students are matched using `Name#isSameName` and `Contact#isSameContact`; duplicate lessons use `Subject#isSameSubject`, level equality and the final timeslot. Edit's private lookup helpers exclude the record being edited, so that changing only formatting or letter case is not mistaken for a duplicate or a clash. The success message includes a note only when an edited level mismatches an enrollment, the student's final name matches another student's name but their contacts differ, or the edit explicitly changes a lesson's fee to `0`.
+#### Parsing the arguments
+
+`EditCommandParser` validates the record type, ID, allowed prefixes and individual field values. It creates an `EditCommand` containing either a `StudentEdit` or a `LessonEdit`. Each supplied field is wrapped in an `Optional`; omitted fields remain empty in the request so execution can retain their stored values. A lesson's start and end are parsed independently because either can be omitted; their final relationship is checked during execution.
+
+#### Executing the command
+
+`EditCommand` retrieves the original record and merges the supplied fields with its unchanged fields. For a lesson, it validates the merged start and end before constructing the updated record. After no-change detection, it checks duplicates and, for a lesson, clashes before asking `Model` to replace the original. The model preserves related records and reapplies active filters. The displayed view and selected sort remain unchanged, so an edited record can disappear from a filter without being deleted.
+
+Duplicate students are matched using `Name#isSameName` and `Contact#isSameContact`; duplicate lessons use `Subject#isSameSubject`, level equality and the final timeslot. Edit's private lookup helpers exclude the record being edited, so that changing only formatting or letter case is not mistaken for a duplicate or a clash. A successful edit adds level-mismatch notes when a supplied level differs from an enrollment's level. It checks for a namesake note only when `s/` or `c/` is supplied and another student matches the final name but has a different contact. A supplied fee of `0` also adds a note. A no-change result returns before these notes are generated.
 
 If the requested details are identical to the stored record, `EditCommand` returns `No changes were made.` and marks the result so that `LogicManager` skips saving. A case-only level edit is still treated as a real edit because it changes the stored spelling, so it follows the normal save-and-rollback path.
 
 The sequence diagram below shows `execute("edit student 1 c/90001111")`, which updates only an existing student's contact number. Less-important method parameters, duplicate checking, note generation, the no-change path and the error paths are omitted to keep the diagram focused. The common model snapshot, storage save and rollback interactions performed by `LogicManager` are also omitted. Editing a lesson follows the same overall flow, with validation of its final timeslot, duplicates and clashes before the update.
 
 <puml src="diagrams/EditSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `edit` Command" />
+
+#### Design considerations
+
+**Aspect: validating a partial edit**
+
+* **Alternative 1 (current choice):** merge the request into a complete record before applying cross-field checks.
+  * Pros: A start-only or end-only change is checked against the retained time, and every changed record follows the same duplicate and clash rules.
+  * Cons: A hand-edited file can already contain duplicate students or clashing lessons. An otherwise unrelated edit can be rejected because the final record still has that conflict.
+* **Alternative 2:** check only the fields explicitly supplied.
+  * Pros: Unrelated changes can proceed despite an existing conflict in hand-edited data.
+  * Cons: Rules involving multiple fields need special cases, and a successful edit can leave a known conflict in the resulting record.
+
+**Aspect: saving an edit that changes nothing**
+
+* **Alternative 1 (current choice):** return `CommandResult.createWithoutDataChange` when the final details match the original, so `LogicManager` skips the write.
+  * Pros: Avoids an unnecessary save and prevents a harmless edit from failing solely because storage is unwritable. Comparing level spelling separately preserves case-only edits even though `Level#equals` ignores case.
+  * Cons: No-change detection must account for the difference between matching equality and the stored spelling.
+* **Alternative 2:** save after every valid edit request.
+  * Pros: One persistence path for every successful request.
+  * Cons: Rewrites unchanged data and can report a save failure even when the user requested no actual change.
+
+#### Testing
+
+`EditCommandParserTest` covers optional fields, independent start/end inputs, IDs, case handling, wrong or repeated prefixes, unknown parameters and missing separators. `EditCommandTest` checks preservation of identity and enrollments, duplicate and clash rejection, midnight validation, warning notes, no-change results and case-only level edits. `LogicManagerTest` verifies that unchanged edits skip saving and that a failed case-only level edit restores the stored spelling. The manual-testing appendix covers representative command and view interactions.
 
 ### Delete feature
 
@@ -264,9 +296,41 @@ The activity diagram summarizes format validation, lookup, deletion, enrollment 
 
 The `list` command clears any active filter and switches the interface to the requested student or lesson list. If no view is supplied, `ListCommandParser` defaults to the student list. It leaves the selected sort order unchanged. Without a prior `sort` command, students use ascending ID and lessons use weekday, start time, then ID; after `sort`, `list` shows the full records in that selected order.
 
+#### Parsing the arguments
+
+`ListCommandParser` trims the arguments and accepts zero or one case-insensitive view keyword. It reports separate errors for an unknown view, a repeated view and conflicting views. Only `ListView.STUDENTS` or `ListView.LESSONS` can be passed to `ListCommand`; the command's constructor rejects `SCHEDULE`.
+
+#### Executing the command
+
+`ListCommand#execute` resets filters, clears the selected schedule student and sets the requested list view. It reads the selected list's size to choose an empty, singular or plural result message. `isDataMutating()` returns `false`, so `LogicManager` does not save the tracker. Clearing the schedule selection also prevents a later deletion from reporting a change to a student schedule that List has already left.
+
 The sequence diagram below shows `execute("list lessons")` when four lessons exist. The invalid-view and empty-list paths are omitted because they do not change the main interaction between the Logic and Model components.
 
 <puml src="diagrams/ListSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `list` Command" />
+
+#### Design considerations
+
+**Aspect: retaining the selected sort order**
+
+* **Alternative 1 (current choice):** reset filters while keeping each list's sort comparator.
+  * Pros: `list` restores the full roster without undoing the user's chosen ordering; sorting and filtering remain separate operations.
+  * Cons: The result may differ from the default ID or chronological order, so the retained-sort behaviour needs to be documented.
+* **Alternative 2:** reset both filters and sorting.
+  * Pros: Every List result has one predictable default order.
+  * Cons: Users must repeat `sort` whenever they clear a filter.
+
+**Aspect: selecting the list view**
+
+* **Alternative 1 (current choice):** an omitted view means Students, matching the initial application view; either List form clears the previous schedule student.
+  * Pros: The short `list` command has a fixed meaning, and list navigation leaves no stale student-specific schedule selection.
+  * Cons: Users who want lessons must type `list lessons`; revisiting a particular student's schedule requires `schedule student ID`.
+* **Alternative 2:** reuse the last list view and retain the schedule student.
+  * Pros: Returning to an earlier view requires less repeated input.
+  * Cons: The same command depends on navigation history, and a hidden schedule selection can affect later command feedback.
+
+#### Testing
+
+`ListCommandParserTest` covers default and case-insensitive views, extra text, repeated views and conflicting views. `ListCommandTest` checks filter clearing, both view transitions from a selected student schedule, empty/singular/plural results and the read-only command flag. The manual-testing appendix also checks retained sorting and representative invalid inputs.
 
 ### Mark and unmark features
 
@@ -1064,6 +1128,10 @@ On first launch, the sample data has Alice Tan (student ID 1), Bryan Lim (ID 2),
 7. Enter `sort student name desc`, followed by `list students`. Expected: all three students remain sorted by descending name, with Chloe first; `list` does not restore ID order.
 8. Enter `list students students`. Expected: `The view can only be specified once.` The displayed list remains unchanged.
 9. Enter `list tutors`. Expected: `Invalid view. Use: list [students|lessons]`. The displayed list remains unchanged.
+10. Enter `list students lessons`. Expected: `Choose either students or lessons, not both.` The displayed list remains unchanged.
+11. Enter `schedule student 1`, then `list lessons`, then `delete student 1`. Expected: List displays all four lessons. Deletion confirms Alice's removal without saying `The schedule now shows all lessons.`, because List has cleared the student schedule selection.
+
+For an empty-list check, use a separate fresh folder. Enter `delete student 1`, `delete student 2` and `delete student 3`, then `list students`. Expected: the Students view is empty and reports that no students were found. Then enter `delete lesson 1`, `delete lesson 2`, `delete lesson 3` and `delete lesson 4`, followed by `list lessons`. Expected: the Lessons view is empty and reports that no lessons were found.
 
 ### Adding students, lessons and enrollments
 
@@ -1136,6 +1204,9 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
 5. Enter `edit student 1 s/Bryan Lim c/98765432`. Expected: the app identifies student ID 2 as a duplicate; neither student changes.
 6. Enter `edit lesson 1 st/17:00`. Expected: the app asks for an end time later than the final start time; Mathematics remains at Monday 15:00-16:30.
 7. Enter `edit lesson 2 d/Monday st/16:00 et/17:00`. Expected: the app reports a clash with Mathematics (lesson ID 1); lesson 2 remains unchanged.
+8. Enter `edit student 1 slv/primary 6`, then `list students`. Expected: the edit succeeds, and Alice's stored level spelling becomes `primary 6` while her ID, enrollments and payment status remain unchanged. Repeat the edit. Expected: `No changes were made.`
+9. Enter `list lessons`, then `edit student 1 c/90002222`. Expected: the Lessons view remains visible and the edit succeeds. Enter `list students` to confirm Alice's new contact.
+10. Enter `filter slv/Primary 6`, then `edit student 1 slv/Primary 5`. Expected: the edit succeeds with level-mismatch notes, but Alice disappears from the filtered Students view because her own level no longer matches. Enter `list students` to confirm she is still stored at `Primary 5`.
 
 ### Deleting a student or lesson
 

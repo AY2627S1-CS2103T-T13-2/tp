@@ -54,6 +54,11 @@ activate Model
 Model --> ListCommand
 deactivate Model
 
+ListCommand -> Model : setScheduleStudentId(Optional.empty())
+activate Model
+Model --> ListCommand
+deactivate Model
+
 ListCommand -> Model : setListView(LESSONS)
 activate Model
 Model --> ListCommand
