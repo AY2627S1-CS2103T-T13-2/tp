@@ -17,12 +17,13 @@ public class Contact {
     public static final int MAX_LENGTH = 25;
 
     public static final String MESSAGE_CONSTRAINTS = String.format("Invalid contact. Use %d to %d digits, at most %d "
-            + "characters in all. Groups of digits can be separated by one space or hyphen, a group can be in "
-            + "brackets, and a + can start the number, such as +65 (9123) 4567.", MIN_DIGITS, MAX_DIGITS, MAX_LENGTH);
+            + "characters in all. Digits can be split into groups by brackets or by a single space or hyphen, and a + "
+            + "can start the number, such as +65 (9123) 4567.", MIN_DIGITS, MAX_DIGITS, MAX_LENGTH);
 
     /**
      * An optional plus sign, then groups of digits separated by at most one space or hyphen, where a group may be in
-     * brackets, such as {@code +65 (9123) 4567} or {@code 9123-4567}.
+     * brackets, such as {@code +65 (9123) 4567} or {@code 9123-4567}. A group in brackets needs no space or hyphen
+     * next to it, so {@code +65(9123)4567} is also allowed.
      */
     public static final String VALIDATION_REGEX = "\\+?(\\(\\d+\\)|\\d+)([ -]?(\\(\\d+\\)|\\d+))*";
 
