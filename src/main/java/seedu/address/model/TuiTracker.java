@@ -83,8 +83,9 @@ public class TuiTracker implements ReadOnlyTuiTracker {
 
         int highestStudentId = newData.getStudentList().stream().mapToInt(s -> s.getId().value).max().orElse(0);
         int highestLessonId = newData.getLessonList().stream().mapToInt(l -> l.getId().value).max().orElse(0);
-        idGenerator.reset(Math.max(newData.getNextStudentId(), highestStudentId + 1),
-                Math.max(newData.getNextLessonId(), highestLessonId + 1));
+        // Worked out in long, since the next ID after Integer.MAX_VALUE does not fit in an int.
+        idGenerator.reset(Math.max(newData.getNextStudentId(), highestStudentId + 1L),
+                Math.max(newData.getNextLessonId(), highestLessonId + 1L));
         logger.fine("Replaced all data: " + newData.getStudentList().size() + " students, "
                 + newData.getLessonList().size() + " lessons, " + newData.getEnrollmentList().size()
                 + " enrollments");
@@ -333,12 +334,12 @@ public class TuiTracker implements ReadOnlyTuiTracker {
     }
 
     @Override
-    public int getNextStudentId() {
+    public long getNextStudentId() {
         return idGenerator.getNextStudentId();
     }
 
     @Override
-    public int getNextLessonId() {
+    public long getNextLessonId() {
         return idGenerator.getNextLessonId();
     }
 

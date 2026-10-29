@@ -26,6 +26,33 @@ public class IdGeneratorTest {
     }
 
     @Test
+    public void newIds_lastIdHandedOut_thenNoIdLeft() {
+        IdGenerator generator = new IdGenerator(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertTrue(generator.hasStudentIdLeft());
+        assertTrue(generator.hasLessonIdLeft());
+
+        assertEquals(new StudentId(Integer.MAX_VALUE), generator.newStudentId());
+        assertEquals(new LessonId(Integer.MAX_VALUE), generator.newLessonId());
+
+        assertFalse(generator.hasStudentIdLeft());
+        assertFalse(generator.hasLessonIdLeft());
+        assertEquals(IdGenerator.ALL_IDS_USED, generator.getNextStudentId()); // the counter does not wrap around
+        assertThrows(IllegalStateException.class, generator::newStudentId);
+        assertThrows(IllegalStateException.class, generator::newLessonId);
+        assertEquals(IdGenerator.ALL_IDS_USED, generator.getNextLessonId());
+    }
+
+    @Test
+    public void constructor_allIdsUsed_hasNoIdLeft() {
+        IdGenerator generator = new IdGenerator(IdGenerator.ALL_IDS_USED, 1);
+
+        assertFalse(generator.hasStudentIdLeft());
+        assertTrue(generator.hasLessonIdLeft());
+        assertThrows(IllegalArgumentException.class, () -> new IdGenerator(IdGenerator.ALL_IDS_USED + 1, 1));
+        assertThrows(IllegalArgumentException.class, () -> new IdGenerator(1, IdGenerator.ALL_IDS_USED + 1));
+    }
+
+    @Test
     public void constructor_invalidCounter_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> new IdGenerator(0, 1));
         assertThrows(IllegalArgumentException.class, () -> new IdGenerator(1, 0));

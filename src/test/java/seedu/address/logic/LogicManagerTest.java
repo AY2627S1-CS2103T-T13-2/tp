@@ -252,7 +252,7 @@ public class LogicManagerTest {
     @Test
     public void execute_failedSave_doesNotUseUpAnId() {
         Logic failingLogic = logicThatChangesDataThenFailsToSave(DUMMY_IO_EXCEPTION, null);
-        int nextStudentIdBefore = model.getTuiTracker().getNextStudentId();
+        long nextStudentIdBefore = model.getTuiTracker().getNextStudentId();
 
         Assertions.assertThrows(CommandException.class, () -> failingLogic.execute("anything"));
 

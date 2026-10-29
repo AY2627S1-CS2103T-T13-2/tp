@@ -28,13 +28,27 @@ public interface ReadOnlyTuiTracker {
     List<Enrollment> getEnrollmentList();
 
     /**
-     * Returns the ID the next new student will get.
+     * Returns the ID the next new student will get, or {@link IdGenerator#ALL_IDS_USED} if every ID has been used.
      */
-    int getNextStudentId();
+    long getNextStudentId();
 
     /**
-     * Returns the ID the next new lesson will get.
+     * Returns the ID the next new lesson will get, or {@link IdGenerator#ALL_IDS_USED} if every ID has been used.
      */
-    int getNextLessonId();
+    long getNextLessonId();
+
+    /**
+     * Returns true if a new student can still get an ID.
+     */
+    default boolean hasStudentIdLeft() {
+        return getNextStudentId() < IdGenerator.ALL_IDS_USED;
+    }
+
+    /**
+     * Returns true if a new lesson can still get an ID.
+     */
+    default boolean hasLessonIdLeft() {
+        return getNextLessonId() < IdGenerator.ALL_IDS_USED;
+    }
 
 }

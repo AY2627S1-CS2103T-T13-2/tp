@@ -231,6 +231,8 @@ Command | Message
 `add s/1 l/History llv/Primary 6 d/Monday st/9:60 et/10:00 f/35` | Invalid start time. Use the 24-hour format, such as 9:00 or 14:30.
 `add` | Invalid command format. Use: add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
 
+IDs are never reused, so each kind of record can have at most 2147483647 IDs. Once every student ID has been used, which can only happen if the data file was edited, adding a new student shows `Cannot add a new student: every student ID up to 2147483647 has been used.` A new lesson shows the same message for lesson IDs. Existing students can still be enrolled in existing lessons.
+
 ### Editing a student or lesson: `edit`
 
 Updates one or more details of an existing student or lesson. Details that are not included in the command remain unchanged.

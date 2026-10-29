@@ -18,8 +18,16 @@ public class IdGenerator {
     /** The ID of the first student and of the first lesson. */
     public static final int FIRST_ID = 1;
 
-    private int nextStudentId;
-    private int nextLessonId;
+    /**
+     * The value of a counter once its last ID, {@link Integer#MAX_VALUE}, has been handed out. The counters are
+     * {@code long} so that they can hold this value instead of wrapping around to a negative number.
+     */
+    public static final long ALL_IDS_USED = (long) Integer.MAX_VALUE + 1;
+
+    private static final String MESSAGE_NO_ID_LEFT = "Every ID up to " + Integer.MAX_VALUE + " has been used.";
+
+    private long nextStudentId;
+    private long nextLessonId;
 
     /**
      * Creates a generator whose first student ID and first lesson ID are both 1.
@@ -31,43 +39,62 @@ public class IdGenerator {
     /**
      * Creates a generator that will hand out the given IDs next.
      */
-    public IdGenerator(int nextStudentId, int nextLessonId) {
-        checkArgument(StudentId.isValidId(nextStudentId), StudentId.MESSAGE_CONSTRAINTS);
-        checkArgument(LessonId.isValidId(nextLessonId), LessonId.MESSAGE_CONSTRAINTS);
-        this.nextStudentId = nextStudentId;
-        this.nextLessonId = nextLessonId;
+    public IdGenerator(long nextStudentId, long nextLessonId) {
+        reset(nextStudentId, nextLessonId);
     }
 
     /**
      * Returns a new student ID and moves the counter on.
+     *
+     * @throws IllegalStateException if every student ID has been used.
      */
     public StudentId newStudentId() {
-        return new StudentId(nextStudentId++);
+        if (!hasStudentIdLeft()) {
+            throw new IllegalStateException(MESSAGE_NO_ID_LEFT);
+        }
+        return new StudentId((int) nextStudentId++);
     }
 
     /**
      * Returns a new lesson ID and moves the counter on.
+     *
+     * @throws IllegalStateException if every lesson ID has been used.
      */
     public LessonId newLessonId() {
-        return new LessonId(nextLessonId++);
+        if (!hasLessonIdLeft()) {
+            throw new IllegalStateException(MESSAGE_NO_ID_LEFT);
+        }
+        return new LessonId((int) nextLessonId++);
     }
 
-    public int getNextStudentId() {
+    public boolean hasStudentIdLeft() {
+        return nextStudentId < ALL_IDS_USED;
+    }
+
+    public boolean hasLessonIdLeft() {
+        return nextLessonId < ALL_IDS_USED;
+    }
+
+    public long getNextStudentId() {
         return nextStudentId;
     }
 
-    public int getNextLessonId() {
+    public long getNextLessonId() {
         return nextLessonId;
     }
 
     /**
-     * Sets both counters to exactly the given values.
+     * Sets both counters to exactly the given values. A counter can be {@link #ALL_IDS_USED}, but no higher.
      */
-    public void reset(int nextStudentId, int nextLessonId) {
-        checkArgument(StudentId.isValidId(nextStudentId), StudentId.MESSAGE_CONSTRAINTS);
-        checkArgument(LessonId.isValidId(nextLessonId), LessonId.MESSAGE_CONSTRAINTS);
+    public void reset(long nextStudentId, long nextLessonId) {
+        checkArgument(isValidCounter(nextStudentId), StudentId.MESSAGE_CONSTRAINTS);
+        checkArgument(isValidCounter(nextLessonId), LessonId.MESSAGE_CONSTRAINTS);
         this.nextStudentId = nextStudentId;
         this.nextLessonId = nextLessonId;
+    }
+
+    private static boolean isValidCounter(long counter) {
+        return counter >= FIRST_ID && counter <= ALL_IDS_USED;
     }
 
     @Override

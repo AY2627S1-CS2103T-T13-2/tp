@@ -139,6 +139,21 @@ public class TuiTrackerTest {
     }
 
     @Test
+    public void constructor_recordsWithTheLargestIds_noIdLeft() {
+        Student last = new StudentBuilder(ALICE).withId(Integer.MAX_VALUE).build();
+        Lesson lastLesson = new LessonBuilder(MATHEMATICS).withId(Integer.MAX_VALUE).build();
+
+        TuiTracker built = new TuiTrackerBuilder().withStudent(last).withLesson(lastLesson).build();
+
+        assertEquals(IdGenerator.ALL_IDS_USED, built.getNextStudentId());
+        assertEquals(IdGenerator.ALL_IDS_USED, built.getNextLessonId());
+        assertFalse(built.hasStudentIdLeft());
+        assertFalse(built.hasLessonIdLeft());
+        // LogicManager copies the data before every command that changes it
+        assertEquals(built, new TuiTracker(built));
+    }
+
+    @Test
     public void constructor_copyIsIndependentOfTheOriginal() {
         TuiTracker copy = new TuiTracker(tracker);
 
@@ -308,7 +323,7 @@ public class TuiTrackerTest {
 
     @Test
     public void addStudent_nullArgument_throwsNullPointerExceptionAndUsesNoId() {
-        int nextStudentId = tracker.getNextStudentId();
+        long nextStudentId = tracker.getNextStudentId();
 
         assertThrows(NullPointerException.class, () ->
                 tracker.addStudent(null, DANIEL.getContact(), DANIEL.getLevel()));
@@ -317,7 +332,7 @@ public class TuiTrackerTest {
 
     @Test
     public void addLesson_nullArgument_throwsNullPointerExceptionAndUsesNoId() {
-        int nextLessonId = tracker.getNextLessonId();
+        long nextLessonId = tracker.getNextLessonId();
 
         assertThrows(NullPointerException.class, () ->
                 tracker.addLesson(null, MATHEMATICS.getLevel(), MATHEMATICS.getTimeslot(), MATHEMATICS.getFee()));

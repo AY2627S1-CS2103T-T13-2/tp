@@ -23,8 +23,8 @@ public class TuiTrackerBuilder {
     private final List<Student> students = new ArrayList<>();
     private final List<Lesson> lessons = new ArrayList<>();
     private final List<Enrollment> enrollments = new ArrayList<>();
-    private int nextStudentId = 1;
-    private int nextLessonId = 1;
+    private long nextStudentId = 1;
+    private long nextLessonId = 1;
 
     /**
      * Adds {@code student} to the TuiTracker that we are building.
@@ -53,7 +53,7 @@ public class TuiTrackerBuilder {
     /**
      * Sets the IDs that the next new student and the next new lesson will get.
      */
-    public TuiTrackerBuilder withNextIds(int nextStudentId, int nextLessonId) {
+    public TuiTrackerBuilder withNextIds(long nextStudentId, long nextLessonId) {
         this.nextStudentId = nextStudentId;
         this.nextLessonId = nextLessonId;
         return this;
@@ -80,12 +80,12 @@ public class TuiTrackerBuilder {
             }
 
             @Override
-            public int getNextStudentId() {
+            public long getNextStudentId() {
                 return nextStudentId;
             }
 
             @Override
-            public int getNextLessonId() {
+            public long getNextLessonId() {
                 return nextLessonId;
             }
         });
