@@ -491,6 +491,66 @@ Use case ends.
     * 6a2. System makes no changes.
     * Use case ends.
 
+* 9a. The changes cannot be saved.
+
+    * 9a1. System restores the original data.
+    * 9a2. System displays the applicable file-write or permission error.
+    * Use case ends.
+
+**Use case: Add a student or a lesson on its own**
+
+**MSS**
+
+1.  User enters an add command that gives the details of a new student, or of a new lesson, but not both.
+2.  System validates the command format and the parameters that the new record needs.
+3.  System checks that the new record is not a duplicate, and that a new lesson does not clash with another lesson on the same day.
+4.  System prepares a note for anything that is probably a mistake but might be intended.
+5.  System creates the record and assigns it a unique ID.
+6.  System saves the changes and displays the new record's ID, followed by any notes. Nobody is enrolled.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The command has an invalid format or a required parameter is missing.
+
+    * 1a1. System displays an error message that names the missing parameter.
+    * Use case ends.
+
+* 1b. The command gives the ID of an existing student or lesson instead of the details of a new one, such as `add s/3`.
+
+    * 1b1. System displays a message that the record already exists and asks for the other side, so that the user can enrol them.
+    * 1b2. System makes no changes.
+    * Use case ends.
+
+* 1c. The ID given does not belong to any student or lesson.
+
+    * 1c1. System displays an error message.
+    * Use case ends.
+
+* 3a. The new student or lesson is a duplicate.
+
+    * 3a1. System displays an error message that instructs the user to use the existing ID.
+    * 3a2. System makes no changes.
+    * Use case ends.
+
+* 3b. The new lesson clashes with an existing lesson.
+
+    * 3b1. System displays a clash message naming the existing lesson and its timeslot.
+    * 3b2. System makes no changes.
+    * Use case ends.
+
+* 4a. The new student has the same name as an existing student with a different contact, or the new lesson has a fee of 0.
+
+    * 4a1. System continues and adds a note for the user to check.
+    * Use case resumes at step 5.
+
+* 6a. The changes cannot be saved.
+
+    * 6a1. System restores the original data.
+    * 6a2. System displays the applicable file-write or permission error.
+    * Use case ends.
+
 **Use case: View students or lessons**
 
 **MSS**
