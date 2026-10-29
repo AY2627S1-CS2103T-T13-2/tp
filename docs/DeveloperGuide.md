@@ -77,6 +77,11 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * displays `Student` and `Lesson` objects from the `Model` component.
 
+`CommandBox` manages user text input and keyboard shortcuts. It delegates session-scoped command recall and command-word completion to `CommandHistory`:
+* Successful commands are recorded in memory in `CommandHistory`; consecutive duplicates are stored only once.
+* The `Up` and `Down` arrow keys traverse through previous commands (`previous()` and `next()`), automatically saving and restoring any unsubmitted text draft when navigating back to the newest position.
+* The `Tab` key triggers autocompletion via `CommandHistory#completeCommandWord`, completing the unique matching command word.
+
 ### Logic component
 
 **API**: [`Logic.java`](https://github.com/AY2627S1-CS2103T-T13-2/tp/blob/master/src/main/java/seedu/address/logic/Logic.java)
@@ -263,24 +268,49 @@ The sequence diagram below shows `execute("list lessons")` when four lessons exi
 
 <puml src="diagrams/ListSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `list` Command" />
 
-### Mark feature
+### Mark and unmark features
 
-The `mark` command records that a student has paid for the current calendar month. `MarkCommandParser` accepts one
-positive student ID and constructs a `MarkCommand`. During execution, the command first looks up the student, then
-checks that the student is not already marked as paid before asking `Model` to update the payment status. The command
-returns a successful `CommandResult` containing the student's name. Invalid IDs, missing students and students who
-are already paid take the corresponding error paths and do not change the model.
+The `mark` command records that students have paid for the current calendar month, while the `unmark` command reverts their payment status to unpaid (e.g. to correct an accidental payment entry).
 
-The sequence diagram below shows the successful execution of `execute("mark 1")` for an existing unpaid student.
+Both commands share a unified syntax and execution pattern:
+
+* **Student mode (`mark ID [MORE_IDS]...` / `unmark ID [MORE_IDS]...`)**: Accepts one or more positive whole-number student IDs separated by whitespace. `MarkCommandParser` / `UnmarkCommandParser` parses each token via `ParserUtil#parseStudentId`, and deduplicates the list using a `LinkedHashSet` to preserve the user's input order while discarding duplicate IDs.
+* **Lesson mode (`mark lesson LESSON_ID` / `unmark lesson LESSON_ID`)**: Case-insensitively checks if the first argument token is `lesson`. If so, exactly one subsequent token is parsed as a positive whole-number lesson ID via `ParserUtil#parseLessonId`.
+
+If the user provides an empty argument string, extraneous parameters after `lesson LESSON_ID`, or non-positive/malformed numbers, a `ParseException` with `MESSAGE_INVALID_COMMAND_FORMAT` is thrown.
+
+During execution, `MarkCommand` and `UnmarkCommand` branch based on the target type:
+
+* **Lesson execution**:
+  1. Retrieves the lesson via `Model#findLesson(LessonId)`. If not found, throws a `CommandException` (`MESSAGE_LESSON_NOT_FOUND`).
+  2. Retrieves enrolled students via `Model#getStudentsIn(LessonId)`. If no students are enrolled in the lesson, throws a `CommandException` (`MESSAGE_NO_STUDENTS_IN_LESSON`).
+  3. Partitions the enrolled students into eligible students (unpaid for `mark`, paid for `unmark`) and already-updated students (paid for `mark`, unpaid for `unmark`).
+  4. If all enrolled students are already in the target state, throws a `CommandException` (`MESSAGE_LESSON_ALL_ALREADY_PAID` or `MESSAGE_LESSON_ALL_ALREADY_UNPAID`).
+  5. Otherwise, updates each eligible student in the model via `Model#markPaid` / `Model#unmarkPaid`.
+  6. Returns a `CommandResult` confirming the updated student names, appending `(Already paid: ...)` or `(Already unpaid: ...)` if any enrolled students were already in the target state.
+
+* **Student execution**:
+  1. Validates each student ID by calling `Model#findStudent(StudentId)`. If any student ID does not exist, throws a `CommandException` (`MESSAGE_STUDENT_NOT_FOUND`) immediately before modifying any records.
+  2. **Single student**: If the student is already in the target state, throws a `CommandException` (`MESSAGE_ALREADY_PAID` or `MESSAGE_ALREADY_UNPAID`). Otherwise, updates the student and returns a success `CommandResult`.
+  3. **Multiple students**: Partitions the target students into eligible students and already-updated students. If all specified students are already in the target state, throws a `CommandException` (`MESSAGE_ALL_ALREADY_PAID` or `MESSAGE_ALL_ALREADY_UNPAID`). Otherwise, updates each eligible student in the model and returns a success `CommandResult` listing updated names, appending `(Already paid: ...)` or `(Already unpaid: ...)` if any were already in the target state.
+
+The sequence diagram below shows the Logic component interactions when executing `mark 1` for an existing unpaid student.
 
 <puml src="diagrams/MarkSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `mark` Command" />
 
+The activity diagram below illustrates the end-to-end execution workflow for both `mark` and `unmark` commands, covering single-student, multi-student, and lesson-wide operations.
+
+<puml src="diagrams/MarkActivityDiagram.puml" alt="Activity Diagram for the `mark` and `unmark` Commands" />
+
 ### Help feature
 
-The `help` command takes no required arguments. `AddressBookParser` constructs a `HelpCommand` directly because no
-command-specific parsing is needed. `HelpCommand#execute(Model)` returns a `CommandResult` whose `showHelp` flag is
-set. After `LogicManager` returns that result, `MainWindow` opens the `HelpWindow`, which displays the format of every
-available command and a link to the full User Guide.
+The `help` command takes no required arguments; any extraneous text is ignored. `AddressBookParser` constructs a `HelpCommand` directly because no command-specific parsing is needed.
+
+`HelpCommand#execute(Model)` returns a `CommandResult` whose `showHelp` flag is set (`isDataMutating()` returns `false`). After `LogicManager` returns that result, `MainWindow#handleHelp()` checks whether the `HelpWindow` is showing:
+* If not showing, `helpWindow.show()` opens the window centered on screen.
+* If already showing or minimized (iconified), `helpWindow.focus()` restores the window, brings it to the front, and requests focus.
+
+The `HelpWindow` displays the usage format of every available command, a clickable hyperlink to the User Guide, and a **Copy URL** button that copies the guide link to the system clipboard. Users can also open the help window by pressing `F1` or selecting `Help` > `Help` from the application menu bar.
 
 The sequence diagram below shows the help window being opened by `executeCommand("help")`.
 
@@ -349,6 +379,47 @@ The sequence diagram below shows `execute("filter student 1")`.
 #### Testing
 
 `FilterCommandParserTest` covers the student, lesson, day, payment, subject, level, student-level and fee forms, including malformed arguments and combining `slv/` or `f/` with every other form. `FilterCommandTest` checks the resulting model and list view, missing IDs and command equality. `ModelManagerTest` checks that payment filters update after payment changes and a month rollover, that the student-level filter selects the right students while leaving the lesson list unaffected, and that the fee filter selects the right lessons while leaving the student list unaffected.
+
+### Sort feature
+
+The `sort` command reorders the displayed student or lesson list according to a specified field and direction without modifying stored data.
+
+#### Parsing the arguments
+
+`SortCommandParser` parses the arguments:
+1. Splits the trimmed arguments by whitespace, requiring either 2 tokens (`[entity] [field]`) or 3 tokens (`[entity] [field] [direction]`).
+2. Validates that the entity is either `student` or `lesson` (case-insensitive).
+3. If direction is provided, validates that it is either `asc` or `desc` (case-insensitive); defaults to ascending (`true`) if omitted.
+4. Normalizes field names: for students, `paid` and `unpaid` are accepted as aliases for `payment`.
+5. Maps the combined entity and field name into a `SortField` enum constant:
+   * Student fields: `STUDENT_ID`, `STUDENT_NAME`, `STUDENT_PAYMENT`, `STUDENT_LEVEL`
+   * Lesson fields: `LESSON_ID`, `LESSON_SUBJECT`, `LESSON_LEVEL`, `LESSON_FEE`, `LESSON_TIME`
+6. If any token is unrecognized or invalid, throws a `ParseException` with `SortCommand.MESSAGE_USAGE`.
+7. Returns a `SortCommand(entity, fieldName, sortField, ascending)`.
+
+#### Execution and model updates
+
+`SortCommand#execute(Model)` executes as follows:
+1. Calls `Model#sort(SortField, boolean)`.
+2. `ModelManager#sort` constructs a `Comparator<?>` based on the specified `SortField`:
+   * `STUDENT_ID`: orders by student ID.
+   * `STUDENT_NAME`: orders case-insensitively by full name, breaking ties by student ID.
+   * `STUDENT_PAYMENT`: orders by payment status for the current calendar month (`isPaid(currentMonth())`), breaking ties by student ID. Ascending order places unpaid students before paid students.
+   * `STUDENT_LEVEL`: orders case-insensitively by level value, breaking ties by student ID.
+   * `LESSON_ID`: orders by lesson ID.
+   * `LESSON_SUBJECT`: orders case-insensitively by subject, breaking ties by lesson ID.
+   * `LESSON_LEVEL`: orders case-insensitively by level, breaking ties by lesson ID.
+   * `LESSON_FEE`: orders by numerical fee amount, breaking ties by lesson ID.
+   * `LESSON_TIME`: orders chronologically using `LESSON_ORDER` (weekday, start time, end time, then lesson ID).
+3. If descending order is specified (`!ascending`), the comparator is reversed via `Comparator#reversed()`.
+4. The comparator is set on the corresponding `SortedList` (`sortedStudents` or `sortedLessons`).
+5. For student sorting, `ModelManager` retains `studentSortField` and `studentSortAscending`. Whenever payment statuses change (via `mark` or `unmark`) or across month boundaries, `ModelManager` re-applies the sort comparator to keep the payment order updated.
+6. Calls `Model#setListView` to automatically switch the displayed UI view to the target entity (`ListView.STUDENTS` or `ListView.LESSONS`).
+7. Returns a `CommandResult` confirming the sorted entity, field name, and direction. `isDataMutating()` returns `false`, so no file save occurs.
+
+The sequence diagram below shows the Logic and Model interactions for `sort student payment desc`.
+
+<puml src="diagrams/SortSequenceDiagram.puml" alt="Interactions Inside the Logic and Model Components for the sort Command" />
 
 ### Schedule feature
 
@@ -428,15 +499,26 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | delete a student and their associated enrollments | remove a student who no longer attends lessons without leaving obsolete enrollments |
 | `* * *` | tutor | delete a lesson and its associated enrollments | remove a cancelled lesson without leaving obsolete enrollments |
 | `* * *` | tutor | mark a student as paid for the current month | track which students have paid |
+| `* * *` | tutor | mark multiple students as paid at once | record payments efficiently after receiving fees from several students |
+| `* * *` | tutor | mark all students in a lesson as paid at once | record class fees in a single command |
 | `* * *` | tutor | have payment statuses reset for a new month | distinguish this month’s unpaid fees from last month’s payments |
 | `* * *` | tutor | view all my recurring lessons in a weekly schedule | spot busy periods and gaps in my teaching week |
 | `* *` | tutor | be shown matching existing students or lessons when adding an enrollment | reuse a record instead of creating a duplicate |
 | `* *` | tutor | use common aliases for education levels | enter levels quickly without creating accidental mismatches |
 | `* *` | tutor | undo an accidental addition | correct a mistake without manually deleting its records |
 | `* *` | tutor | change a student’s current-month status from paid back to unpaid | correct a payment recorded by mistake |
+| `* *` | tutor | mark multiple students or an entire lesson as unpaid | revert accidental bulk payment updates |
 | `* *` | tutor | view payment dates and history | check when a student paid in previous months |
 | `* *` | tutor | record a payment for a specific month | update an earlier month when a payment is received late |
 | `* *` | tutor | see how many students are paid and unpaid | assess outstanding payments at a glance |
+| `* * *` | tutor | sort students by payment status | quickly identify all students who still have unpaid fees at the top of the list |
+| `* * *` | tutor | sort students by name, level, or ID | browse and locate students alphabetically or by academic level |
+| `* * *` | tutor | sort lessons by chronological time, fee, subject, level, or ID | review my weekly schedule in order or find high-fee classes |
+| `* *` | tutor | sort records in ascending or descending order | view highest values or paid students first when needed |
+| `* *` | tutor | copy the User Guide link from the help window | easily access the complete documentation in my browser |
+| `* * *` | fast-typing tutor | traverse previous commands using the Up and Down arrow keys | repeat or edit recently executed commands without retyping them |
+| `* *` | fast-typing tutor | restore my drafted command when navigating past the newest history entry | check past commands without losing what I was typing |
+| `* *` | fast-typing tutor | autocomplete unique command words with the Tab key | type commands faster with fewer keystrokes |
 
 ### Use cases
 
@@ -717,74 +799,176 @@ Use case ends.
     * 2a1. System displays an empty weekly schedule and informs the user that no lessons are scheduled.
     * Use case ends.
 
-**Use case: Mark a student's monthly payment as paid**
+**Use case: Mark monthly payment as paid (mark)**
 
 **MSS**
 
-1. User requests to mark a student as paid using the student's permanent ID.
-2. System identifies the student corresponding to the specified ID.
-3. System marks the student's payment status as paid for the current month.
-4. System confirms that the student's payment has been marked as paid.
+1. User requests to mark payment as paid by specifying one or more student IDs, or a lesson ID.
+2. System identifies the target student(s) directly or through lesson enrollments.
+3. System marks the eligible students as paid for the current month.
+4. System confirms that the students have been marked as paid (and lists any students who were already paid).
 
 Use case ends.
 
 **Extensions**
 
-* 1a. The student ID is missing or more than one argument is provided.
-    * 1a1. System displays `Invalid command format. Use: mark ID`.
+* 1a. The command format is invalid (e.g. missing arguments, unrecognized keyword, or extraneous tokens after `lesson`).
+    * 1a1. System displays `Invalid command format. Use: mark ID [MORE_IDS]... or mark lesson LESSON_ID`.
     * Use case ends.
 
-* 1b. The student ID is non-numeric or not positive.
+* 1b. A student ID or lesson ID is non-numeric or not positive.
     * 1b1. System displays `ID must be a positive whole number.`
     * Use case ends.
 
-* 2a. No student has the specified ID.
-    * 2a1. System displays `No student found with ID ID.`, using the requested ID.
+* 1c. An ID exceeds `2147483647`.
+    * 1c1. System displays `ID is too large. No student or lesson has an ID above 2147483647.`
     * Use case ends.
 
-* 3a. The student has already been marked as paid for the current month.
-    * 3a1. System leaves the payment status unchanged.
-    * 3a2. System informs the user that the student is already paid.
+* 2a. A specified student ID does not exist.
+    * 2a1. System displays `No student found with ID ID.`, using the first missing ID encountered.
+    * System leaves all student payment statuses unchanged.
     * Use case ends.
 
-* 3b. The payment status cannot be saved.
-    * 3b1. System displays the applicable file-write or insufficient-permissions error and states that no changes were made.
-    * 3b2. System leaves the payment status unchanged.
+* 2b. The specified lesson ID does not exist.
+    * 2b1. System displays `No lesson found with ID ID.`, using the requested lesson ID.
     * Use case ends.
 
-**Use case: Correct a student's monthly payment to unpaid**
+* 2c. The specified lesson has no enrolled students.
+    * 2c1. System displays `No students are enrolled in Lesson ID.`.
+    * Use case ends.
+
+* 3a. A single student is specified and is already marked as paid.
+    * 3a1. System displays `NAME is already marked as paid for the current month.`.
+    * System leaves the payment status unchanged.
+    * Use case ends.
+
+* 3b. Multiple students are specified and all are already marked as paid.
+    * 3b1. System displays `All specified students are already marked as paid for the current month.`.
+    * System leaves all payment statuses unchanged.
+    * Use case ends.
+
+* 3c. A lesson is specified and all enrolled students are already marked as paid.
+    * 3c1. System displays `All students in Lesson ID are already marked as paid for the current month.`.
+    * System leaves all payment statuses unchanged.
+    * Use case ends.
+
+* 3d. Multiple students or a lesson are specified, and some (but not all) students are already marked as paid.
+    * 3d1. System marks only the unpaid students as paid.
+    * 3d2. System displays a confirmation message naming the marked students and listing the already paid students in parentheses.
+    * Use case ends.
+
+* 3e. The payment status cannot be saved.
+    * 3e1. System displays the applicable file-write or insufficient-permissions error and states that no changes were made.
+    * 3e2. System leaves the payment status unchanged.
+    * Use case ends.
+
+**Use case: Correct monthly payment to unpaid (unmark)**
 
 **MSS**
 
-1. User requests to unmark a student's payment using the student's permanent ID.
-2. System identifies the student corresponding to the specified ID.
-3. System marks the student's payment status as unpaid for the current month.
-4. System confirms that the student's payment has been marked as unpaid.
+1. User requests to unmark payment by specifying one or more student IDs, or a lesson ID.
+2. System identifies the target student(s) directly or through lesson enrollments.
+3. System marks the eligible students as unpaid for the current month.
+4. System confirms that the students have been marked as unpaid (and lists any students who were already unpaid).
 
 Use case ends.
 
 **Extensions**
 
-* 1a. The student ID is missing or more than one argument is provided.
-    * 1a1. System displays `Invalid command format. Use: unmark ID`.
+* 1a. The command format is invalid (e.g. missing arguments, unrecognized keyword, or extraneous tokens after `lesson`).
+    * 1a1. System displays `Invalid command format. Use: unmark ID [MORE_IDS]... or unmark lesson LESSON_ID`.
     * Use case ends.
 
-* 1b. The student ID is non-numeric or not positive.
+* 1b. A student ID or lesson ID is non-numeric or not positive.
     * 1b1. System displays `ID must be a positive whole number.`
     * Use case ends.
 
-* 2a. No student has the specified ID.
-    * 2a1. System displays `No student found with ID ID.`, using the requested ID.
+* 1c. An ID exceeds `2147483647`.
+    * 1c1. System displays `ID is too large. No student or lesson has an ID above 2147483647.`
     * Use case ends.
 
-* 3a. The student has already been marked as unpaid for the current month.
-    * 3a1. System leaves the payment status unchanged.
-    * 3a2. System informs the user that the student is already unpaid.
+* 2a. A specified student ID does not exist.
+    * 2a1. System displays `No student found with ID ID.`, using the first missing ID encountered.
+    * System leaves all student payment statuses unchanged.
     * Use case ends.
 
-* 3b. The payment status cannot be saved.
-    * 3b1. System displays the applicable file-write or insufficient-permissions error and states that no changes were made.
-    * 3b2. System leaves the payment status unchanged.
+* 2b. The specified lesson ID does not exist.
+    * 2b1. System displays `No lesson found with ID ID.`, using the requested lesson ID.
+    * Use case ends.
+
+* 2c. The specified lesson has no enrolled students.
+    * 2c1. System displays `No students are enrolled in Lesson ID.`.
+    * Use case ends.
+
+* 3a. A single student is specified and is already unpaid.
+    * 3a1. System displays `NAME is already unpaid for the current month.`.
+    * System leaves the payment status unchanged.
+    * Use case ends.
+
+* 3b. Multiple students are specified and all are already unpaid.
+    * 3b1. System displays `All specified students are already unpaid for the current month.`.
+    * System leaves all payment statuses unchanged.
+    * Use case ends.
+
+* 3c. A lesson is specified and all enrolled students are already unpaid.
+    * 3c1. System displays `All students in Lesson ID are already unpaid for the current month.`.
+    * System leaves all payment statuses unchanged.
+    * Use case ends.
+
+* 3d. Multiple students or a lesson are specified, and some (but not all) students are already unpaid.
+    * 3d1. System marks only the paid students as unpaid.
+    * 3d2. System displays a confirmation message naming the unmarked students and listing the already unpaid students in parentheses.
+    * Use case ends.
+
+* 3e. The payment status cannot be saved.
+    * 3e1. System displays the applicable file-write or insufficient-permissions error and states that no changes were made.
+    * 3e2. System leaves the payment status unchanged.
+    * Use case ends.
+
+**Use case: Sort students or lessons**
+
+**MSS**
+
+1. User enters a sort command specifying the entity (`student` or `lesson`), the sort field, and optionally the sort direction (`asc` or `desc`).
+2. System parses the entity, field, and direction (defaulting to `asc` if omitted).
+3. System applies the requested comparator to the corresponding list.
+4. System switches the active list view to the sorted entity's list (Students or Lessons).
+5. System displays the sorted records and a confirmation message.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The command format is invalid (e.g. missing arguments, extra tokens, or unrecognized entity/field/direction).
+    * 1a1. System displays `Invalid command format. Use: sort student id|name|level|payment|paid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
+    * Use case ends.
+
+* 1b. The direction token is not `asc` or `desc`.
+    * 1b1. System displays `Invalid command format. Use: sort student id|name|level|payment|paid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
+    * Use case ends.
+
+* 3a. The sorted list is empty.
+    * 3a1. System updates the sort order and displays the empty list with the confirmation message.
+    * Use case ends.
+
+**Use case: View help**
+
+**MSS**
+
+1. User enters `help` (or presses `F1`, or selects `Help` > `Help` from the menu bar).
+2. System opens the Help window displaying the command format summary and the User Guide link.
+3. System displays a confirmation message (`Opened help window.`).
+
+Use case ends.
+
+**Extensions**
+
+* 1a. User provides extra parameters after `help` (e.g. `help 123`).
+    * 1a1. System ignores extraneous parameters and opens the Help window as normal.
+    * Use case ends.
+
+* 2a. The Help window is already open.
+    * 2a1. System de-iconifies the window if minimized, brings it to the front, and requests focus.
     * Use case ends.
 
 ### Non-Functional Requirements
@@ -860,8 +1044,14 @@ On first launch, the sample data has Alice Tan (student ID 1), Bryan Lim (ID 2),
 ### Launch, help and exit
 
 1. Launch the JAR in a fresh folder. Expected: the Students view shows three sample students, not contacts.
-2. Enter `help`. Expected: the help window shows the available command formats. Close it, then press `F1` to open it again.
-3. Resize and move the main window, enter `exit`, and relaunch the JAR in the same folder. Expected: the window reopens with the saved size and location when that location is still available.
+2. Enter `help`. Expected: the help window shows the available command formats. Close it, then press `F1` to open it again. Click the "Copy URL" button and verify that the User Guide link is copied to your clipboard.
+3. Command box shortcuts:
+   1. Enter `list students`, then enter `list lessons`.
+   2. In the empty command box, press `Up`. Expected: `list lessons` appears. Press `Up` again. Expected: `list students` appears.
+   3. Press `Down`. Expected: `list lessons` appears. Press `Down` again. Expected: an empty text box appears.
+   4. Type `mark 1` without pressing Enter. Press `Up` twice to view history. Press `Down` twice back to the bottom. Expected: the draft `mark 1` is preserved and restored.
+   5. Clear the box, type `sc`, and press `Tab`. Expected: autocompletes to `schedule `.
+4. Resize and move the main window, enter `exit`, and relaunch the JAR in the same folder. Expected: the window reopens with the saved size and location when that location is still available.
 
 ### Listing and filtering
 
@@ -954,13 +1144,72 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
 
 ### Marking and correcting payment
 
-1. Enter `mark 1`. Expected: Alice is marked paid for the current month.
-2. Enter `unmark 1`. Expected: Alice is marked unpaid for the current month again.
+1. Marking and unmarking a single student
+   1. Enter `mark 1` with sample data. Expected: Alice Tan is marked as paid for the current month.
+   2. Enter `mark 1` again. Expected: Error indicating Alice Tan is already marked as paid for the current month.
+   3. Enter `unmark 1`. Expected: Alice Tan is marked as unpaid for the current month.
+   4. Enter `unmark 1` again. Expected: Error indicating Alice Tan is already unpaid for the current month.
+
+2. Marking and unmarking multiple students (batch)
+   1. Enter `mark 1 2` with sample data (where student 1 is unpaid and student 2, Bryan Lim, is already paid).<br>
+      Expected: Alice Tan is marked as paid, with Bryan Lim reported as already paid: `Marked Alice Tan as paid for the current month. (Already paid: Bryan Lim)`. Duplicate IDs (e.g. `mark 1 1 2`) are merged and behave identically.
+   2. Enter `mark 1 2` again.<br>
+      Expected: Error displaying `All specified students are already marked as paid for the current month.`.
+   3. Enter `unmark 1 2 3` (where students 1 and 2 are paid and student 3 is unpaid).<br>
+      Expected: Alice Tan and Bryan Lim are marked as unpaid, reporting Chloe Ng: `Marked Alice Tan, Bryan Lim as unpaid for the current month. (Already unpaid: Chloe Ng)`.
+   4. Enter `unmark 1 2 3` again.<br>
+      Expected: Error displaying `All specified students are already unpaid for the current month.`.
+
+3. Marking and unmarking by lesson
+   1. Enter `mark lesson 1` with sample data (student 1 enrolled and now unpaid).<br>
+      Expected: Alice Tan is marked as paid for the current month.
+   2. Enter `mark lesson 1` again.<br>
+      Expected: Error displaying `All students in Lesson 1 are already marked as paid for the current month.`.
+   3. Enter `unmark lesson 1`.<br>
+      Expected: Alice Tan is marked as unpaid for the current month.
+   4. Add a new lesson without students: `add l/Biology llv/Secondary 3 d/Tuesday st/14:00 et/15:30 f/50`. Note its ID (e.g. `5`), then enter `mark lesson 5`.<br>
+      Expected: Error displaying `No students are enrolled in Lesson 5.`.
+
+4. Error handling and input validation
+   1. Missing arguments: `mark` or `unmark`.<br>
+      Expected: Error displaying `Invalid command format. Use: mark ID [MORE_IDS]... or mark lesson LESSON_ID` (or `unmark ...`).
+   2. Malformed lesson syntax: `mark lesson` or `mark lesson 1 2`.<br>
+      Expected: Error displaying invalid command format.
+   3. Non-positive ID: `mark 0` or `mark -1`.<br>
+      Expected: Error displaying `ID must be a positive whole number.`.
+   4. ID exceeding maximum integer limit: `mark 2147483648`.<br>
+      Expected: Error displaying `ID is too large. No student or lesson has an ID above 2147483647.`.
+   5. Missing student or lesson: `mark 999` or `mark lesson 999`.<br>
+      Expected: Error displaying `No student found with ID 999.` or `No lesson found with ID 999.`.
 
 ### Sorting
 
-1. Enter `sort lesson fee desc`. Expected: the Secondary 2 Science lesson (ID 3, fee 60) appears first.
-2. Enter `sort student name desc`. Expected: the view switches to Students and Chloe appears first.
+1. Sorting students
+   1. Enter `sort student payment`. Expected: view switches to Students; unpaid students (Alice Tan, Chloe Ng) appear first, and Bryan Lim (paid) appears last.
+   2. Enter `sort student payment desc`. Expected: Bryan Lim (paid) appears first.
+   3. Enter `sort student name`. Expected: students appear in alphabetical order (Alice Tan, Bryan Lim, Chloe Ng).
+   4. Enter `sort student name desc`. Expected: students appear in reverse alphabetical order (Chloe Ng, Bryan Lim, Alice Tan).
+   5. Enter `sort student level`. Expected: students appear ordered by educational level.
+   6. Enter `sort student id`. Expected: students appear in ascending ID order (1, 2, 3).
+
+2. Sorting lessons
+   1. Enter `sort lesson fee desc`. Expected: view switches to Lessons; Secondary 2 Science (ID 3, fee 60) appears first.
+   2. Enter `sort lesson fee asc`. Expected: lowest fee lessons appear first.
+   3. Enter `sort lesson time`. Expected: lessons appear in chronological weekday and start-time order.
+   4. Enter `sort lesson subject`. Expected: lessons appear alphabetically by subject.
+   5. Enter `sort lesson id`. Expected: lessons appear in ascending lesson ID order.
+
+3. Automatic view switching
+   1. While viewing Lessons, enter `sort student name`. Expected: view switches to Students and sorts by name.
+   2. While viewing Students, enter `sort lesson fee desc`. Expected: view switches to Lessons and sorts by fee.
+
+4. Error handling and input validation
+   1. Missing arguments: `sort`, `sort student`, or `sort lesson`.<br>
+      Expected: Error displaying `Invalid command format. Use: sort student id|name|level|payment|paid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
+   2. Invalid entity or field: `sort teacher name`, `sort student age`, or `sort lesson duration`.<br>
+      Expected: Error displaying invalid command format.
+   3. Invalid direction or extra arguments: `sort student name ascending`, `sort lesson fee up`, or `sort student name asc extra`.<br>
+      Expected: Error displaying invalid command format.
 
 ### Filtering students and lessons
 

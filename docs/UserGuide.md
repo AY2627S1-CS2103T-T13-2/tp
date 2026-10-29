@@ -39,8 +39,8 @@ With TuiTracker, you can view and update student and lesson details, manage enro
 
    * `edit student 1 c/90001111` : Updates the contact number of the student with ID 1.
 
-   * `mark 1` : Marks the student with ID 1 as paid for the current month.
-   * `unmark 1` : Corrects student 1's payment status back to unpaid.
+   * `mark 1` : Marks the student with ID 1 as paid for the current month (supports multiple students or a lesson, e.g. `mark 1 2 3` or `mark lesson 1`).
+   * `unmark 1` : Corrects student 1's payment status back to unpaid (supports multiple students or a lesson, e.g. `unmark 1 2 3` or `unmark lesson 1`).
 
    * `delete student 3` : Deletes the student with ID 3.
 
@@ -54,9 +54,17 @@ With TuiTracker, you can view and update student and lesson details, manage enro
 
 ### Command-box shortcuts
 
-The command box keeps successful commands for the current session. Press **Up** and **Down** to move through that
-history; text you were drafting is restored when you move past the newest entry. Consecutive duplicate commands are
-stored once. Type the start of a command word and press **Tab** to complete it when there is only one match.
+TuiTracker provides keyboard shortcuts within the command box to speed up typing and command reuse:
+
+* **Command history traversal (`Up` / `Down` arrows):**
+  * Press **Up** to traverse backwards through previously executed commands in the current session (from newest to oldest).
+  * Press **Down** to traverse forwards toward newer commands.
+  * Only successfully executed commands are saved in history; invalid commands that cause errors are not saved.
+  * Consecutive identical commands are deduplicated and saved once.
+* **Draft preservation:**
+  * If you type an unsubmitted command draft and then press **Up** to browse previous commands, your draft is preserved. Pressing **Down** past the newest command restores your draft text exactly as it was.
+* **Command-word autocompletion (`Tab` key):**
+  * Type the beginning of a command word (e.g. `sc` or `un`) and press **Tab** to complete it when there is only one match (e.g. completes to `schedule ` or `unmark `).
 
 <box type="info" seamless>
 
@@ -339,7 +347,7 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 * An ID above `2147483647` — the app displays `ID is too large. No student or lesson has an ID above 2147483647.`
 * No record of the requested kind has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID). An ID belonging only to the other kind does not match. No data is changed on failure.
 
-### Marking a student as paid: `mark`
+### Marking a student or lesson as paid: `mark`
 
 Marks one or more students, or all students enrolled in a lesson, as paid for the current month. Use this command after receiving payment for the current month.
 
@@ -348,7 +356,7 @@ Marks one or more students, or all students enrolled in a lesson, as paid for th
 **Parameters:**
 
 * `ID` — one or more student positive whole-number IDs separated by spaces, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`). Duplicate IDs are merged.
-* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as paid.
+* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as paid. Letter case for `lesson` is ignored.
 * Leading and trailing spaces are ignored.
 
 **Examples:**
@@ -363,27 +371,29 @@ Marks one or more students, or all students enrolled in a lesson, as paid for th
 * For multiple students: `Marked Alice Tan, Bob Tan as paid for the current month.`
 * If some students were already marked as paid: `Marked Alice Tan as paid for the current month. (Already paid: Bob Tan)`
 * The payment status of the marked students for the current month is updated to paid.
+* The change is saved immediately and is retained after restarting TuiTracker. The student's details and lesson enrollments are not changed.
 
 **Notes:**
 
 * The command records payment only for the current month.
 * If a single student is already marked as paid, the command fails and displays an error message.
 * When specifying multiple students or a lesson, if some students are already paid, the command marks the remaining unpaid students and informs you of those already paid. If all specified students or lesson students are already paid, no change is made and an error message is displayed.
+* Duplicate student IDs are merged into a single entry before processing.
 * Student IDs and lesson IDs are separate.
 * The ID must be a positive whole number. For example, `mark 0` and `mark -1` are invalid.
 
 **Errors:**
 
-* A missing ID or invalid format — the app displays `Invalid command format. Use: mark ID [MORE_IDS]... or mark lesson LESSON_ID`.
+* A missing ID, invalid format, or extra text after the lesson ID — the app displays `Invalid command format. Use: mark ID [MORE_IDS]... or mark lesson LESSON_ID`.
 * A malformed or non-positive ID — the app displays `ID must be a positive whole number.`
 * An ID above `2147483647` — the app displays `ID is too large. No student or lesson has an ID above 2147483647.`
 * No student or lesson has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID).
 * No students are enrolled in the lesson — the app displays `No students are enrolled in Lesson 1.`
-* All specified students are already marked as paid — the app displays `Alice Tan is already marked as paid for the current month.` or `All specified students are already marked as paid for the current month.` or `All students in Lesson 1 are already marked as paid for the current month.`
+* All specified students are already marked as paid — the app displays `Alice Tan is already marked as paid for the current month.` (for a single student), `All specified students are already marked as paid for the current month.` (for multiple students), or `All students in Lesson 1 are already marked as paid for the current month.` (for a lesson).
 
 No data is changed on failure.
 
-### Correcting a payment to unpaid: `unmark`
+### Correcting a student or lesson payment to unpaid: `unmark`
 
 Marks one or more students, or all students enrolled in a lesson, as unpaid for the current month. Use this command to correct accidental payment entries.
 
@@ -392,7 +402,7 @@ Marks one or more students, or all students enrolled in a lesson, as unpaid for 
 **Parameters:**
 
 * `ID` — one or more student positive whole-number IDs separated by spaces, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`). Duplicate IDs are merged.
-* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as unpaid.
+* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as unpaid. Letter case for `lesson` is ignored.
 * Leading and trailing spaces are ignored.
 
 **Examples:**
@@ -406,8 +416,28 @@ Marks one or more students, or all students enrolled in a lesson, as unpaid for 
 * For a single student: `Marked Alice Tan as unpaid for the current month.`
 * For multiple students: `Marked Alice Tan, Bob Tan as unpaid for the current month.`
 * If some students were already marked as unpaid: `Marked Alice Tan as unpaid for the current month. (Already unpaid: Bob Tan)`
+* The payment status of the unmarked students for the current month is updated to unpaid.
+* The change is saved immediately and is retained after restarting TuiTracker. The student's details and lesson enrollments are not changed.
 
-The change is saved immediately and is retained after restarting TuiTracker. The student's details and lesson enrollments are not changed.
+**Notes:**
+
+* The command modifies payment status only for the current month.
+* If a single student is already unpaid, the command fails and displays an error message.
+* When specifying multiple students or a lesson, if some students are already unpaid, the command marks the remaining paid students as unpaid and informs you of those already unpaid. If all specified students or lesson students are already unpaid, no change is made and an error message is displayed.
+* Duplicate student IDs are merged into a single entry before processing.
+* Student IDs and lesson IDs are separate.
+* The ID must be a positive whole number. For example, `unmark 0` and `unmark -1` are invalid.
+
+**Errors:**
+
+* A missing ID, invalid format, or extra text after the lesson ID — the app displays `Invalid command format. Use: unmark ID [MORE_IDS]... or unmark lesson LESSON_ID`.
+* A malformed or non-positive ID — the app displays `ID must be a positive whole number.`
+* An ID above `2147483647` — the app displays `ID is too large. No student or lesson has an ID above 2147483647.`
+* No student or lesson has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID).
+* No students are enrolled in the lesson — the app displays `No students are enrolled in Lesson 1.`
+* All specified students are already unpaid — the app displays `Alice Tan is already unpaid for the current month.` (for a single student), `All specified students are already unpaid for the current month.` (for multiple students), or `All students in Lesson 1 are already unpaid for the current month.` (for a lesson).
+
+No data is changed on failure.
 
 ### Showing a student's lessons, a lesson's students, lessons by day, subject, level or fee, or students by payment status or level: `filter`
 
@@ -449,24 +479,57 @@ combined with `student`, `lesson`, `day`, `l/`, `llv/`, or with each other.
 
 ### Sorting students and lessons: `sort`
 
-Sorts the currently displayed student or lesson records without changing saved data. The direction defaults to
-ascending and can be written explicitly as `asc` or `desc`.
+Sorts either student or lesson records without changing saved data. The sorting direction defaults to ascending and can be specified explicitly as `asc` or `desc`.
 
 **Format:** `sort student id|name|level|payment|paid [asc|desc]` or `sort lesson id|subject|level|fee|time [asc|desc]`
 
-* For students, you can sort by `id`, `name`, `level`, or payment status (`payment` / `paid`).
-* Sorting students by payment status in ascending order (default) places **unpaid** students at the top, making it easy for tutors to see who has yet to pay for the current month. Using `desc` places paid students at the top.
-* For lessons, you can sort by `id`, `subject`, `level`, `fee`, or `time` (chronological weekday and start-time order).
+**Parameters:**
 
-Examples:
+* Target entity: `student` or `lesson` (case-insensitive).
+  * Sorting students automatically switches the displayed view to the **Students** list.
+  * Sorting lessons automatically switches the displayed view to the **Lessons** list.
+* Student fields:
+  * `id`: by student ID.
+  * `name`: alphabetical by student full name (case-insensitive).
+  * `level`: alphabetical by education level (case-insensitive).
+  * `payment` (or `paid` / `unpaid`): by payment status for the current calendar month. Ascending order places **unpaid** students at the top (`false` before `true`), allowing tutors to immediately identify who has not yet paid. Descending order places paid students at the top.
+* Lesson fields:
+  * `id`: by lesson ID.
+  * `subject`: alphabetical by lesson subject (case-insensitive).
+  * `level`: alphabetical by education level (case-insensitive).
+  * `fee`: numerical lesson fee amount.
+  * `time`: chronological order by weekday (Monday to Sunday) and start time.
+* Direction: `asc` (ascending, default) or `desc` (descending). Letter case is ignored.
 
-* `sort student payment` or `sort student paid` sorts students with unpaid students at the top.
-* `sort student payment desc` shows paid students before unpaid students.
-* `sort student name` sorts students alphabetically by name.
-* `sort student level` sorts students by educational level.
-* `sort lesson fee desc` shows the highest-fee lessons first.
-* `sort lesson time` restores chronological weekday and start-time order.
-* `sort lesson id` sorts lessons by their identifier.
+**Tie-breakers:**
+
+* For students sorted by `name`, `level`, or `payment`, tied records are sorted by ascending student ID.
+* For lessons sorted by `subject`, `level`, or `fee`, tied records are sorted by ascending lesson ID. For `time`, tied start times are sorted by end time, then lesson ID.
+
+**Successful sorting:**
+
+* `Sorted students by payment in ascending order.`
+* `Sorted lessons by fee in descending order.`
+
+**Notes:**
+
+* The command updates only the displayed view order; saved tracker files are not modified.
+* The selected sort order is preserved when switching views or clearing filters with `list`.
+* When payment statuses update (e.g. through `mark` or `unmark`) or across month boundaries, the student list re-evaluates and dynamically updates the payment sort order.
+
+**Examples:**
+
+* `sort student payment` or `sort student paid` — sorts students with unpaid students at the top.
+* `sort student payment desc` — shows paid students before unpaid students.
+* `sort student name` — sorts students alphabetically by name.
+* `sort student level` — sorts students by educational level.
+* `sort lesson fee desc` — shows the highest-fee lessons first.
+* `sort lesson time` — restores chronological weekday and start-time order.
+* `sort lesson id` — sorts lessons by their identifier.
+
+**Errors:**
+
+* Missing arguments, invalid entity, unsupported field, or invalid direction — the app displays `Invalid command format. Use: sort student id|name|level|payment|paid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
 
 ### Viewing the weekly schedule: `schedule`
 
@@ -495,6 +558,18 @@ The schedule can be explored entirely from the keyboard:
 When focus moves to a day or lesson, the schedule scrolls to keep it visible. The focused heading or lesson is highlighted.
 
 If there are no lessons, the result box shows `No lessons are scheduled for this week.` An ID with no matching student shows `No student found with ID 999.` (using the entered ID). A missing ID or extra text shows `Invalid command format. Use: schedule [student ID]`; an unknown keyword shows `Unknown parameter. Use: schedule [student ID]`. Invalid IDs use the same ID error messages as other commands.
+
+### Viewing help: `help`
+
+Shows a help window containing a summary of all available commands and a link to this User Guide.
+
+**Format:** `help`
+
+* Opens a pop-up window listing the format and usage of all commands.
+* If the help window is already open or minimized, entering `help` restores it and brings it back to the front.
+* You can also open the help window by pressing `F1` or selecting **Help** > **Help** from the top menu bar.
+* The help window provides a **Copy URL** button to copy the link to this User Guide to your clipboard.
+* Any extraneous parameters are ignored (e.g., `help 123` works the same as `help`).
 
 ### Exiting the program: `exit`
 
