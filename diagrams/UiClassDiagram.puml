@@ -8,6 +8,7 @@ interface Ui
 class UiManager
 class MainWindow
 class CommandBox
+class CommandHistory
 class ResultDisplay
 class StudentListPanel
 class LessonListPanel
@@ -29,6 +30,7 @@ MainWindow *--> SchedulePanel
 MainWindow *--> StatusBarFooter
 MainWindow --> HelpWindow
 
+CommandBox *--> "1" CommandHistory
 StudentListPanel *--> "0..*" StudentCard
 LessonListPanel *--> "0..*" LessonCard
 @enduml

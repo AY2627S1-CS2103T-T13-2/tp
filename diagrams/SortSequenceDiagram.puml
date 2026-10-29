@@ -1,0 +1,74 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant ":SortCommandParser" as SortCommandParser LOGIC_COLOR
+participant "s:SortCommand" as SortCommand LOGIC_COLOR
+participant "r:CommandResult" as CommandResult LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+[-> LogicManager : execute("sort student payment desc")
+activate LogicManager
+
+LogicManager -> AddressBookParser : parseCommand("sort student payment desc")
+activate AddressBookParser
+
+create SortCommandParser
+AddressBookParser -> SortCommandParser
+activate SortCommandParser
+
+SortCommandParser --> AddressBookParser
+deactivate SortCommandParser
+
+AddressBookParser -> SortCommandParser : parse("student payment desc")
+activate SortCommandParser
+
+create SortCommand
+SortCommandParser -> SortCommand : SortCommand("student", "payment", STUDENT_PAYMENT, false)
+activate SortCommand
+
+SortCommand --> SortCommandParser : s
+deactivate SortCommand
+
+SortCommandParser --> AddressBookParser : s
+deactivate SortCommandParser
+'Hidden arrow to position the destroy marker below the end of the activation bar.
+SortCommandParser -[hidden]-> AddressBookParser
+destroy SortCommandParser
+
+AddressBookParser --> LogicManager : s
+deactivate AddressBookParser
+
+LogicManager -> SortCommand : execute(m)
+activate SortCommand
+
+SortCommand -> Model : sort(STUDENT_PAYMENT, false)
+activate Model
+Model --> SortCommand
+deactivate Model
+
+SortCommand -> Model : setListView(STUDENTS)
+activate Model
+Model --> SortCommand
+deactivate Model
+
+create CommandResult
+SortCommand -> CommandResult
+activate CommandResult
+
+CommandResult --> SortCommand : r
+deactivate CommandResult
+
+SortCommand --> LogicManager : r
+deactivate SortCommand
+
+[<--LogicManager : r
+deactivate LogicManager
+@enduml

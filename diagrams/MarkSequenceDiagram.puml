@@ -30,7 +30,7 @@ AddressBookParser -> MarkCommandParser : parse(" 1")
 activate MarkCommandParser
 
 create MarkCommand
-MarkCommandParser -> MarkCommand : MarkCommand(StudentId(1))
+MarkCommandParser -> MarkCommand : MarkCommand(studentIds)
 activate MarkCommand
 MarkCommand --> MarkCommandParser
 deactivate MarkCommand
