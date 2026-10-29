@@ -288,15 +288,15 @@ The sequence diagram below shows the help window being opened by `executeCommand
 
 ### Filter feature
 
-The `filter` command narrows the displayed list to one student's lessons, one lesson's students, lessons matching a day, subject or level, or students with a selected payment status. It changes the displayed view without changing saved data.
+The `filter` command narrows the displayed list to one student's lessons, one lesson's students, lessons matching a day, subject or level, students with a selected payment status, or students at a given level. It changes the displayed view without changing saved data.
 
 #### Parsing the arguments
 
-`FilterCommandParser` accepts `student ID`, `lesson ID`, `day DAY`, the bare `paid` or `unpaid` keyword, or one or both of `l/SUBJECT` and `llv/LESSON_LEVEL`.
+`FilterCommandParser` accepts `student ID`, `lesson ID`, `day DAY`, the bare `paid` or `unpaid` keyword, one or both of `l/SUBJECT` and `llv/LESSON_LEVEL`, or `slv/STUDENT_LEVEL`.
 
-1. The `student`, `lesson` and `day` forms require exactly two whitespace-separated tokens. The payment forms require one token. The subject and level forms use their command prefixes and may be combined.
+1. The `student`, `lesson` and `day` forms require exactly two whitespace-separated tokens. The payment forms require one token. The subject/level and student-level forms use their command prefixes; `l/` and `llv/` may be combined with each other, but `slv/` cannot be combined with any other form.
 2. An incomplete, unknown, mixed or repeated form raises a `ParseException` with a specific message before the view changes.
-3. IDs and days use the shared `ParserUtil` methods. Subject and level values are parsed with the corresponding domain parsers.
+3. IDs and days use the shared `ParserUtil` methods. Subject, lesson level and student level values are parsed with the corresponding domain parsers; `slv/` reuses `ParserUtil#parseStudentLevel`, the same method `add` and `edit` use for a student's own level.
 
 The parser builds the corresponding `FilterCommand` directly. A filter selects existing records and never creates new ones.
 
@@ -305,9 +305,9 @@ The parser builds the corresponding `FilterCommand` directly. A filter selects e
 `FilterCommand#execute(Model)` branches on the selected filter kind:
 
 1. For `studentId`/`lessonId`, it first confirms the ID refers to an existing student or lesson, otherwise throws a `CommandException` (`MESSAGE_STUDENT_NOT_FOUND` / `MESSAGE_LESSON_NOT_FOUND`). A `DayOfWeek` needs no such check — unlike an ID, every value the parser can produce already refers to something real, so there is nothing to look up or fail to find.
-2. It delegates to the matching `Model` filter method and selects the relevant list: `LESSONS` for student, day, subject and level filters; `STUDENTS` for lesson and payment-status filters.
+2. It delegates to the matching `Model` filter method and selects the relevant list: `LESSONS` for student, day, subject and level filters; `STUDENTS` for lesson, payment-status and student-level filters.
 
-Inside `ModelManager`, setting one filter clears the earlier filter fields. `refreshFilters()` then rebuilds the predicates for both `FilteredList`s. A day, subject or level filter narrows only lessons; payment status narrows only students. Mutating operations reapply the predicates. Payment changes and the month-boundary refresh also re-evaluate the current payment filter and payment sort.
+Inside `ModelManager`, setting one filter clears the earlier filter fields. `refreshFilters()` then rebuilds the predicates for both `FilteredList`s. A day, subject or level filter narrows only lessons; payment status and student level each narrow only students. Mutating operations reapply the predicates. Payment changes and the month-boundary refresh also re-evaluate the current payment filter and payment sort.
 
 The sequence diagram below shows `execute("filter student 1")`.
 
@@ -317,7 +317,7 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 **Aspect: how the active filter is stored**
 
-* **Alternative 1 (current choice):** six nullable fields in `ModelManager`, one each for student, lesson, day, subject, level and paid status. The subject and level fields may be set together; every other filter setter clears the previous fields.
+* **Alternative 1 (current choice):** seven nullable fields in `ModelManager`, one each for student, lesson, day, subject, level, paid status and student level. The subject and level fields may be set together; every other filter setter clears the previous fields.
   * Pros: Each predicate can read the fields it needs, and `resetFilters()` clears them in one place.
   * Cons: The valid combinations are enforced by the setters rather than the type system, so a new filter setter must clear the previous fields correctly.
 * **Alternative 2:** a sealed type representing each filter form, including the combined subject and level form.
@@ -348,7 +348,7 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 #### Testing
 
-`FilterCommandParserTest` covers the student, lesson, day, payment, subject and level forms, including malformed arguments. `FilterCommandTest` checks the resulting model and list view, missing IDs and command equality. `ModelManagerTest` checks that payment filters update after payment changes and a month rollover.
+`FilterCommandParserTest` covers the student, lesson, day, payment, subject, level and student-level forms, including malformed arguments and combining `slv/` with every other form. `FilterCommandTest` checks the resulting model and list view, missing IDs and command equality. `ModelManagerTest` checks that payment filters update after payment changes and a month rollover, and that the student-level filter selects the right students while leaving the lesson list unaffected.
 
 ### Schedule feature
 
@@ -899,6 +899,62 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
 
 1. Enter `sort lesson fee desc`. Expected: the Secondary 2 Science lesson (ID 3, fee 60) appears first.
 2. Enter `sort student name desc`. Expected: the view switches to Students and Chloe appears first.
+
+### Filtering students and lessons
+
+1. Filtering by student or lesson ID
+
+   1. Enter `filter student 1` with the sample data.<br>
+      Expected: The displayed list switches to Lessons, showing only `Mathematics` and `Science` (the lessons student 1, Alice, is enrolled in). The status message reports the number of lessons shown.
+
+   1. Enter `filter lesson 1`.<br>
+      Expected: The displayed list switches to Students, showing only `Alice Tan` (the only student enrolled in lesson 1, Mathematics).
+
+   1. Enter `filter student 999` (an ID that does not exist).<br>
+      Expected: No list changes. An error message reports that the student could not be found.
+
+1. Filtering by day
+
+   1. Enter `filter day Monday`.<br>
+      Expected: The displayed list switches to Lessons, showing only lessons on Monday (`Mathematics` with the sample data). The student list is unaffected.
+
+   1. Enter `filter day Mon`.<br>
+      Expected: Rejected. The error names the specific problem and gives a valid example.
+
+1. Filtering by subject and/or lesson level
+
+   1. Enter `filter l/Science`.<br>
+      Expected: The displayed list switches to Lessons, showing both Science lessons regardless of level.
+
+   1. Enter `filter llv/Primary 6`.<br>
+      Expected: Shows lessons at Primary 6 level only (`Mathematics` and `Science`), across any subject.
+
+   1. Enter `filter l/Science llv/Primary 6`.<br>
+      Expected: Shows only lessons matching both (`Science` at Primary 6).
+
+1. Filtering by payment status
+
+   1. Enter `filter paid`.<br>
+      Expected: The displayed list switches to Students, showing only students marked as paid for the current month (`Bryan Lim` with the sample data).
+
+   1. Enter `filter unpaid`.<br>
+      Expected: Shows the remaining students (`Alice Tan` and `Chloe Ng`).
+
+1. Filtering by student level
+
+   1. Enter `filter slv/Primary 6`.<br>
+      Expected: The displayed list switches to Students, showing only `Alice Tan`, since she is the only student whose own level is Primary 6. (This differs from `filter llv/Primary 6` above, which matches lessons at that level, not students.)
+
+   1. Enter `filter slv/Secondary 2`.<br>
+      Expected: Shows only `Bryan Lim`.
+
+   1. Enter `filter l/Science slv/Primary 6` (combining a lesson filter with a student-level filter).<br>
+      Expected: Rejected. The error explains that filter forms cannot be mixed.
+
+1. Clearing the filter
+
+   1. After any of the above, enter `list`.<br>
+      Expected: Every student and every lesson is shown again.
 
 ### Viewing the weekly schedule
 

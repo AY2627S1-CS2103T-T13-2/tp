@@ -3,6 +3,7 @@ package seedu.address.logic.parser;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_LESSON;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_LESSON_LEVEL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_STUDENT_LEVEL;
 
 import java.time.DayOfWeek;
 
@@ -17,22 +18,23 @@ import seedu.address.model.student.StudentId;
  * Parses input arguments and creates a new FilterCommand object.
  *
  * <p>The arguments are either a keyword and a value ({@code student ID}, {@code lesson ID} or {@code day DAY}),
- * the bare keyword {@code paid} or {@code unpaid}, or one or both of {@code l/SUBJECT} and
- * {@code llv/LESSON_LEVEL}.
+ * the bare keyword {@code paid} or {@code unpaid}, one or both of {@code l/SUBJECT} and {@code llv/LESSON_LEVEL},
+ * or {@code slv/STUDENT_LEVEL}.
  */
 public class FilterCommandParser implements Parser<FilterCommand> {
 
     public static final String MESSAGE_INVALID_SUBJECT = Subject.MESSAGE_CONSTRAINTS;
     public static final String MESSAGE_FILTER_EXAMPLES = "Choose a filter form. Examples: filter student 1, "
-            + "filter lesson 2, filter day Monday, filter paid, or filter l/Mathematics llv/Primary 6.";
+            + "filter lesson 2, filter day Monday, filter paid, filter l/Mathematics llv/Primary 6, "
+            + "or filter slv/Primary 6.";
     public static final String MESSAGE_MISSING_FILTER_VALUE = "The %1$s filter needs a value. "
             + "Example: filter %1$s %2$s.";
     public static final String MESSAGE_UNKNOWN_FILTER = "Unknown filter type '%1$s'. Use student, lesson, day, "
-            + "paid, unpaid, l/SUBJECT, or llv/LESSON_LEVEL. Example: filter student 1.";
+            + "paid, unpaid, l/SUBJECT, llv/LESSON_LEVEL, or slv/STUDENT_LEVEL. Example: filter student 1.";
     public static final String MESSAGE_EXTRA_FILTER_ARGUMENTS = "Too many values for the %1$s filter. "
             + "Example: filter %1$s %2$s.";
     public static final String MESSAGE_MIXED_FILTER_FORMS = "Do not combine a student, lesson, or day filter with "
-            + "l/ or llv/. Example: filter l/Mathematics llv/Primary 6.";
+            + "l/, llv/, or slv/. Example: filter l/Mathematics llv/Primary 6.";
 
     private static final String KEYWORD_STUDENT = "student";
     private static final String KEYWORD_LESSON = "lesson";
@@ -50,8 +52,19 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         requireNonNull(args);
 
         // A leading space lets a prefix at the very start of the arguments be recognised.
-        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" " + args, PREFIX_LESSON, PREFIX_LESSON_LEVEL);
-        if (argMultimap.getValue(PREFIX_LESSON).isPresent() || argMultimap.getValue(PREFIX_LESSON_LEVEL).isPresent()) {
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" " + args, PREFIX_LESSON, PREFIX_LESSON_LEVEL,
+                PREFIX_STUDENT_LEVEL);
+        boolean hasLessonFilter = argMultimap.getValue(PREFIX_LESSON).isPresent()
+                || argMultimap.getValue(PREFIX_LESSON_LEVEL).isPresent();
+        boolean hasStudentLevelFilter = argMultimap.getValue(PREFIX_STUDENT_LEVEL).isPresent();
+
+        if (hasLessonFilter && hasStudentLevelFilter) {
+            throw new ParseException(MESSAGE_MIXED_FILTER_FORMS);
+        }
+        if (hasStudentLevelFilter) {
+            return parseStudentLevel(argMultimap);
+        }
+        if (hasLessonFilter) {
             return parseSubjectAndLevel(argMultimap);
         }
 
@@ -122,6 +135,17 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         }
 
         return new FilterCommand(subject, level);
+    }
+
+    private static FilterCommand parseStudentLevel(ArgumentMultimap argMultimap) throws ParseException {
+        if (!argMultimap.getPreamble().isEmpty()) {
+            throw new ParseException(MESSAGE_MIXED_FILTER_FORMS);
+        }
+
+        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_STUDENT_LEVEL);
+
+        Level level = ParserUtil.parseStudentLevel(argMultimap.getValue(PREFIX_STUDENT_LEVEL).get());
+        return new FilterCommand(level);
     }
 
     private static boolean isKeyword(String keyword) {

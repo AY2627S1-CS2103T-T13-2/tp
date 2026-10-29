@@ -426,6 +426,27 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void filterStudentsByLevel_matchingLevel_showsOnlyThoseStudents() {
+        modelManager.filterStudentsByLevel(new Level("Primary 6"));
+
+        assertEquals(Collections.singletonList(ALICE), modelManager.getStudentList());
+        // the lesson list is unaffected
+        assertEquals(Arrays.asList(MATHEMATICS, SCIENCE_S2, SCIENCE_P6, ENGLISH), modelManager.getLessonList());
+    }
+
+    @Test
+    public void filterStudentsByLevel_noMatch_showsAnEmptyList() {
+        modelManager.filterStudentsByLevel(new Level("Secondary 4"));
+
+        assertEquals(Collections.emptyList(), modelManager.getStudentList());
+    }
+
+    @Test
+    public void filterStudentsByLevel_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> modelManager.filterStudentsByLevel(null));
+    }
+
+    @Test
     public void paymentChanges_refreshActivePaidFilter() {
         modelManager.filterStudentsByPaidStatus(true);
 

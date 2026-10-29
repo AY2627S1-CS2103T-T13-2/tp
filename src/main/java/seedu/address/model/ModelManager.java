@@ -70,6 +70,7 @@ public class ModelManager implements Model {
     private Subject filteredBySubject;
     private Level filteredByLevel;
     private Boolean filteredByPaidStatus;
+    private Level filteredByStudentLevel;
 
     /**
      * Initializes a ModelManager with the given tuiTracker, userPrefs and clock.
@@ -316,6 +317,14 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public void filterStudentsByLevel(Level level) {
+        requireNonNull(level);
+        clearFilterFields();
+        filteredByStudentLevel = level;
+        refreshFilters();
+    }
+
+    @Override
     public void resetFilters() {
         clearFilterFields();
         refreshFilters();
@@ -364,6 +373,7 @@ public class ModelManager implements Model {
         filteredBySubject = null;
         filteredByLevel = null;
         filteredByPaidStatus = null;
+        filteredByStudentLevel = null;
     }
 
     /**
@@ -377,6 +387,7 @@ public class ModelManager implements Model {
         final Subject subjectFilter = filteredBySubject;
         final Level levelFilter = filteredByLevel;
         final Boolean paidFilter = filteredByPaidStatus;
+        final Level studentLevelFilter = filteredByStudentLevel;
 
         Predicate<Student> studentPredicate;
         if (lessonFilter != null) {
@@ -384,6 +395,8 @@ public class ModelManager implements Model {
         } else if (paidFilter != null) {
             final YearMonth month = currentMonth();
             studentPredicate = student -> student.isPaid(month) == paidFilter;
+        } else if (studentLevelFilter != null) {
+            studentPredicate = student -> student.getLevel().equals(studentLevelFilter);
         } else {
             studentPredicate = student -> true;
         }
