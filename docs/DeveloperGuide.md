@@ -1052,49 +1052,56 @@ Use case ends.
 **Usability**
 
 7.  A user with above average typing speed (>50WPM) for regular English text (i.e. not code, not system admin commands) should be able to accomplish all of the tasks faster using commands than using the mouse.
-8.  Every feature should be usable through typed commands alone, without needing the mouse.
+8.  Every feature should be usable with the keyboard alone, without needing the mouse.
 9.  Every error message should state what was wrong with the input and, where applicable, the expected format.
 
 **Data**
 
 10. Data should be stored locally in a human-editable text file, without using a DBMS.
 11. Data should be saved automatically after every command that changes it, without the user needing to save manually.
-12. A command that fails should leave the stored data unchanged.
-13. If the data file is missing or cannot be read, the application should still start, without crashing. 
-14. Student contact numbers and payment records should be stored only on the user's computer, and should never be sent elsewhere.
+12. A command that fails should leave the data unchanged. This includes a command whose changes cannot be saved to the data file.
+13. If the data file is missing, the application should start with sample data.
+14. If the data file cannot be read, the application should still start without crashing, and should not overwrite the file.
+15. Student contact numbers and payment records should be stored only on the user's computer, and should never be sent elsewhere.
+16. Log files should not record student names or contact numbers.
 
 **Scope**
 
-15. The application is intended for a single user, and is not required to support multiple users sharing the same data file.
+17. The application is intended for a single user, and is not required to support multiple users sharing the same data file.
 
 ### Glossary
 
 * **Cascading deletion**: The automatic removal of all enrollments tied to a student or lesson when that student or lesson is deleted.
 * **CLI (Command Line Interface)**: A way of using the application by typing text commands, rather than clicking with the mouse.
 * **Command**: A text instruction that the user types into TuiTracker to perform an action, made up of a command word (e.g., `add`, `list`) followed by any required parameters, e.g., `delete student 12`.
+* **Command history**: The commands that ran successfully in the current session, which the user can bring back into the command box with the `Up` and `Down` keys. It is kept in memory only, and is cleared when TuiTracker closes.
 * **Command word**: The first word of a command, which specifies the action to perform, e.g., `add`, `delete`, `list` or `mark`.
 * **Contact**: The phone number of a student (or of the student's parent or guardian), with 3 to 15 digits and at most 25 characters in all, e.g., `91234567` or `+65 (9123) 4567`. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a `+` can start the number.
 * **Current month**: The calendar month given by the date on the user's computer. Payment statuses apply only to the current month.
-* **Data file**: The local, human-editable file in which TuiTracker stores all students, lessons and enrollments.
+* **Data file**: The local, human-editable JSON file in which TuiTracker stores all students, lessons and enrollments, at `data/tuitracker.json` by default.
 * **Display index**: The position of a record in a currently displayed list, starting from 1. It can change whenever the displayed list changes. Commands use permanent student and lesson IDs instead.
 * **Duplicate lesson**: A lesson with the same subject, level, day, start time and end time as an existing lesson. Subjects and levels are compared without considering letter case or extra spaces, so `Mathematics` and `mathematics` are the same subject.
 * **Duplicate student**: A student with the same name and contact as an existing student. Names are compared without considering letter case or extra spaces, and contacts by their digits only, so `alice  tan` with `9123 4567` duplicates `Alice Tan` with `91234567`.
 * **Enrollment**: The link between a student and a lesson that the student attends. A student can be enrolled in many lessons, and a lesson can have many students.
+* **Filter**: A condition that limits the displayed list to some students or lessons, e.g., the lessons on Monday. Only one filter can be active at a time, and `list` clears it.
 * **Lesson**: A weekly class conducted by the tutor, defined by its subject, level, day, start time, end time and fee.
 * **Lesson clash**: The situation where two lessons on the same day have overlapping timeslots, e.g., `15:00-16:30` and `16:00-17:00` on Monday. A lesson that starts exactly when another ends (e.g., `15:00-16:00` and `16:00-17:00`) does not clash with it.
-* **Lesson fee**: The amount charged for one session of a lesson: 0 or more, with at most two decimal places. A fee of 0 is for a free lesson.
+* **Lesson fee**: The amount charged for one session of a lesson: 0 or more, with at most 7 digits before the decimal point and at most two decimal places. A fee of 0 is for a free lesson.
 * **Lesson ID**: A unique positive integer assigned to a lesson when it is created. It never changes, and is used to refer to the lesson in commands.
-* **Level**: The education level of a student or lesson, e.g., `Primary 6` or `Secondary 2`. Levels are compared without considering letter case or extra spaces, so `Primary 6` and `primary   6` are the same level, but `P6` and `Primary 6` are different levels.
-* **Level matching**: Comparing a student's level with a lesson's level when the student is enrolled. A student can join a lesson of another level, but `add` then adds a note naming both levels.
+* **Level**: The education level of a student or lesson, e.g., `Primary 6` or `Secondary 2`, made up of letters, numbers, spaces and hyphens, with at most 30 characters. Levels are compared without considering letter case or extra spaces, so `Primary 6` and `primary   6` are the same level, but `P6` and `Primary 6` are different levels.
+* **Level matching**: Comparing a student's level with a lesson's level when the student is enrolled. A student can join a lesson of another level, but `add` and `edit` then add a note naming both levels.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS.
 * **Parameter**: A value given after the command word to provide the details a command needs, e.g., the student ID `12` in `delete student 12`. Some parameters are written after a _prefix_.
-* **Payment status**: Whether a student has paid for the current month (_Paid_) or not (_Unpaid_). Every student's payment status is reset to _Unpaid_ at the start of each month.
+* **Payment status**: Whether a student has paid for the current month (_Paid_) or not (_Unpaid_). TuiTracker stores the last month each student paid for, so every student becomes _Unpaid_ when a new month starts, without any change to the data file.
 * **Prefix**: A short label ending in `/` that marks which parameter a value belongs to, e.g., `c/` in `c/91234567` marks a contact. Parameters with prefixes can be given in any order.
+* **Read-only recovery mode**: The mode TuiTracker starts in when the data file cannot be read. It shows no records, blocks every command that changes data, and leaves the data file as it is, so that the user can repair or replace it.
+* **Sort order**: The order in which the displayed list shows students or lessons, set by `sort`, e.g., students by name. It is kept when the list is filtered or switched, but is not saved to the data file.
 * **Student**: A person taught by the tutor, defined by their name, contact and level.
 * **Student ID**: A unique positive integer assigned to a student when they are created. It never changes, and is used to refer to the student in commands. Not to be confused with a _display index_.
 * **Subject**: The subject taught in a lesson, e.g., `Mathematics`.
-* **Timeslot**: The day, start time and end time of a lesson, e.g., Monday `15:00-16:30`. Times use the 24-hour format with a one- or two-digit hour (`9:00` or `09:00`), and are stored and shown as `HH:mm`.
+* **Timeslot**: The day, start time and end time of a lesson, e.g., Monday `15:00-16:30`. Times use the 24-hour format with a one- or two-digit hour (`9:00` or `09:00`), and are stored and shown as `HH:mm`. A lesson must end later on the same day it starts, by `23:59` at the latest.
 * **Tutor**: The user of TuiTracker, i.e., a private tutor who manages their own students, lessons and payments.
+* **Weekly schedule**: The Monday-to-Sunday timeline of lessons shown by `schedule`. It repeats every week, since lessons have a day and time but no calendar date.
 * **WPM**: Words per minute, a standard measurement of how fast someone types.
 
 --------------------------------------------------------------------------------------------------------------------

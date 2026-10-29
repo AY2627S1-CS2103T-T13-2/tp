@@ -35,7 +35,7 @@ With TuiTracker, you can view and update student and lesson details, manage enro
 
    * `list lessons` : Lists all lessons.
 
-   * `add s/Alice Tan c/91234567 slv/Primary 6 l/Mathematics llv/Primary 6 d/Monday st/15:00 et/16:30 f/50.00` : Adds a student named `Alice Tan` to a new Mathematics lesson.
+   * `add s/Daniel Koh c/92223333 slv/Primary 6 l/Art llv/Primary 6 d/Tuesday st/10:00 et/11:00 f/40` : Adds a new student named `Daniel Koh` and enrolls them in a new Art lesson.
 
    * `edit student 1 c/90001111` : Updates the contact number of the student with ID 1.
 
@@ -167,7 +167,7 @@ At least one of `s/` and `l/` is needed. An existing student or lesson given on 
 
 Parameter | Meaning | Needed when | Rules
 ----------|---------|-------------|------
-`s/` | The student: an ID, or the name of a new student | you enroll a student, or add one | A name has at most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter. The words `s/o` and `d/o` can be part of a name, such as `Ravi s/o Kumar`; a name cannot start with the single word `O`.
+`s/` | The student: an ID, or the name of a new student | you enroll a student, or add one | A name has at most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter. The words `s/o` and `d/o` can be part of a name, such as `Ravi s/o Kumar`.
 `l/` | The lesson: an ID, or the subject of a new lesson | you enroll a student in a lesson, or add one | A subject has at most 50 characters: letters, numbers, spaces and `.` `,` `-` `(` `)` `&` `@`, with at least one letter.
 `c/` | The student's contact number | the student is new | 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a `+` can start the number, such as `+65 (9123) 4567`. Duplicates are compared by the digits only.
 `slv/` | The student's level, such as `Primary 6` | the student is new | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
