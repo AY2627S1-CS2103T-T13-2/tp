@@ -16,11 +16,13 @@ public class Level {
 
     public static final int MAX_LENGTH = 30;
 
-    public static final String MESSAGE_CONSTRAINTS_STUDENT = "Invalid student level. "
-            + "Level must contain letters or numbers and cannot exceed " + MAX_LENGTH + " characters.";
+    /** The rule that both messages state, so that the user knows which characters to remove. */
+    private static final String RULE = "A level has 1 to " + MAX_LENGTH + " characters: letters, numbers, spaces "
+            + "and hyphens, with at least one letter or number.";
 
-    public static final String MESSAGE_CONSTRAINTS_LESSON = "Invalid lesson level. "
-            + "Level must contain letters or numbers and cannot exceed " + MAX_LENGTH + " characters.";
+    public static final String MESSAGE_CONSTRAINTS_STUDENT = "Invalid student level. " + RULE;
+
+    public static final String MESSAGE_CONSTRAINTS_LESSON = "Invalid lesson level. " + RULE;
 
     /** Letters, numbers, spaces and hyphens only, with at least one letter or number. */
     private static final String VALIDATION_REGEX = "^(?=.*[\\p{L}\\p{N}])[\\p{L}\\p{N} \\-]+$";
