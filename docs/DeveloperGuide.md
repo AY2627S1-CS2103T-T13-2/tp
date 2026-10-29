@@ -428,6 +428,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | delete a lesson and its associated enrollments | remove a cancelled lesson without leaving obsolete enrollments |
 | `* * *` | tutor | mark a student as paid for the current month | track which students have paid |
 | `* * *` | tutor | have payment statuses reset for a new month | distinguish this month’s unpaid fees from last month’s payments |
+| `* * *` | tutor | view all my recurring lessons in a weekly schedule | spot busy periods and gaps in my teaching week |
 | `* *` | tutor | be shown matching existing students or lessons when adding an enrollment | reuse a record instead of creating a duplicate |
 | `* *` | tutor | use common aliases for education levels | enter levels quickly without creating accidental mismatches |
 | `* *` | tutor | undo an accidental addition | correct a mistake without manually deleting its records |
@@ -599,22 +600,60 @@ Use case ends.
 Use case ends.
 
 **Extensions**
-* 1a. The command is missing the kind, contains an unknown kind, or contains extra text.
-    * 1a1. System displays `Invalid command format. Use: delete student|lesson ID`.
+
+* 1a. The request has a missing or unknown kind, a missing or invalid ID, or extra input.
+    * 1a1. System explains the required request format.
     * Use case ends.
 
-* 1b. The ID is missing, non-numeric, or not a positive integer.
-    * 1b1. System displays `Invalid command format. Use: delete student|lesson ID`.
+* 1b. The ID is too large.
+    * 1b1. System informs the user that the ID exceeds the supported range.
     * Use case ends.
 
-* 2a. No student or lesson exists with the specified kind and ID.
-    * 2a1. System displays an error stating that no record of the specified kind exists with the given ID.
-    * 2a2. System leaves all data unchanged.
+* 2a. No record of the requested kind has the specified ID.
+    * 2a1. System informs the user that no student or lesson of that kind has the specified ID.
     * Use case ends.
 
-* 2b. The ID exists but belongs to the other kind of record.
-    * 2b1. System displays an error message.
-    * 2b2. System leaves all data unchanged.
+* 3a. The changes cannot be saved.
+    * 3a1. System leaves the record, its enrolments and the previous schedule selection unchanged.
+    * 3a2. System informs the user that no changes were made.
+    * Use case ends.
+
+* 4a. The deleted student was selected in the weekly schedule.
+    * 4a1. System shows all lessons in the weekly schedule and informs the user of the change.
+    * Use case ends.
+
+**Use case: View the weekly schedule**
+
+**MSS**
+
+1. User requests to view the weekly schedule of all lessons.
+2. System displays all recurring lessons by day and time, replacing any earlier student-specific schedule.
+3. System confirms that the weekly schedule is displayed.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. User requests the weekly schedule for a specific student.
+    * 1a1. System identifies the student.
+    * 1a2. System displays only the lessons attended by that student and confirms whose schedule is shown.
+    * Use case ends.
+
+* 1b. The request has an invalid parameter, a missing or invalid student ID, or extra input.
+    * 1b1. System explains the error.
+    * Use case ends.
+
+* 1c. The specified student does not exist.
+    * 1c1. System informs the user that no student has the specified ID.
+    * 1c2. System leaves the displayed view and schedule selection unchanged.
+    * Use case ends.
+
+* 1d. The specified student is not enrolled in any lessons.
+    * 1d1. System displays an empty weekly schedule for that student and informs the user that no lessons are scheduled for them.
+    * Use case ends.
+
+* 2a. There are no lessons to display.
+    * 2a1. System displays an empty weekly schedule and informs the user that no lessons are scheduled.
     * Use case ends.
 
 **Use case: Edit a student or lesson**
