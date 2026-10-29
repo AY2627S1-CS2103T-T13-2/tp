@@ -60,7 +60,7 @@ public class FileUtil {
         requireNonNull(content);
         createParentDirsOfFile(file);
 
-        Path parentDir = file.getParent();
+        Path parentDir = file.toAbsolutePath().getParent();
         Path tempFile = parentDir != null
                 ? Files.createTempFile(parentDir, file.getFileName().toString(), ".tmp")
                 : Files.createTempFile(file.getFileName().toString(), ".tmp");

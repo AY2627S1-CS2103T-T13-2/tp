@@ -70,6 +70,22 @@ public class FileUtilTest {
     }
 
     @Test
+    public void writeToFile_bareRelativePath_success() throws IOException {
+        Path file = Path.of("tempBareRelativeTestFile.tmp");
+        try {
+            Files.deleteIfExists(file);
+            FileUtil.writeToFile(file, "initial content");
+            assertTrue(Files.exists(file));
+            assertEquals("initial content", FileUtil.readFromFile(file));
+
+            FileUtil.writeToFile(file, "updated content");
+            assertEquals("updated content", FileUtil.readFromFile(file));
+        } finally {
+            Files.deleteIfExists(file);
+        }
+    }
+
+    @Test
     public void writeToFile_nullArgs_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> FileUtil.writeToFile(null, "content"));
         assertThrows(NullPointerException.class, () -> FileUtil.writeToFile(tempFolder.resolve("file.txt"), null));
