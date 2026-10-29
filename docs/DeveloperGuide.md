@@ -220,11 +220,11 @@ The order is deliberate. Duplicates are checked **before** clashes because an id
 
 The `edit` command changes the specified fields of one existing student or lesson while preserving its ID and related data. `EditCommandParser` creates an `EditCommand` containing either a `StudentEdit` or a `LessonEdit`; fields that were not supplied remain empty in that edit request and retain their existing values during execution. `EditCommand` builds the complete updated record and validates duplicates, the final timeslot and clashes before asking the `Model` to replace the original.
 
-Duplicate students are matched using `Name#isSameName` and `Contact#isSameContact`; duplicate lessons use `Subject#isSameSubject`, level equality and the final timeslot. Edit's private lookup helpers exclude the record being edited, so that changing only formatting or letter case is not mistaken for a duplicate or a clash. Warning notes are appended to the success message under specific conditions: a level-mismatch note is added only when the edited level differs from an enrolled lesson or student, a namesake note is added only when the final name matches another student while the contact differs, and a free-lesson note is added only when the edit explicitly supplies `f/0`.
+Duplicate students are matched using `Name#isSameName` and `Contact#isSameContact`; duplicate lessons use `Subject#isSameSubject`, level equality and the final timeslot. Edit's private lookup helpers exclude the record being edited, so that changing only formatting or letter case is not mistaken for a duplicate or a clash. The success message includes a note only when an edited level mismatches an enrollment, the student's final name matches another student's name but their contacts differ, or the edit explicitly changes a lesson's fee to `0`.
 
 If the requested details are identical to the stored record, `EditCommand` returns `No changes were made.` and marks the result so that `LogicManager` skips saving. A case-only level edit is still treated as a real edit because it changes the stored spelling, so it follows the normal save-and-rollback path.
 
-The sequence diagram below shows `execute("edit student 1 c/90001111")`, which updates only an existing student's contact number. Less-important method parameters, duplicate checking, note generation, the no-change path, the error paths, and the common snapshot, save, and rollback interactions in `LogicManager` are omitted to keep the diagram focused. Editing a lesson follows the same overall flow, with validation of its final timeslot, duplicates and clashes before the update.
+The sequence diagram below shows `execute("edit student 1 c/90001111")`, which updates only an existing student's contact number. Less-important method parameters, duplicate checking, note generation, the no-change path and the error paths are omitted to keep the diagram focused. The common model snapshot, storage save and rollback interactions performed by `LogicManager` are also omitted. Editing a lesson follows the same overall flow, with validation of its final timeslot, duplicates and clashes before the update.
 
 <puml src="diagrams/EditSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `edit` Command" />
 
@@ -257,7 +257,7 @@ The activity diagram summarizes format validation, lookup, deletion, enrollment 
 
 ### List feature
 
-The `list` command clears any active filter and switches the interface to the requested student or lesson list. If no view is supplied, `ListCommandParser` defaults to the student list.
+The `list` command clears any active filter and switches the interface to the requested student or lesson list. If no view is supplied, `ListCommandParser` defaults to the student list. It leaves the selected sort order unchanged. Without a prior `sort` command, students use ascending ID and lessons use weekday, start time, then ID; after `sort`, `list` shows the full records in that selected order.
 
 The sequence diagram below shows `execute("list lessons")` when four lessons exist. The invalid-view and empty-list paths are omitted because they do not change the main interaction between the Logic and Model components.
 
@@ -422,6 +422,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
 | `* * *` | tutor | list my students with their contact details, levels, lessons, and payment statuses | review my roster and outstanding payments |
 | `* * *` | tutor | list my lessons with their timeslots, fees, and enrolled students | review my teaching schedule |
+| `* * *` | tutor | correct or update an existing student or lesson without changing its identity or related records | keep details accurate without recreating the record and its enrollments |
 | `* * *` | tutor | view the weekly schedule for one student | see when that student's lessons take place |
 | `* * *` | tutor | delete a student and their associated enrollments | remove a student who no longer attends lessons without leaving obsolete enrollments |
 | `* * *` | tutor | delete a lesson and its associated enrollments | remove a cancelled lesson without leaving obsolete enrollments |
@@ -504,24 +505,86 @@ Use case ends.
 
 **Extensions**
 
-* 2a. The user specifies an invalid view or extra text.
+* 2a. The user specifies an unknown view or extra text.
 
     * 2a1. System displays `Invalid view. Use: list [students|lessons]`.
     * Use case ends.
 
-* 2b. The user specifies the same view repeatedly.
+* 2b. The user repeats the same view.
 
-    * 2b1. System displays `The view can only be specified once.`.
+    * 2b1. System displays `The view can only be specified once.`
     * Use case ends.
 
-* 2c. The user specifies both students and lessons.
+* 2c. The user specifies both `students` and `lessons`.
 
-    * 2c1. System displays `Choose either students or lessons, not both.`.
+    * 2c1. System displays `Choose either students or lessons, not both.`
     * Use case ends.
 
 * 4a. There are no records of the requested type.
 
     * 4a1. System displays an empty list and an informative message.
+    * Use case ends.
+
+**Use case: Edit a student or lesson**
+
+**MSS**
+
+1. User enters an `edit` command containing a record type, its ID, and one or more fields to change.
+2. System validates the command format and supplied field values.
+3. System retrieves the specified student or lesson.
+4. System combines the supplied fields with the record's unchanged fields.
+5. System validates the complete updated record for duplicates and, for a lesson, its final timeslot and clashes.
+6. System replaces the record while retaining its ID, enrollments, and, for a student, payment status.
+7. System saves the change and confirms the edited record.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The record type, ID, field selection, or command format is invalid.
+
+    * 1a1. System displays an error message explaining the expected input.
+    * 1a2. System makes no changes.
+    * Use case ends.
+
+* 2a. A supplied field value is invalid.
+
+    * 2a1. System displays the applicable field validation message.
+    * 2a2. System makes no changes.
+    * Use case ends.
+
+* 3a. No student or lesson has the specified ID.
+
+    * 3a1. System displays a not-found message for the requested record type and ID.
+    * Use case ends.
+
+* 4a. The supplied values already match the stored record.
+
+    * 4a1. System displays `No changes were made.` and skips saving.
+    * Use case ends.
+
+* 5a. The updated record duplicates another student or lesson.
+
+    * 5a1. System displays a message identifying the duplicate record.
+    * 5a2. System makes no changes.
+    * Use case ends.
+
+* 5b. The lesson's final end time is not later than its final start time on the same day.
+
+    * 5b1. System displays the applicable invalid-end-time message.
+    * 5b2. System makes no changes.
+    * Use case ends.
+
+* 5c. The lesson's final timeslot clashes with another lesson.
+
+    * 5c1. System displays a clash message naming the other lesson and its timeslot.
+    * 5c2. System makes no changes.
+    * Use case ends.
+
+* 7a. The change cannot be saved.
+
+    * 7a1. System restores the original data.
+    * 7a2. System displays the applicable file-write or permission error.
     * Use case ends.
 
 **Use case: Delete a student or lesson**
@@ -740,11 +803,15 @@ On first launch, the sample data has Alice Tan (student ID 1), Bryan Lim (ID 2),
 
 ### Listing and filtering
 
-1. Enter `list lessons`. Expected: all four sample lessons appear, and the result says `Listed 4 lessons.`
-2. Enter `filter student 1`. Expected: only Alice's Mathematics and Primary 6 Science lessons appear.
-3. Enter `list lessons`. Expected: the filter is cleared and all four lessons appear again.
-4. Enter `filter paid`. Expected: the Students view shows Bryan, who is paid in the sample data.
-5. Enter `list students`. Expected: the filter is cleared and all three students appear.
+1. Enter `list students`. Expected: all three sample students appear in ascending ID order, and the result says `Listed 3 students.`
+2. Enter `list lessons`. Expected: all four sample lessons appear in chronological order, and the result says `Listed 4 lessons.`
+3. Enter `filter student 1`. Expected: only Alice's Mathematics and Primary 6 Science lessons appear.
+4. Enter `list lessons`. Expected: the filter is cleared and all four lessons appear again.
+5. Enter `filter paid`. Expected: the Students view shows Bryan, who is paid in the sample data.
+6. Enter `list students`. Expected: the filter is cleared and all three students appear.
+7. Enter `sort student name desc`, followed by `list students`. Expected: all three students remain sorted by descending name, with Chloe first; `list` does not restore ID order.
+8. Enter `list students students`. Expected: `The view can only be specified once.` The displayed list remains unchanged.
+9. Enter `list tutors`. Expected: `Invalid view. Use: list [students|lessons]`. The displayed list remains unchanged.
 
 ### Adding students, lessons and enrollments
 
@@ -810,9 +877,13 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
 
 ### Editing a student and a lesson
 
-1. Enter `edit student 1 c/90001111`. Expected: Alice's contact changes while her ID and enrollments stay the same.
-2. Enter `edit lesson 1 f/55`, then `list lessons`. Expected: Mathematics keeps lesson ID 1 and its enrollments, but its displayed fee becomes 55.
-3. Enter `edit student 1 s/Alice Tan`. Expected: the result says `No changes were made.`
+1. Enter `edit student 1 c/90001111`, followed by `list students`. Expected: Alice's contact becomes `90001111`; she retains ID 1, lesson IDs 1 and 2, and her unpaid status.
+2. Enter `edit lesson 1 f/55`, followed by `list lessons`. Expected: Mathematics retains lesson ID 1 and Alice remains enrolled, but its displayed fee becomes 55.
+3. Enter `edit student 1 s/Alice Tan`. Expected: `No changes were made.` The displayed student details remain unchanged.
+4. Enter `edit student 1 c/12`. Expected: the invalid-contact message is displayed and Alice's contact remains `90001111`.
+5. Enter `edit student 1 s/Bryan Lim c/98765432`. Expected: the app identifies student ID 2 as a duplicate; neither student changes.
+6. Enter `edit lesson 1 st/17:00`. Expected: the app asks for an end time later than the final start time; Mathematics remains at Monday 15:00-16:30.
+7. Enter `edit lesson 2 d/Monday st/16:00 et/17:00`. Expected: the app reports a clash with Mathematics (lesson ID 1); lesson 2 remains unchanged.
 
 ### Deleting a student or lesson
 

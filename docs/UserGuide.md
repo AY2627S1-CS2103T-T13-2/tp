@@ -107,8 +107,9 @@ Displays either all students or all lessons. Use this command to switch between 
 
 **Displayed information:**
 
-* The student list shows each student's name, ID, contact number, level, payment status for the current month, and enrolled lesson IDs. Students are ordered by ascending ID by default, but any active sort order selected using the `sort` command is preserved.
-* The lesson list shows each lesson's subject, ID, level, weekly timeslot, fee per session, and enrolled students. Lessons are ordered by day of the week (Monday first), start time, then ID by default, but any active sort order selected using the `sort` command is preserved.
+* The student list shows each student's name, ID, contact number, level, payment status for the current month, and enrolled lesson IDs. Its default order is ascending ID.
+* The lesson list shows each lesson's subject, ID, level, weekly timeslot, fee per session, and enrolled students. Its default order is day of the week (Monday first), start time, then ID.
+* If you previously used `sort`, `list` keeps that selected order while clearing the active filter. For example, after `sort student name desc`, `list students` still shows students by descending name.
 
 **Notes:**
 
@@ -270,7 +271,7 @@ Each one starts from the sample data and is followed by the result you should se
 * The record's ID never changes.
 * Editing a student preserves their payment status and lesson enrollments.
 * Editing a lesson preserves its student enrollments.
-* Student duplicates are compared using the name without regard to letter case or extra spaces, and using only the digits of the contact number. Lesson duplicates compare the subject and level without regard to letter case or extra spaces.
+* Student duplicates are compared using the name without regard to letter case or extra spaces, and using only the digits of the contact number. Lesson duplicates have the same subject and level without regard to letter case or extra spaces, and the same final day, start time, and end time.
 * An edit that results in the same name as another student but a different contact number goes ahead with a note naming that student and ID.
 * Changing a student's level goes ahead even if it differs from their enrolled lessons. The result adds one note per mismatching lesson, including its ID. Changing a lesson's level similarly adds one note per affected student.
 * Changing a lesson fee to `0` goes ahead with a note asking you to check that it is meant to be free.
