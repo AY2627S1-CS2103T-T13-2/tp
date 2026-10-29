@@ -55,7 +55,15 @@ public class StudentCard extends UiPart<Region> {
         contact.setText("Contact: " + student.getContact().value);
         level.setText("Level: " + student.getLevel());
         payment.setText("Payment: " + (paid ? "Paid" : "Unpaid"));
-        lessons.setText("Lessons: " + (lessonIds.isEmpty() ? "none"
-                : lessonIds.stream().map(LessonId::toString).collect(Collectors.joining(", "))));
+        lessons.setText(lessonIdsText(lessonIds));
+    }
+
+    /**
+     * Returns the line that lists the IDs of the lessons a student is enrolled in. The label says that the numbers
+     * are IDs, so that {@code Lesson IDs: 2} cannot be read as a count of two lessons.
+     */
+    static String lessonIdsText(List<LessonId> lessonIds) {
+        return "Lesson IDs: " + (lessonIds.isEmpty() ? "none"
+                : lessonIds.stream().map(LessonId::toString).collect(Collectors.joining(", ")));
     }
 }

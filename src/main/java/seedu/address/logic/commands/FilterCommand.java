@@ -22,15 +22,16 @@ import seedu.address.model.student.StudentId;
 
 /**
  * Shows only the lessons of one student, only the students of one lesson, only the lessons on one day,
- * only the students who are paid or unpaid for the current month, or only the lessons with a given subject,
- * level, or both.
+ * only the students who are paid or unpaid for the current month, only the students at a given level, or
+ * only the lessons with a given subject, level, or both.
  */
 public class FilterCommand extends Command {
 
     public static final String COMMAND_WORD = "filter";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + " student|lesson ID or " + COMMAND_WORD + " day DAY or "
-            + COMMAND_WORD + " paid|unpaid or " + COMMAND_WORD + " [l/SUBJECT] [llv/LESSON_LEVEL]";
+            + COMMAND_WORD + " paid|unpaid or " + COMMAND_WORD + " [l/SUBJECT] [llv/LESSON_LEVEL] or "
+            + COMMAND_WORD + " slv/STUDENT_LEVEL";
 
     public static final String MESSAGE_SHOWING_LESSONS = "Showing %1$d lesson(s) for student ID %2$s.";
 
@@ -43,9 +44,11 @@ public class FilterCommand extends Command {
     public static final String MESSAGE_SHOWING_STUDENTS_BY_PAID_STATUS =
             "Showing %1$d student(s) who are %2$s for the current month.";
 
+    public static final String MESSAGE_SHOWING_STUDENTS_BY_LEVEL = "Showing %1$d student(s) at level %2$s.";
+
     /**
-     * Only one kind of filter is set: the student, the lesson, the day, the paid status, or the subject and
-     * level. When filtering by subject and level, either one or both may be set.
+     * Only one kind of filter is set: the student, the lesson, the day, the paid status, the student level, or
+     * the subject and level. When filtering by subject and level, either one or both may be set.
      */
     private final StudentId studentId;
     private final LessonId lessonId;
@@ -53,6 +56,7 @@ public class FilterCommand extends Command {
     private final Subject subject;
     private final Level level;
     private final Boolean paidStatus;
+    private final Level studentLevel;
 
     /**
      * Creates a command that shows only the lessons the given student is enrolled in.
@@ -64,6 +68,7 @@ public class FilterCommand extends Command {
         this.subject = null;
         this.level = null;
         this.paidStatus = null;
+        this.studentLevel = null;
     }
 
     /**
@@ -76,6 +81,7 @@ public class FilterCommand extends Command {
         this.subject = null;
         this.level = null;
         this.paidStatus = null;
+        this.studentLevel = null;
     }
 
     /**
@@ -88,6 +94,7 @@ public class FilterCommand extends Command {
         this.subject = null;
         this.level = null;
         this.paidStatus = null;
+        this.studentLevel = null;
     }
 
     /**
@@ -102,6 +109,7 @@ public class FilterCommand extends Command {
         this.subject = subject;
         this.level = level;
         this.paidStatus = null;
+        this.studentLevel = null;
     }
 
     /**
@@ -114,6 +122,20 @@ public class FilterCommand extends Command {
         this.subject = null;
         this.level = null;
         this.paidStatus = paidStatus;
+        this.studentLevel = null;
+    }
+
+    /**
+     * Creates a command that shows only the students at the given level.
+     */
+    public FilterCommand(Level studentLevel) {
+        this.studentId = null;
+        this.lessonId = null;
+        this.day = null;
+        this.subject = null;
+        this.level = null;
+        this.paidStatus = null;
+        this.studentLevel = requireNonNull(studentLevel);
     }
 
     @Override
@@ -154,6 +176,13 @@ public class FilterCommand extends Command {
             model.setListView(ListView.STUDENTS);
             return new CommandResult(String.format(MESSAGE_SHOWING_STUDENTS_BY_PAID_STATUS,
                     model.getStudentList().size(), paidStatus ? "paid" : "unpaid"));
+        }
+
+        if (studentLevel != null) {
+            model.filterStudentsByLevel(studentLevel);
+            model.setListView(ListView.STUDENTS);
+            return new CommandResult(String.format(MESSAGE_SHOWING_STUDENTS_BY_LEVEL,
+                    model.getStudentList().size(), studentLevel));
         }
 
         model.filterLessonsBySubjectAndLevel(subject, level);
@@ -197,12 +226,13 @@ public class FilterCommand extends Command {
                 && Objects.equals(day, otherFilterCommand.day)
                 && Objects.equals(subject, otherFilterCommand.subject)
                 && Objects.equals(level, otherFilterCommand.level)
-                && Objects.equals(paidStatus, otherFilterCommand.paidStatus);
+                && Objects.equals(paidStatus, otherFilterCommand.paidStatus)
+                && Objects.equals(studentLevel, otherFilterCommand.studentLevel);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(studentId, lessonId, day, subject, level, paidStatus);
+        return Objects.hash(studentId, lessonId, day, subject, level, paidStatus, studentLevel);
     }
 
     @Override
@@ -214,6 +244,7 @@ public class FilterCommand extends Command {
                 .add("subject", subject)
                 .add("level", level)
                 .add("paidStatus", paidStatus)
+                .add("studentLevel", studentLevel)
                 .toString();
     }
 }

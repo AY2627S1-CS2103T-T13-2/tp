@@ -70,6 +70,7 @@ public class ModelManager implements Model {
     private Subject filteredBySubject;
     private Level filteredByLevel;
     private Boolean filteredByPaidStatus;
+    private Level filteredByStudentLevel;
 
     /**
      * Initializes a ModelManager with the given tuiTracker, userPrefs and clock.
@@ -316,6 +317,14 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public void filterStudentsByLevel(Level level) {
+        requireNonNull(level);
+        clearFilterFields();
+        filteredByStudentLevel = level;
+        refreshFilters();
+    }
+
+    @Override
     public void resetFilters() {
         clearFilterFields();
         refreshFilters();
@@ -325,11 +334,17 @@ public class ModelManager implements Model {
     public void sort(SortField field, boolean ascending) {
         requireNonNull(field);
         Comparator<?> comparator = switch (field) {
+            case STUDENT_ID -> Comparator.comparing(student -> ((Student) student).getId());
             case STUDENT_NAME -> Comparator.comparing(student -> ((Student) student).getName().fullName,
                     String.CASE_INSENSITIVE_ORDER).thenComparing(student -> ((Student) student).getId());
             case STUDENT_PAYMENT -> Comparator.comparing(student -> ((Student) student).isPaid(currentMonth()))
                     .thenComparing(student -> ((Student) student).getId());
+            case STUDENT_LEVEL -> Comparator.comparing(student -> ((Student) student).getLevel().value,
+                    String.CASE_INSENSITIVE_ORDER).thenComparing(student -> ((Student) student).getId());
+            case LESSON_ID -> Comparator.comparing(lesson -> ((Lesson) lesson).getId());
             case LESSON_SUBJECT -> Comparator.comparing(lesson -> ((Lesson) lesson).getSubject().value,
+                    String.CASE_INSENSITIVE_ORDER).thenComparing(lesson -> ((Lesson) lesson).getId());
+            case LESSON_LEVEL -> Comparator.comparing(lesson -> ((Lesson) lesson).getLevel().value,
                     String.CASE_INSENSITIVE_ORDER).thenComparing(lesson -> ((Lesson) lesson).getId());
             case LESSON_FEE -> Comparator.comparing(lesson -> ((Lesson) lesson).getFee().getAmount())
                     .thenComparing(lesson -> ((Lesson) lesson).getId());
@@ -338,7 +353,7 @@ public class ModelManager implements Model {
         if (!ascending) {
             comparator = comparator.reversed();
         }
-        if (field == SortField.STUDENT_NAME || field == SortField.STUDENT_PAYMENT) {
+        if (field.name().startsWith("STUDENT_")) {
             @SuppressWarnings("unchecked")
             Comparator<Student> studentComparator = (Comparator<Student>) comparator;
             sortedStudents.setComparator(studentComparator);
@@ -358,6 +373,7 @@ public class ModelManager implements Model {
         filteredBySubject = null;
         filteredByLevel = null;
         filteredByPaidStatus = null;
+        filteredByStudentLevel = null;
     }
 
     /**
@@ -371,6 +387,7 @@ public class ModelManager implements Model {
         final Subject subjectFilter = filteredBySubject;
         final Level levelFilter = filteredByLevel;
         final Boolean paidFilter = filteredByPaidStatus;
+        final Level studentLevelFilter = filteredByStudentLevel;
 
         Predicate<Student> studentPredicate;
         if (lessonFilter != null) {
@@ -378,6 +395,8 @@ public class ModelManager implements Model {
         } else if (paidFilter != null) {
             final YearMonth month = currentMonth();
             studentPredicate = student -> student.isPaid(month) == paidFilter;
+        } else if (studentLevelFilter != null) {
+            studentPredicate = student -> student.getLevel().equals(studentLevelFilter);
         } else {
             studentPredicate = student -> true;
         }

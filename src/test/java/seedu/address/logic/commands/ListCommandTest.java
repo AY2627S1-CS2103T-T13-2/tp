@@ -10,6 +10,8 @@ import static seedu.address.testutil.TypicalLessons.MATHEMATICS;
 import static seedu.address.testutil.TypicalStudents.ALICE;
 import static seedu.address.testutil.TypicalTuiTracker.getTypicalTuiTracker;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.model.ListView;
@@ -49,6 +51,16 @@ public class ListCommandTest {
     }
 
     @Test
+    public void execute_clearsScheduleStudentSelection() {
+        model.setScheduleStudentId(Optional.of(ALICE.getId()));
+        Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+        String expectedMessage = String.format(ListCommand.MESSAGE_LISTED_STUDENTS, 3);
+
+        assertCommandSuccess(new ListCommand(ListView.STUDENTS), model, expectedMessage, expectedModel);
+        assertTrue(model.getScheduleStudentId().isEmpty());
+    }
+
+    @Test
     public void execute_lessons_clearsFilterAndShowsAllLessons() {
         model.filterLessonsByStudent(ALICE.getId());
         Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
@@ -56,6 +68,29 @@ public class ListCommandTest {
         String expectedMessage = String.format(ListCommand.MESSAGE_LISTED_LESSONS, 4);
 
         assertCommandSuccess(new ListCommand(ListView.LESSONS), model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_studentsFromStudentSchedule_clearsScheduleSelection() {
+        model.setScheduleStudentId(Optional.of(ALICE.getId()));
+        model.setListView(ListView.SCHEDULE);
+        Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+        String expectedMessage = String.format(ListCommand.MESSAGE_LISTED_STUDENTS, 3);
+
+        assertCommandSuccess(new ListCommand(ListView.STUDENTS), model, expectedMessage, expectedModel);
+        assertTrue(model.getScheduleStudentId().isEmpty());
+    }
+
+    @Test
+    public void execute_lessonsFromStudentSchedule_clearsScheduleSelection() {
+        model.setScheduleStudentId(Optional.of(ALICE.getId()));
+        model.setListView(ListView.SCHEDULE);
+        Model expectedModel = new ModelManager(getTypicalTuiTracker(), new UserPrefs(), CLOCK);
+        expectedModel.setListView(ListView.LESSONS);
+        String expectedMessage = String.format(ListCommand.MESSAGE_LISTED_LESSONS, 4);
+
+        assertCommandSuccess(new ListCommand(ListView.LESSONS), model, expectedMessage, expectedModel);
+        assertTrue(model.getScheduleStudentId().isEmpty());
     }
 
     @Test
@@ -96,6 +131,12 @@ public class ListCommandTest {
 
         assertCommandSuccess(new ListCommand(ListView.LESSONS), oneLessonModel,
                 ListCommand.MESSAGE_LISTED_ONE_LESSON, expectedModel);
+    }
+
+    @Test
+    public void isDataMutating_returnsFalse() {
+        assertFalse(new ListCommand(ListView.STUDENTS).isDataMutating());
+        assertFalse(new ListCommand(ListView.LESSONS).isDataMutating());
     }
 
     @Test

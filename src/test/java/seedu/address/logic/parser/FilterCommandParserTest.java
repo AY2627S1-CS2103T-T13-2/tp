@@ -92,6 +92,35 @@ public class FilterCommandParserTest {
     }
 
     @Test
+    public void parse_validStudentLevelArgs_returnsFilterCommand() {
+        Level level = new Level("Secondary 3");
+
+        assertParseSuccess(parser, " slv/Secondary 3", new FilterCommand(level));
+
+        // no leading space
+        assertParseSuccess(parser, "slv/Secondary 3", new FilterCommand(level));
+    }
+
+    @Test
+    public void parse_invalidStudentLevel_throwsParseException() {
+        assertParseFailure(parser, " slv/", Level.MESSAGE_CONSTRAINTS_STUDENT);
+        assertParseFailure(parser, " slv/Primary 6!", Level.MESSAGE_CONSTRAINTS_STUDENT);
+    }
+
+    @Test
+    public void parse_repeatedStudentLevel_throwsParseException() {
+        assertParseFailure(parser, " slv/Primary 6 slv/Primary 5", MESSAGE_DUPLICATE_PARAMETER);
+    }
+
+    @Test
+    public void parse_studentLevelCombinedWithOtherForms_throwsParseException() {
+        assertParseFailure(parser, " day slv/Primary 6", FilterCommandParser.MESSAGE_MIXED_FILTER_FORMS);
+        assertParseFailure(parser, " lesson 1 slv/Primary 6", FilterCommandParser.MESSAGE_MIXED_FILTER_FORMS);
+        assertParseFailure(parser, " l/Mathematics slv/Primary 6", FilterCommandParser.MESSAGE_MIXED_FILTER_FORMS);
+        assertParseFailure(parser, " llv/Primary 6 slv/Primary 6", FilterCommandParser.MESSAGE_MIXED_FILTER_FORMS);
+    }
+
+    @Test
     public void parse_invalidSubjectOrLevel_throwsParseException() {
         assertParseFailure(parser, " l/", FilterCommandParser.MESSAGE_INVALID_SUBJECT);
         assertParseFailure(parser, " l/123", FilterCommandParser.MESSAGE_INVALID_SUBJECT);

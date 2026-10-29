@@ -107,8 +107,9 @@ Displays either all students or all lessons. Use this command to switch between 
 
 **Displayed information:**
 
-* The student list shows each student's name, ID, contact number, level, payment status for the current month, and enrolled lesson IDs. Students are ordered by ascending ID.
-* The lesson list shows each lesson's subject, ID, level, weekly timeslot, fee per session, and enrolled students. Lessons are ordered by day of the week (Monday first), start time, then ID.
+* The student list shows each student's name, ID, contact number, level, payment status for the current month, and enrolled lesson IDs. Its default order is ascending ID.
+* The lesson list shows each lesson's subject, ID, level, weekly timeslot, fee per session, and enrolled students. Its default order is day of the week (Monday first), start time, then ID.
+* If you previously used `sort`, `list` keeps that selected order while clearing the active filter. For example, after `sort student name desc`, `list students` still shows students by descending name.
 
 **Notes:**
 
@@ -185,7 +186,7 @@ Each one is followed by the result you should see.
 1. `add s/4 l/2`: Enrolled Daniel Koh [Student ID: 4] in Science [Lesson ID: 2]. Payment status: Unpaid.
 1. `add s/2 l/Physics llv/Secondary 2 d/Friday st/14:00 et/15:00 f/55`: Enrolled Bryan Lim [Student ID: 2] in Physics [Lesson ID: 7]. Payment status: Paid.
 1. `add s/1 l/4`: Enrolled Alice Tan [Student ID: 1] in English [Lesson ID: 4]. Payment status: Unpaid. The result ends with `Note: Alice Tan's level (Primary 6) differs from the lesson's level (Primary 4).` A student can join a lesson of another level, but the note asks you to check that this is intended.
-1. `add s/Nora Lim c/90000000 slv/Primary 6`: Added student Nora Lim [Student ID: 6]. Nora is not enrolled in any lesson yet, so the student list shows `Lessons: none`.
+1. `add s/Nora Lim c/90000000 slv/Primary 6`: Added student Nora Lim [Student ID: 6]. Nora is not enrolled in any lesson yet, so the student list shows `Lesson IDs: none`.
 1. `add l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50`: Added lesson Mathematics [Lesson ID: 8]. No student is enrolled yet.
 1. `add s/6 l/8`: Enrolled Nora Lim [Student ID: 6] in Mathematics [Lesson ID: 8]. Payment status: Unpaid.
 
@@ -270,7 +271,7 @@ Each one starts from the sample data and is followed by the result you should se
 * The record's ID never changes.
 * Editing a student preserves their payment status and lesson enrollments.
 * Editing a lesson preserves its student enrollments.
-* Student duplicates are compared using the name without regard to letter case or extra spaces, and using only the digits of the contact number. Lesson duplicates compare the subject and level without regard to letter case or extra spaces.
+* Student duplicates are compared using the name without regard to letter case or extra spaces, and using only the digits of the contact number. Lesson duplicates have the same subject and level without regard to letter case or extra spaces, and the same final day, start time, and end time.
 * An edit that results in the same name as another student but a different contact number goes ahead with a note naming that student and ID.
 * Changing a student's level goes ahead even if it differs from their enrolled lessons. The result adds one note per mismatching lesson, including its ID. Changing a lesson's level similarly adds one note per affected student.
 * Changing a lesson fee to `0` goes ahead with a note asking you to check that it is meant to be free.
@@ -340,73 +341,92 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 
 ### Marking a student as paid: `mark`
 
-Marks a student as paid for the current month using the student's ID. Use this command after receiving the student's payment for the current month.
+Marks one or more students, or all students enrolled in a lesson, as paid for the current month. Use this command after receiving payment for the current month.
 
-**Format:** `mark ID`
+**Format:** `mark ID [MORE_IDS]...` or `mark lesson LESSON_ID`
 
 **Parameters:**
 
-* `ID` — the student's positive whole-number ID, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
-* Leading and trailing spaces are ignored. No other text may follow the ID.
+* `ID` — one or more student positive whole-number IDs separated by spaces, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`). Duplicate IDs are merged.
+* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as paid.
+* Leading and trailing spaces are ignored.
 
 **Examples:**
 
-* `mark 1` — marks the student with ID 1 as paid for the current month.
-* `mark 0012` — marks student 12 as paid; leading zeros are ignored.
+* `mark 1` — marks student 1 as paid for the current month.
+* `mark 1 2 3` — marks students 1, 2, and 3 as paid for the current month.
+* `mark lesson 1` — marks all students enrolled in lesson 1 as paid for the current month.
 
 **Successful marking:**
 
-* The result box confirms the student's name, for example `Marked Alice Tan as paid for the current month.`
-* The student's payment status for the current month is updated to paid.
+* For a single student: `Marked Alice Tan as paid for the current month.`
+* For multiple students: `Marked Alice Tan, Bob Tan as paid for the current month.`
+* If some students were already marked as paid: `Marked Alice Tan as paid for the current month. (Already paid: Bob Tan)`
+* The payment status of the marked students for the current month is updated to paid.
 
 **Notes:**
 
 * The command records payment only for the current month.
-* A student who is already marked as paid for the current month cannot be marked again.
-* Student IDs and lesson IDs are separate. The ID must belong to a student.
+* If a single student is already marked as paid, the command fails and displays an error message.
+* When specifying multiple students or a lesson, if some students are already paid, the command marks the remaining unpaid students and informs you of those already paid. If all specified students or lesson students are already paid, no change is made and an error message is displayed.
+* Student IDs and lesson IDs are separate.
 * The ID must be a positive whole number. For example, `mark 0` and `mark -1` are invalid.
 
 **Errors:**
 
-* A missing ID or extra text after the ID — the app displays `Invalid command format. Use: mark ID`.
+* A missing ID or invalid format — the app displays `Invalid command format. Use: mark ID [MORE_IDS]... or mark lesson LESSON_ID`.
 * A malformed or non-positive ID — the app displays `ID must be a positive whole number.`
 * An ID above `2147483647` — the app displays `ID is too large. No student or lesson has an ID above 2147483647.`
-* No student has that ID — the app displays `No student found with ID 999.` (using the requested ID). An ID belonging only to a lesson does not match.
-* The student is already marked as paid for the current month — the app displays `Alice Tan is already marked as paid for the current month.` (using the student's name).
+* No student or lesson has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID).
+* No students are enrolled in the lesson — the app displays `No students are enrolled in Lesson 1.`
+* All specified students are already marked as paid — the app displays `Alice Tan is already marked as paid for the current month.` or `All specified students are already marked as paid for the current month.` or `All students in Lesson 1 are already marked as paid for the current month.`
 
 No data is changed on failure.
 
 ### Correcting a payment to unpaid: `unmark`
 
-Corrects an accidental payment entry by marking the student as unpaid for the current month.
+Marks one or more students, or all students enrolled in a lesson, as unpaid for the current month. Use this command to correct accidental payment entries.
 
-**Format:** `unmark ID`
+**Format:** `unmark ID [MORE_IDS]...` or `unmark lesson LESSON_ID`
 
-Examples:
+**Parameters:**
+
+* `ID` — one or more student positive whole-number IDs separated by spaces, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`). Duplicate IDs are merged.
+* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as unpaid.
+* Leading and trailing spaces are ignored.
+
+**Examples:**
 
 * `unmark 1` — marks student 1 as unpaid for the current month.
-* `unmark 0012` — marks student 12 as unpaid; leading zeros are ignored.
+* `unmark 1 2 3` — marks students 1, 2, and 3 as unpaid for the current month.
+* `unmark lesson 1` — marks all students enrolled in lesson 1 as unpaid for the current month.
 
-The student must exist and must currently be marked as paid. The change is saved immediately and is retained
-after restarting TuiTracker. The student's details and lesson enrollments are not changed.
+**Successful unmarking:**
 
-### Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status: `filter`
+* For a single student: `Marked Alice Tan as unpaid for the current month.`
+* For multiple students: `Marked Alice Tan, Bob Tan as unpaid for the current month.`
+* If some students were already marked as unpaid: `Marked Alice Tan as unpaid for the current month. (Already unpaid: Bob Tan)`
 
-Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, only the lessons on one day of the week, only the lessons with a given subject, level, or both, or only the students who are paid or unpaid for the current month.
+The change is saved immediately and is retained after restarting TuiTracker. The student's details and lesson enrollments are not changed.
 
-Format: `filter student|lesson ID`, `filter day DAY`, `filter paid|unpaid` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]`
+### Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status or level: `filter`
+
+Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, only the lessons on one day of the week, only the lessons with a given subject, level, or both, only the students who are paid or unpaid for the current month, or only the students at a given level.
+
+Format: `filter student|lesson ID`, `filter day DAY`, `filter paid|unpaid`, `filter [l/SUBJECT] [llv/LESSON_LEVEL]` or `filter slv/STUDENT_LEVEL`
 
 * Shows a student's lessons: `filter student ID`.
 * Shows a lesson's students: `filter lesson ID`.
 * Shows a day's lessons: `filter day DAY`.
 * Shows students by payment status for the current month: `filter paid` or `filter unpaid`.
 * Shows lessons by subject, level, or both: `filter l/SUBJECT`, `filter llv/LESSON_LEVEL` or `filter l/SUBJECT llv/LESSON_LEVEL`. At least one of `l/` and `llv/` must be given, and they can be in any order. When both are given, only lessons matching both are shown.
-* `SUBJECT` and `LESSON_LEVEL` must match the lesson's subject and level exactly; letter case is ignored. For example, `l/mathematics` matches `Mathematics` but `l/Math` does not.
+* Shows students at a given level: `filter slv/STUDENT_LEVEL`. This matches the student's own level, not the level of any lesson they are enrolled in.
+* `SUBJECT` and `LESSON_LEVEL` must match the lesson's subject and level exactly; letter case is ignored. For example, `l/mathematics` matches `Mathematics` but `l/Math` does not. The same applies to `STUDENT_LEVEL`.
 * The `ID` refers to the student ID or lesson ID shown in the displayed list, not its position in the list.
 * The specified `ID` must belong to an existing student or lesson.
 * `DAY` is the full day name, e.g. `Monday`; letter case is ignored.
 * Filtering replaces any earlier filter; only one filter can be active at a time.
-* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson, or by payment status, switches it to **Students**; filtering by a day, subject or level also switches it to **Lessons**.
+* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson, by payment status, or by student level, switches it to **Students**; filtering by a day, subject or level also switches it to **Lessons**.
 * To clear the filter and show every student and lesson again, use `list`.
 
 Examples:
@@ -418,24 +438,33 @@ Examples:
 * `filter l/Mathematics` shows only the Mathematics lessons.
 * `filter llv/Primary 6` shows only the Primary 6 lessons.
 * `filter l/Mathematics llv/Primary 6` shows only the Primary 6 Mathematics lessons.
+* `filter slv/Primary 6` shows only the students at Primary 6.
 
 If a filter is incomplete or mixes incompatible forms, TuiTracker explains the specific problem and includes a
 valid example. For instance, `filter student` suggests `filter student 1`, while combining `day` with `l/` explains
-that keyword and prefix filters cannot be mixed.
+that keyword and prefix filters cannot be mixed. The same restriction applies to `slv/`: it cannot be combined with
+`student`, `lesson`, `day`, `l/`, or `llv/`.
 
 ### Sorting students and lessons: `sort`
 
 Sorts the currently displayed student or lesson records without changing saved data. The direction defaults to
 ascending and can be written explicitly as `asc` or `desc`.
 
-**Format:** `sort student name|payment [asc|desc]` or `sort lesson subject|fee|time [asc|desc]`
+**Format:** `sort student id|name|level|payment|paid [asc|desc]` or `sort lesson id|subject|level|fee|time [asc|desc]`
+
+* For students, you can sort by `id`, `name`, `level`, or payment status (`payment` / `paid`).
+* Sorting students by payment status in ascending order (default) places **unpaid** students at the top, making it easy for tutors to see who has yet to pay for the current month. Using `desc` places paid students at the top.
+* For lessons, you can sort by `id`, `subject`, `level`, `fee`, or `time` (chronological weekday and start-time order).
 
 Examples:
 
-* `sort student name` sorts students alphabetically by name.
+* `sort student payment` or `sort student paid` sorts students with unpaid students at the top.
 * `sort student payment desc` shows paid students before unpaid students.
+* `sort student name` sorts students alphabetically by name.
+* `sort student level` sorts students by educational level.
 * `sort lesson fee desc` shows the highest-fee lessons first.
 * `sort lesson time` restores chronological weekday and start-time order.
+* `sort lesson id` sorts lessons by their identifier.
 
 ### Viewing the weekly schedule: `schedule`
 
@@ -485,7 +514,6 @@ TuiTracker data is saved automatically as a JSON file `[JAR file location]/data/
 
 **Caution:**
 If your changes make the data file invalid, TuiTracker warns you at the next launch and opens in read-only recovery mode. It shows an empty list, but leaves the invalid file untouched and blocks data-changing commands. Back up the file, repair or replace it, then restart TuiTracker to resume editing.<br>
-If your changes make the data file invalid, TuiTracker starts with no students or lessons at the next run. The invalid file remains on disk until you run a command that changes stored data. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause TuiTracker to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
@@ -509,11 +537,11 @@ Action     | Format, Examples
 **Add**    | `add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> e.g., `add s/Daniel Koh c/92223333 slv/Primary 6 l/1`, `add s/Nora Lim c/90000000 slv/Primary 6`, `add l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50`
 **Edit**   | `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]` <br> `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]`
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
-**Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`
+**Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid`, `filter [l/SUBJECT] [llv/LESSON_LEVEL]` or `filter slv/STUDENT_LEVEL` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`, `filter slv/Primary 6`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
-**Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
-**Unmark** | `unmark ID` <br> e.g., `unmark 1`, `unmark 0012`
+**Mark**   | `mark ID [MORE_IDS]...` or `mark lesson LESSON_ID` <br> e.g., `mark 1`, `mark 1 2 3`, `mark lesson 1`
+**Unmark** | `unmark ID [MORE_IDS]...` or `unmark lesson LESSON_ID` <br> e.g., `unmark 1`, `unmark 1 2 3`, `unmark lesson 1`
 **Schedule** | `schedule [student ID]` <br> e.g., `schedule`, `schedule student 1`; shows recurring lessons from Monday to Sunday
-**Sort** | `sort student name\|payment [asc\|desc]` or `sort lesson subject\|fee\|time [asc\|desc]` <br> e.g., `sort student name`, `sort lesson fee desc`
+**Sort** | `sort student id\|name\|level\|payment\|paid [asc\|desc]` or `sort lesson id\|subject\|level\|fee\|time [asc\|desc]` <br> e.g., `sort student payment`, `sort lesson fee desc`
 **Help**   | `help`
 **Exit**   | `exit`

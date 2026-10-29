@@ -35,10 +35,16 @@ import seedu.address.model.student.StudentId;
 public class EditCommandParser implements Parser<EditCommand> {
 
     private static final Prefix[] ALL_PREFIXES = {PREFIX_STUDENT, PREFIX_LESSON, PREFIX_CONTACT,
-        PREFIX_STUDENT_LEVEL, PREFIX_LESSON_LEVEL, PREFIX_DAY, PREFIX_START_TIME, PREFIX_END_TIME, PREFIX_FEE};
+        PREFIX_STUDENT_LEVEL, PREFIX_LESSON_LEVEL, PREFIX_DAY, PREFIX_START_TIME, PREFIX_END_TIME,
+        PREFIX_FEE};
     private static final Prefix[] STUDENT_PREFIXES = {PREFIX_STUDENT, PREFIX_CONTACT, PREFIX_STUDENT_LEVEL};
     private static final Prefix[] LESSON_PREFIXES = {PREFIX_LESSON, PREFIX_LESSON_LEVEL, PREFIX_DAY,
         PREFIX_START_TIME, PREFIX_END_TIME, PREFIX_FEE};
+
+    @FunctionalInterface
+    private interface ArgumentValueParser<T> {
+        T parse(String value) throws ParseException;
+    }
 
     @Override
     public EditCommand parse(String args) throws ParseException {
@@ -48,7 +54,7 @@ public class EditCommandParser implements Parser<EditCommand> {
         ArgumentTokenizer.verifyNoUnknownPrefixes(args, EditCommand.MESSAGE_USAGE, ALL_PREFIXES);
         String[] target = arguments.getPreamble().trim().split("\\s+");
         if (target.length != 2 || !isKind(target[0]) || containsKnownGluedPrefix(target[1])) {
-            throw invalidFormat();
+            throw createInvalidFormatException();
         }
 
         arguments.verifyNoDuplicatePrefixesFor(ALL_PREFIXES);
@@ -61,14 +67,17 @@ public class EditCommandParser implements Parser<EditCommand> {
                 : parseLesson(target[1], arguments);
     }
 
-    private static EditCommand parseStudent(String idValue, ArgumentMultimap arguments) throws ParseException {
+    private static EditCommand parseStudent(String idValue, ArgumentMultimap arguments)
+            throws ParseException {
         if (anyGiven(arguments, LESSON_PREFIXES)) {
             throw new ParseException(EditCommand.MESSAGE_STUDENT_PARAMETERS_NOT_ALLOWED);
         }
         StudentId id = ParserUtil.parseStudentId(idValue);
-        Optional<Name> name = parseName(arguments);
-        Optional<Contact> contact = parseContact(arguments);
-        Optional<Level> level = parseStudentLevel(arguments);
+        Optional<Name> name = parseOptionalArgument(arguments, PREFIX_STUDENT, ParserUtil::parseName);
+        Optional<Contact> contact = parseOptionalArgument(arguments, PREFIX_CONTACT,
+                ParserUtil::parseContact);
+        Optional<Level> level = parseOptionalArgument(arguments, PREFIX_STUDENT_LEVEL,
+                ParserUtil::parseStudentLevel);
         return new EditCommand(new StudentEdit(id, name, contact, level));
     }
 
@@ -77,73 +86,32 @@ public class EditCommandParser implements Parser<EditCommand> {
             throw new ParseException(EditCommand.MESSAGE_LESSON_PARAMETERS_NOT_ALLOWED);
         }
         LessonId id = ParserUtil.parseLessonId(idValue);
-        Optional<Subject> subject = parseSubject(arguments);
-        Optional<Level> level = parseLessonLevel(arguments);
-        Optional<DayOfWeek> day = parseDay(arguments);
-        Optional<LocalTime> start = parseStart(arguments);
-        Optional<LocalTime> end = parseEnd(arguments);
-        Optional<Fee> fee = parseFee(arguments);
+        Optional<Subject> subject = parseOptionalArgument(arguments, PREFIX_LESSON, ParserUtil::parseSubject);
+        Optional<Level> level = parseOptionalArgument(arguments, PREFIX_LESSON_LEVEL,
+                ParserUtil::parseLessonLevel);
+        Optional<DayOfWeek> day = parseOptionalArgument(arguments, PREFIX_DAY, ParserUtil::parseDay);
+        Optional<LocalTime> start = parseOptionalArgument(arguments, PREFIX_START_TIME,
+                ParserUtil::parseStartTime);
+        Optional<LocalTime> end = parseOptionalArgument(arguments, PREFIX_END_TIME,
+                EditCommandParser::parseEndTime);
+        Optional<Fee> fee = parseOptionalArgument(arguments, PREFIX_FEE, ParserUtil::parseFee);
         return new EditCommand(new LessonEdit(id, subject, level, day, start, end, fee));
     }
 
-    private static Optional<Name> parseName(ArgumentMultimap arguments) throws ParseException {
-        return arguments.getValue(PREFIX_STUDENT).isPresent()
-                ? Optional.of(ParserUtil.parseName(arguments.getValue(PREFIX_STUDENT).get()))
-                : Optional.empty();
+    /** Parses one optional argument when it is present. */
+    private static <T> Optional<T> parseOptionalArgument(ArgumentMultimap arguments, Prefix prefix,
+            ArgumentValueParser<T> parser) throws ParseException {
+        Optional<String> value = arguments.getValue(prefix);
+        return value.isPresent() ? Optional.of(parser.parse(value.get())) : Optional.empty();
     }
 
-    private static Optional<Contact> parseContact(ArgumentMultimap arguments) throws ParseException {
-        return arguments.getValue(PREFIX_CONTACT).isPresent()
-                ? Optional.of(ParserUtil.parseContact(arguments.getValue(PREFIX_CONTACT).get()))
-                : Optional.empty();
-    }
-
-    private static Optional<Level> parseStudentLevel(ArgumentMultimap arguments) throws ParseException {
-        return arguments.getValue(PREFIX_STUDENT_LEVEL).isPresent()
-                ? Optional.of(ParserUtil.parseStudentLevel(arguments.getValue(PREFIX_STUDENT_LEVEL).get()))
-                : Optional.empty();
-    }
-
-    private static Optional<Subject> parseSubject(ArgumentMultimap arguments) throws ParseException {
-        return arguments.getValue(PREFIX_LESSON).isPresent()
-                ? Optional.of(ParserUtil.parseSubject(arguments.getValue(PREFIX_LESSON).get()))
-                : Optional.empty();
-    }
-
-    private static Optional<Level> parseLessonLevel(ArgumentMultimap arguments) throws ParseException {
-        return arguments.getValue(PREFIX_LESSON_LEVEL).isPresent()
-                ? Optional.of(ParserUtil.parseLessonLevel(arguments.getValue(PREFIX_LESSON_LEVEL).get()))
-                : Optional.empty();
-    }
-
-    private static Optional<DayOfWeek> parseDay(ArgumentMultimap arguments) throws ParseException {
-        return arguments.getValue(PREFIX_DAY).isPresent()
-                ? Optional.of(ParserUtil.parseDay(arguments.getValue(PREFIX_DAY).get()))
-                : Optional.empty();
-    }
-
-    private static Optional<LocalTime> parseStart(ArgumentMultimap arguments) throws ParseException {
-        return arguments.getValue(PREFIX_START_TIME).isPresent()
-                ? Optional.of(ParserUtil.parseStartTime(arguments.getValue(PREFIX_START_TIME).get()))
-                : Optional.empty();
-    }
-
-    private static Optional<LocalTime> parseEnd(ArgumentMultimap arguments) throws ParseException {
-        if (arguments.getValue(PREFIX_END_TIME).isEmpty()) {
-            return Optional.empty();
-        }
-        String value = arguments.getValue(PREFIX_END_TIME).get().trim();
-        if (value.equals("24:00")) {
+    private static LocalTime parseEndTime(String value) throws ParseException {
+        String trimmedValue = value.trim();
+        if (trimmedValue.equals("24:00")) {
             throw new ParseException(Timeslot.MESSAGE_MIDNIGHT_END);
         }
-        return Optional.of(Timeslot.parseTime(value)
-                .orElseThrow(() -> new ParseException(Timeslot.MESSAGE_INVALID_END_TIME)));
-    }
-
-    private static Optional<Fee> parseFee(ArgumentMultimap arguments) throws ParseException {
-        return arguments.getValue(PREFIX_FEE).isPresent()
-                ? Optional.of(ParserUtil.parseFee(arguments.getValue(PREFIX_FEE).get()))
-                : Optional.empty();
+        return Timeslot.parseTime(trimmedValue)
+                .orElseThrow(() -> new ParseException(Timeslot.MESSAGE_INVALID_END_TIME));
     }
 
     private static boolean containsKnownGluedPrefix(String value) {
@@ -160,7 +128,7 @@ public class EditCommandParser implements Parser<EditCommand> {
         return kind.equals("student") || kind.equals("lesson");
     }
 
-    private static ParseException invalidFormat() {
+    private static ParseException createInvalidFormatException() {
         return new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
     }
 }

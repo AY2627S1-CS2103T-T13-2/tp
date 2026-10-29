@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import seedu.address.commons.core.LogsCenter;
@@ -34,7 +35,8 @@ public class ListCommand extends Command {
 
     public static final String MESSAGE_NO_STUDENTS = "No students found. Use the add command to create one.";
 
-    public static final String MESSAGE_NO_LESSONS = "No lessons found. Lessons are created through the add command.";
+    public static final String MESSAGE_NO_LESSONS =
+            "No lessons found. Lessons are created through the add command.";
 
     private static final Logger logger = LogsCenter.getLogger(ListCommand.class);
 
@@ -57,6 +59,7 @@ public class ListCommand extends Command {
         logger.fine("Executing list command for the " + view + " view");
 
         model.resetFilters();
+        model.setScheduleStudentId(Optional.empty());
         model.setListView(view);
 
         return switch (view) {

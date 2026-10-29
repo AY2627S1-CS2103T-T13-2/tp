@@ -146,14 +146,14 @@ The `add` command enrolls a student in a lesson, creating either record if it is
 * `AddCommand.StudentRef` is either an `ExistingStudent` (an ID) or a `NewStudent` (a name, a contact and a level).
 * `AddCommand.LessonRef` is either an `ExistingLesson` (an ID) or a `NewLesson` (a subject, a level, a timeslot and a fee).
 
-These are `sealed` interfaces implemented by records, so the compiler checks that every case is handled and `equals` comes for free, which the parser tests rely on.
+These are `sealed` interfaces implemented by records, so the compiler checks that every case is handled and `equals` comes for free, which the parser tests rely on. When only one side is given, `AddCommand` is built with that side alone, and the other side is `null`.
 
 The parser works in this order, and reports the first problem it finds:
 
 1. The command is well formed: no text before the first parameter, and at least one parameter.
 2. No parameter is given more than once.
 3. No parameter is joined to another value without a space, such as the `slv/` in `c/92223333slv/Primary 6`. Without this check, the joined parameter would be reported as missing.
-4. At least one of `s/` and `l/` is given. Whether each supplied value is an ID or a new record's name or subject decides the remaining checks. The command later rejects an existing ID given on its own, because there would be nothing to create.
+4. `s/` is given if any student parameter (`c/`, `slv/`) is, and `l/` is given if any lesson parameter (`llv/`, `d/`, `st/`, `et/`, `f/`) is. Which of `s/` and `l/` are given, and whether each is a whole number (an existing record) or not (a new one), decides everything after this.
 5. Neither `s/` nor `l/` is a number that is not a valid ID, such as `0`, `-1` or `1.5`, and neither is an ID larger than any record can have. Without this check, such a number would be read as the name of a new student or the subject of a new lesson.
 6. No parameter is given that does not belong to the form. For example, `c/` is not allowed with an existing student.
 7. No required parameter is missing, for example `c/` and `slv/` for a new student. The message also says which value was read as a new student or lesson, and suggests giving only the ID when the value is an ID followed by more text.
@@ -164,15 +164,15 @@ The parser works in this order, and reports the first problem it finds:
 `AddCommand#execute(Model)` checks the whole request **before it creates or changes anything**, in this order, and reports the first problem it finds:
 
 1. The student exists, then the lesson exists (only for an existing student or lesson).
-2. An existing student or lesson is not given on its own, with no other record to add or enroll.
+2. An existing student or lesson is not given alone. There would be nothing to create and no one to enroll, so the message names the record and asks for the other side.
 3. A new student is not a duplicate, a new lesson is not a duplicate, and the student is not already enrolled in the lesson. Duplicates are found with `Name#isSameName`, `Contact#isSameContact` and `Subject#isSameSubject`, which ignore letter case, extra spaces and (for contacts) everything but the digits. `equals` on these classes stays exact, so that `edit` can still change only the letter case of a value.
-4. A new lesson does not clash with an existing lesson.
+4. A new lesson does not clash with an existing lesson. This also applies to a new lesson given alone.
 
-It then works out the notes for things that are probably mistakes but might be intended, in this order: a new student with the same name as an existing student, a student whose level differs from the lesson's level, and a new lesson whose fee is 0. Notes do not stop the command; each one is added to the result on its own line.
+It then works out the notes for things that are probably mistakes but might be intended, in this order: a new student with the same name as an existing student, a student whose level differs from the lesson's level (only when both sides are given), and a new lesson whose fee is 0. Notes do not stop the command; each one is added to the result on its own line.
 
-Only then does it create what is new (`Model#addStudent`, `Model#addLesson`). It calls `Model#enroll` when both sides were supplied; a standalone new record has no enrollment. The IDs in the result message come from the objects that the `Model` returns.
+Only then does it create what is new (`Model#addStudent`, `Model#addLesson`). When both sides are given, it then calls `Model#enroll`. When one side is given alone, it creates that record and stops there, and the result reports the new ID, such as `Added student Nora Lim [Student ID: 4].` The IDs in the result message come from the objects that the `Model` returns.
 
-The sequence diagram below shows `execute("add s/Daniel Koh c/92223333 slv/Primary 6 l/1")`, a new student joining an existing lesson. The checks that do not apply to this form (the clash check, which is only for a new lesson, and the notes, which are worked out inside `AddCommand`) are left out to keep the diagram readable.
+The sequence diagram below shows `execute("add s/Daniel Koh c/92223333 slv/Primary 6 l/1")`, a new student joining an existing lesson. `findStudentWithSameName` looks for a student with the same name, for the note; there is none here, so the result has no note. The clash check is only for a new lesson, and the level note compares two levels that `AddCommand` already has, so neither calls the `Model` in this form.
 
 <puml src="diagrams/AddSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `add` Command" />
 
@@ -196,9 +196,21 @@ The sequence diagram below shows `execute("add s/Daniel Koh c/92223333 slv/Prima
   * Pros: Each check could sit next to the code that depends on it.
   * Cons: Undoing must also put the ID counters back. `LogicManager` only undoes a command when saving fails, so this would need a second mechanism.
 
+**Aspect: how a side that was left out is represented**
+
+* **Alternative 1 (current choice):** the side that was left out is `null` in `AddCommand`, which has one constructor for each of the three combinations.
+  * Pros: `StudentRef` and `LessonRef` keep meaning "a student" and "a lesson", so the code that handles them stays as it was. Only the few places that depend on both sides, such as the level note and the enrollment, test for `null`.
+  * Cons: Each of those places must remember the `null` case; the compiler does not check it.
+* **Alternative 2:** a third kind of reference, such as `NoStudent` and `NoLesson`, in the `sealed` interfaces.
+  * Pros: The compiler checks that every `switch` on a reference handles the missing side.
+  * Cons: Every method that takes a `StudentRef` would also have to handle "no student", including the ones that only make sense when there is one, such as the level check.
+* **Alternative 3:** separate commands for creating a student and creating a lesson.
+  * Pros: Each command is simpler.
+  * Cons: The duplicate and clash checks, and their messages, would be repeated or moved out of `AddCommand`, and a user would have two more command words to learn.
+
 **Aspect: the order of the checks**
 
-The order is deliberate. Duplicates are checked **before** clashes because an identical lesson always overlaps the original: if the clash were checked first, the more helpful message "an identical lesson already exists" could never be shown. Existence is checked first because the other checks need the records. A different level is reported as a note rather than rejected, because a student may attend a lesson of another level on purpose, for example a stronger student in a higher-level class.
+The order is deliberate. Duplicates are checked **before** clashes because an identical lesson always overlaps the original: if the clash were checked first, the more helpful message "an identical lesson already exists" could never be shown. Existence is checked first because the other checks need the records: the message for an existing record given alone, for example, names that record. A different level is reported as a note rather than rejected, because a student may attend a lesson of another level on purpose, for example a stronger student in a higher-level class.
 
 #### Testing
 
@@ -208,11 +220,11 @@ The order is deliberate. Duplicates are checked **before** clashes because an id
 
 The `edit` command changes the specified fields of one existing student or lesson while preserving its ID and related data. `EditCommandParser` creates an `EditCommand` containing either a `StudentEdit` or a `LessonEdit`; fields that were not supplied remain empty in that edit request and retain their existing values during execution. `EditCommand` builds the complete updated record and validates duplicates, the final timeslot and clashes before asking the `Model` to replace the original.
 
-Duplicate students are matched using `Name#isSameName` and `Contact#isSameContact`; duplicate lessons use `Subject#isSameSubject`, level equality and the final timeslot. Edit's private lookup helpers exclude the record being edited, so that changing only formatting or letter case is not mistaken for a duplicate or a clash. A different student/lesson level, a namesake with a different contact and a fee of `0` are allowed but appended to the success message as notes.
+Duplicate students are matched using `Name#isSameName` and `Contact#isSameContact`; duplicate lessons use `Subject#isSameSubject`, level equality and the final timeslot. Edit's private lookup helpers exclude the record being edited, so that changing only formatting or letter case is not mistaken for a duplicate or a clash. The success message includes a note only when an edited level mismatches an enrollment, the student's final name matches another student's name but their contacts differ, or the edit explicitly changes a lesson's fee to `0`.
 
 If the requested details are identical to the stored record, `EditCommand` returns `No changes were made.` and marks the result so that `LogicManager` skips saving. A case-only level edit is still treated as a real edit because it changes the stored spelling, so it follows the normal save-and-rollback path.
 
-The sequence diagram below shows `execute("edit student 1 c/90001111")`, which updates only an existing student's contact number. Less-important method parameters, duplicate checking, note generation, the no-change path and the error paths are omitted to keep the diagram focused. Editing a lesson follows the same overall flow, with validation of its final timeslot, duplicates and clashes before the update.
+The sequence diagram below shows `execute("edit student 1 c/90001111")`, which updates only an existing student's contact number. Less-important method parameters, duplicate checking, note generation, the no-change path and the error paths are omitted to keep the diagram focused. The common model snapshot, storage save and rollback interactions performed by `LogicManager` are also omitted. Editing a lesson follows the same overall flow, with validation of its final timeslot, duplicates and clashes before the update.
 
 <puml src="diagrams/EditSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `edit` Command" />
 
@@ -245,7 +257,7 @@ The activity diagram summarizes format validation, lookup, deletion, enrollment 
 
 ### List feature
 
-The `list` command clears any active filter and switches the interface to the requested student or lesson list. If no view is supplied, `ListCommandParser` defaults to the student list.
+The `list` command clears any active filter and switches the interface to the requested student or lesson list. If no view is supplied, `ListCommandParser` defaults to the student list. It leaves the selected sort order unchanged. Without a prior `sort` command, students use ascending ID and lessons use weekday, start time, then ID; after `sort`, `list` shows the full records in that selected order.
 
 The sequence diagram below shows `execute("list lessons")` when four lessons exist. The invalid-view and empty-list paths are omitted because they do not change the main interaction between the Logic and Model components.
 
@@ -276,15 +288,15 @@ The sequence diagram below shows the help window being opened by `executeCommand
 
 ### Filter feature
 
-The `filter` command narrows the displayed list to one student's lessons, one lesson's students, lessons matching a day, subject or level, or students with a selected payment status. It changes the displayed view without changing saved data.
+The `filter` command narrows the displayed list to one student's lessons, one lesson's students, lessons matching a day, subject or level, students with a selected payment status, or students at a given level. It changes the displayed view without changing saved data.
 
 #### Parsing the arguments
 
-`FilterCommandParser` accepts `student ID`, `lesson ID`, `day DAY`, the bare `paid` or `unpaid` keyword, or one or both of `l/SUBJECT` and `llv/LESSON_LEVEL`.
+`FilterCommandParser` accepts `student ID`, `lesson ID`, `day DAY`, the bare `paid` or `unpaid` keyword, one or both of `l/SUBJECT` and `llv/LESSON_LEVEL`, or `slv/STUDENT_LEVEL`.
 
-1. The `student`, `lesson` and `day` forms require exactly two whitespace-separated tokens. The payment forms require one token. The subject and level forms use their command prefixes and may be combined.
+1. The `student`, `lesson` and `day` forms require exactly two whitespace-separated tokens. The payment forms require one token. The subject/level and student-level forms use their command prefixes; `l/` and `llv/` may be combined with each other, but `slv/` cannot be combined with any other form.
 2. An incomplete, unknown, mixed or repeated form raises a `ParseException` with a specific message before the view changes.
-3. IDs and days use the shared `ParserUtil` methods. Subject and level values are parsed with the corresponding domain parsers.
+3. IDs and days use the shared `ParserUtil` methods. Subject, lesson level and student level values are parsed with the corresponding domain parsers; `slv/` reuses `ParserUtil#parseStudentLevel`, the same method `add` and `edit` use for a student's own level.
 
 The parser builds the corresponding `FilterCommand` directly. A filter selects existing records and never creates new ones.
 
@@ -293,9 +305,9 @@ The parser builds the corresponding `FilterCommand` directly. A filter selects e
 `FilterCommand#execute(Model)` branches on the selected filter kind:
 
 1. For `studentId`/`lessonId`, it first confirms the ID refers to an existing student or lesson, otherwise throws a `CommandException` (`MESSAGE_STUDENT_NOT_FOUND` / `MESSAGE_LESSON_NOT_FOUND`). A `DayOfWeek` needs no such check — unlike an ID, every value the parser can produce already refers to something real, so there is nothing to look up or fail to find.
-2. It delegates to the matching `Model` filter method and selects the relevant list: `LESSONS` for student, day, subject and level filters; `STUDENTS` for lesson and payment-status filters.
+2. It delegates to the matching `Model` filter method and selects the relevant list: `LESSONS` for student, day, subject and level filters; `STUDENTS` for lesson, payment-status and student-level filters.
 
-Inside `ModelManager`, setting one filter clears the earlier filter fields. `refreshFilters()` then rebuilds the predicates for both `FilteredList`s. A day, subject or level filter narrows only lessons; payment status narrows only students. Mutating operations reapply the predicates. Payment changes and the month-boundary refresh also re-evaluate the current payment filter and payment sort.
+Inside `ModelManager`, setting one filter clears the earlier filter fields. `refreshFilters()` then rebuilds the predicates for both `FilteredList`s. A day, subject or level filter narrows only lessons; payment status and student level each narrow only students. Mutating operations reapply the predicates. Payment changes and the month-boundary refresh also re-evaluate the current payment filter and payment sort.
 
 The sequence diagram below shows `execute("filter student 1")`.
 
@@ -305,7 +317,7 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 **Aspect: how the active filter is stored**
 
-* **Alternative 1 (current choice):** six nullable fields in `ModelManager`, one each for student, lesson, day, subject, level and paid status. The subject and level fields may be set together; every other filter setter clears the previous fields.
+* **Alternative 1 (current choice):** seven nullable fields in `ModelManager`, one each for student, lesson, day, subject, level, paid status and student level. The subject and level fields may be set together; every other filter setter clears the previous fields.
   * Pros: Each predicate can read the fields it needs, and `resetFilters()` clears them in one place.
   * Cons: The valid combinations are enforced by the setters rather than the type system, so a new filter setter must clear the previous fields correctly.
 * **Alternative 2:** a sealed type representing each filter form, including the combined subject and level form.
@@ -336,7 +348,7 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 #### Testing
 
-`FilterCommandParserTest` covers the student, lesson, day, payment, subject and level forms, including malformed arguments. `FilterCommandTest` checks the resulting model and list view, missing IDs and command equality. `ModelManagerTest` checks that payment filters update after payment changes and a month rollover.
+`FilterCommandParserTest` covers the student, lesson, day, payment, subject, level and student-level forms, including malformed arguments and combining `slv/` with every other form. `FilterCommandTest` checks the resulting model and list view, missing IDs and command equality. `ModelManagerTest` checks that payment filters update after payment changes and a month rollover, and that the student-level filter selects the right students while leaving the lesson list unaffected.
 
 ### Schedule feature
 
@@ -408,13 +420,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | be warned when a new lesson overlaps another lesson on the same day | avoid double-booking my teaching time |
 | `* * *` | tutor | be prevented from creating duplicate students, lessons, or enrollments | keep my records accurate |
 | `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
-| `* * *` | tutor | list my students with their contact details, levels, lessons, monthly fees, and payment statuses | review my roster and outstanding payments |
+| `* * *` | tutor | list my students with their contact details, levels, lessons, and payment statuses | review my roster and outstanding payments |
 | `* * *` | tutor | list my lessons with their timeslots, fees, and enrolled students | review my teaching schedule |
+| `* * *` | tutor | correct or update an existing student or lesson without changing its identity or related records | keep details accurate without recreating the record and its enrollments |
 | `* * *` | tutor | view the weekly schedule for one student | see when that student's lessons take place |
 | `* * *` | tutor | delete a student and their associated enrollments | remove a student who no longer attends lessons without leaving obsolete enrollments |
 | `* * *` | tutor | delete a lesson and its associated enrollments | remove a cancelled lesson without leaving obsolete enrollments |
 | `* * *` | tutor | mark a student as paid for the current month | track which students have paid |
 | `* * *` | tutor | have payment statuses reset for a new month | distinguish this month’s unpaid fees from last month’s payments |
+| `* * *` | tutor | view all my recurring lessons in a weekly schedule | spot busy periods and gaps in my teaching week |
 | `* *` | tutor | be shown matching existing students or lessons when adding an enrollment | reuse a record instead of creating a duplicate |
 | `* *` | tutor | use common aliases for education levels | enter levels quickly without creating accidental mismatches |
 | `* *` | tutor | undo an accidental addition | correct a mistake without manually deleting its records |
@@ -485,21 +499,93 @@ Use case ends.
 2.  System validates the requested view.
 3.  System clears any active list filter.
 4.  System retrieves the requested records.
-5.  System shows records in their current sort order (by ID for students and by day and time for lessons by default).
+5.  System shows records in their current sort order (by ID for students and by weekday, start time, then ID for lessons by default).
 6.  System displays the records and the total count.
 
-    Use case ends.
+Use case ends.
 
 **Extensions**
 
-* 2a. The user specifies an invalid, repeated or conflicting view.
+* 2a. The user specifies an unknown view or extra text.
 
-    * 2a1. System displays an error specific to the invalid or repeated view, or asks the user to choose one view.
+    * 2a1. System displays `Invalid view. Use: list [students|lessons]`.
+    * Use case ends.
+
+* 2b. The user repeats the same view.
+
+    * 2b1. System displays `The view can only be specified once.`
+    * Use case ends.
+
+* 2c. The user specifies both `students` and `lessons`.
+
+    * 2c1. System displays `Choose either students or lessons, not both.`
     * Use case ends.
 
 * 4a. There are no records of the requested type.
 
     * 4a1. System displays an empty list and an informative message.
+    * Use case ends.
+
+**Use case: Edit a student or lesson**
+
+**MSS**
+
+1. User enters an `edit` command containing a record type, its ID, and one or more fields to change.
+2. System validates the command format and supplied field values.
+3. System retrieves the specified student or lesson.
+4. System combines the supplied fields with the record's unchanged fields.
+5. System validates the complete updated record for duplicates and, for a lesson, its final timeslot and clashes.
+6. System replaces the record while retaining its ID, enrollments, and, for a student, payment status.
+7. System saves the change and confirms the edited record.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The record type, ID, field selection, or command format is invalid.
+
+    * 1a1. System displays an error message explaining the expected input.
+    * 1a2. System makes no changes.
+    * Use case ends.
+
+* 2a. A supplied field value is invalid.
+
+    * 2a1. System displays the applicable field validation message.
+    * 2a2. System makes no changes.
+    * Use case ends.
+
+* 3a. No student or lesson has the specified ID.
+
+    * 3a1. System displays a not-found message for the requested record type and ID.
+    * Use case ends.
+
+* 4a. The supplied values already match the stored record.
+
+    * 4a1. System displays `No changes were made.` and skips saving.
+    * Use case ends.
+
+* 5a. The updated record duplicates another student or lesson.
+
+    * 5a1. System displays a message identifying the duplicate record.
+    * 5a2. System makes no changes.
+    * Use case ends.
+
+* 5b. The lesson's final end time is not later than its final start time on the same day.
+
+    * 5b1. System displays the applicable invalid-end-time message.
+    * 5b2. System makes no changes.
+    * Use case ends.
+
+* 5c. The lesson's final timeslot clashes with another lesson.
+
+    * 5c1. System displays a clash message naming the other lesson and its timeslot.
+    * 5c2. System makes no changes.
+    * Use case ends.
+
+* 7a. The change cannot be saved.
+
+    * 7a1. System restores the original data.
+    * 7a2. System displays the applicable file-write or permission error.
     * Use case ends.
 
 **Use case: Delete a student or lesson**
@@ -511,26 +597,101 @@ Use case ends.
 3. System deletes the specified record and all enrolments associated with it.
 4. System confirms the deletion and identifies the deleted record.
 
-    Use case ends.
+Use case ends.
 
 **Extensions**
-* 1a. The command is missing the kind, contains an unknown kind, or contains extra text.
-    * 1a1. System displays `Invalid command format. Use: delete student|lesson ID`.
+
+* 1a. The request has a missing or unknown kind, a missing or invalid ID, or extra input.
+    * 1a1. System explains the required request format.
     * Use case ends.
 
-* 1b. The ID is missing, non-numeric, or not a positive integer.
-    * 1b1. System displays `Invalid command format. Use: delete student|lesson ID`.
+* 1b. The ID is too large.
+    * 1b1. System informs the user that the ID exceeds the supported range.
+    * Use case ends.
+
+* 2a. No record of the requested kind has the specified ID.
+    * 2a1. System informs the user that no student or lesson of that kind has the specified ID.
+    * Use case ends.
+
+* 3a. The changes cannot be saved.
+    * 3a1. System leaves the record, its enrolments and the previous schedule selection unchanged.
+    * 3a2. System informs the user that no changes were made.
+    * Use case ends.
+
+* 4a. The deleted student was selected in the weekly schedule.
+    * 4a1. System shows all lessons in the weekly schedule and informs the user of the change.
+    * Use case ends.
+
+**Use case: View the weekly schedule**
+
+**MSS**
+
+1. User requests to view the weekly schedule of all lessons.
+2. System displays all recurring lessons by day and time, replacing any earlier student-specific schedule.
+3. System confirms that the weekly schedule is displayed.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. User requests the weekly schedule for a specific student.
+    * 1a1. System identifies the student.
+    * 1a2. System displays only the lessons attended by that student and confirms whose schedule is shown.
+    * Use case ends.
+
+* 1b. The request has an invalid parameter, a missing or invalid student ID, or extra input.
+    * 1b1. System explains the error.
+    * Use case ends.
+
+* 1c. The specified student does not exist.
+    * 1c1. System informs the user that no student has the specified ID.
+    * 1c2. System leaves the displayed view and schedule selection unchanged.
+    * Use case ends.
+
+* 1d. The specified student is not enrolled in any lessons.
+    * 1d1. System displays an empty weekly schedule for that student and informs the user that no lessons are scheduled for them.
+    * Use case ends.
+
+* 2a. There are no lessons to display.
+    * 2a1. System displays an empty weekly schedule and informs the user that no lessons are scheduled.
+    * Use case ends.
+
+**Use case: Edit a student or lesson**
+
+**MSS**
+
+1. User requests to edit a student or lesson using its kind, ID, and updated fields.
+2. System identifies the specified student or lesson.
+3. System validates the updated fields, checking for duplicate details or lesson clashes.
+4. System updates the specified record while preserving its ID and existing enrolments.
+5. System saves the changes and displays the updated record details.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The command format is invalid, kind is missing or unknown, or ID is invalid.
+    * 1a1. System displays an error message showing the correct command format.
     * Use case ends.
 
 * 2a. No student or lesson exists with the specified kind and ID.
-    * 2a1. System displays an error stating that no record of the specified kind exists with the given ID.
-    * 2a2. System leaves all data unchanged.
+    * 2a1. System displays an error message stating that no record of the specified kind exists with the given ID.
     * Use case ends.
 
-* 2b. The ID exists but belongs to the other kind of record.
-    * 2b1. System displays an error message.
-    * 2b2. System leaves all data unchanged.
+* 3a. The updated details result in a duplicate student, duplicate lesson, or lesson timeslot clash.
+    * 3a1. System displays an error message explaining the conflict.
+    * 3a2. System leaves all data unchanged.
     * Use case ends.
+
+* 3b. The requested details are identical to the stored record.
+    * 3b1. System displays `No changes were made.`
+    * 3b2. System skips saving and leaves all data unchanged.
+    * Use case ends.
+
+* 4a. The edited record cannot be saved.
+    * 4a1. System restores the original data.
+    * 4a2. System displays the applicable file-write or permission error.
+    * Use case ends without a persistent change.
 
 
 **Use case: Mark a student's monthly payment as paid**
@@ -561,6 +722,41 @@ Use case ends.
 * 3a. The student has already been marked as paid for the current month.
     * 3a1. System leaves the payment status unchanged.
     * 3a2. System informs the user that the student is already paid.
+    * Use case ends.
+
+* 3b. The payment status cannot be saved.
+    * 3b1. System displays the applicable file-write or insufficient-permissions error and states that no changes were made.
+    * 3b2. System leaves the payment status unchanged.
+    * Use case ends.
+
+**Use case: Correct a student's monthly payment to unpaid**
+
+**MSS**
+
+1. User requests to unmark a student's payment using the student's permanent ID.
+2. System identifies the student corresponding to the specified ID.
+3. System marks the student's payment status as unpaid for the current month.
+4. System confirms that the student's payment has been marked as unpaid.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The student ID is missing or more than one argument is provided.
+    * 1a1. System displays `Invalid command format. Use: unmark ID`.
+    * Use case ends.
+
+* 1b. The student ID is non-numeric or not positive.
+    * 1b1. System displays `ID must be a positive whole number.`
+    * Use case ends.
+
+* 2a. No student has the specified ID.
+    * 2a1. System displays `No student found with ID ID.`, using the requested ID.
+    * Use case ends.
+
+* 3a. The student has already been marked as unpaid for the current month.
+    * 3a1. System leaves the payment status unchanged.
+    * 3a2. System informs the user that the student is already unpaid.
     * Use case ends.
 
 * 3b. The payment status cannot be saved.
@@ -606,12 +802,12 @@ Use case ends.
 * **CLI (Command Line Interface)**: A way of using the application by typing text commands, rather than clicking with the mouse.
 * **Command**: A text instruction that the user types into TuiTracker to perform an action, made up of a command word (e.g., `add`, `list`) followed by any required parameters, e.g., `delete student 12`.
 * **Command word**: The first word of a command, which specifies the action to perform, e.g., `add`, `delete`, `list` or `mark`.
-* **Contact**: A student's (or their parent or guardian's) contact number. The app accepts 3 to 15 digits with optional grouping punctuation, subject to the User Guide's length limits.
+* **Contact**: The phone number of a student (or of the student's parent or guardian), with 3 to 15 digits and at most 25 characters in all, e.g., `91234567` or `+65 (9123) 4567`. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a `+` can start the number.
 * **Current month**: The calendar month given by the date on the user's computer. Payment statuses apply only to the current month.
 * **Data file**: The local, human-editable file in which TuiTracker stores all students, lessons and enrollments.
 * **Display index**: The position of a record in a currently displayed list, starting from 1. It can change whenever the displayed list changes. Commands use permanent student and lesson IDs instead.
-* **Duplicate lesson**: A lesson with the same subject, level, day, start time and end time as an existing lesson.
-* **Duplicate student**: A student with the same name and contact as an existing student.
+* **Duplicate lesson**: A lesson with the same subject, level, day, start time and end time as an existing lesson. Subjects and levels are compared without considering letter case or extra spaces, so `Mathematics` and `mathematics` are the same subject.
+* **Duplicate student**: A student with the same name and contact as an existing student. Names are compared without considering letter case or extra spaces, and contacts by their digits only, so `alice  tan` with `9123 4567` duplicates `Alice Tan` with `91234567`.
 * **Enrollment**: The link between a student and a lesson that the student attends. A student can be enrolled in many lessons, and a lesson can have many students.
 * **Lesson**: A weekly class conducted by the tutor, defined by its subject, level, day, start time, end time and fee.
 * **Lesson clash**: The situation where two lessons on the same day have overlapping timeslots, e.g., `15:00-16:30` and `16:00-17:00` on Monday. A lesson that starts exactly when another ends (e.g., `15:00-16:00` and `16:00-17:00`) does not clash with it.
@@ -646,23 +842,87 @@ On first launch, the sample data has Alice Tan (student ID 1), Bryan Lim (ID 2),
 
 ### Listing and filtering
 
-1. Enter `list lessons`. Expected: all four sample lessons appear, and the result says `Listed 4 lessons.`
-2. Enter `filter student 1`. Expected: only Alice's Mathematics and Primary 6 Science lessons appear.
-3. Enter `list lessons`. Expected: the filter is cleared and all four lessons appear again.
-4. Enter `filter paid`. Expected: the Students view shows Bryan, who is paid in the sample data.
-5. Enter `list students`. Expected: the filter is cleared and all three students appear.
+1. Enter `list students`. Expected: all three sample students appear in ascending ID order, and the result says `Listed 3 students.`
+2. Enter `list lessons`. Expected: all four sample lessons appear in chronological order, and the result says `Listed 4 lessons.`
+3. Enter `filter student 1`. Expected: only Alice's Mathematics and Primary 6 Science lessons appear.
+4. Enter `list lessons`. Expected: the filter is cleared and all four lessons appear again.
+5. Enter `filter paid`. Expected: the Students view shows Bryan, who is paid in the sample data.
+6. Enter `list students`. Expected: the filter is cleared and all three students appear.
+7. Enter `sort student name desc`, followed by `list students`. Expected: all three students remain sorted by descending name, with Chloe first; `list` does not restore ID order.
+8. Enter `list students students`. Expected: `The view can only be specified once.` The displayed list remains unchanged.
+9. Enter `list tutors`. Expected: `Invalid view. Use: list [students|lessons]`. The displayed list remains unchanged.
 
-### Adding a student and enrolling them
+### Adding students, lessons and enrollments
 
-1. Enter `add s/Daniel Koh c/92223333 slv/Primary 6 l/1`. Expected: Daniel is created with student ID 4 and enrolled in Mathematics (lesson ID 1).
-2. Enter `list students`. Expected: Daniel appears with his new ID and Mathematics enrollment.
-3. Enter `add s/1 l/1`. Expected: the app reports that Alice is already enrolled in lesson 1; no extra enrollment is created.
+Run all the steps in this section in order, in one fresh folder, as the IDs in the expected messages depend on the records added by earlier steps. Enter `list students` or `list lessons` at any time to see what has been added. A command that is rejected adds nothing.
+
+**An existing student and an existing lesson**
+
+1. Enter `add s/2 l/1`. Expected: `Enrolled Bryan Lim [Student ID: 2] in Mathematics [Lesson ID: 1]. Payment status: Paid.`, followed by `Note: Bryan Lim's level (Secondary 2) differs from the lesson's level (Primary 6).`
+2. Enter `add s/1 l/1`. Expected: `The student is already enrolled in this lesson.`
+3. Enter `add s/99 l/1`. Expected: `No student found with ID 99.`
+4. Enter `add s/1 l/99`. Expected: `No lesson found with ID 99.`
+
+**A new student and an existing lesson**
+
+1. Enter `add s/Daniel Koh c/92223333 slv/Primary 6 l/1`. Expected: `Enrolled Daniel Koh [Student ID: 4] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.` Daniel Koh appears in the student list.
+2. Enter `add s/daniel  koh c/9222 3333 slv/Primary 6 l/2`. Expected: `A student with the same name and contact already exists (Student ID: 4). Use the existing student ID.`
+3. Enter `add s/Eve Lee slv/Primary 6 l/1`. Expected: `Missing required parameter: c/. s/Eve Lee was read as a new student.`
+4. Enter `add s/Eve Lee c/12 slv/Primary 6 l/1`. Expected: `Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a + can start the number, such as +65 (9123) 4567.`
+
+**An existing student and a new lesson**
+
+1. Enter `add s/1 l/Art llv/Primary 6 d/Tuesday st/10:00 et/11:00 f/40`. Expected: `Enrolled Alice Tan [Student ID: 1] in Art [Lesson ID: 5]. Payment status: Unpaid.` Art appears in the lesson list.
+2. Enter `add s/2 l/art llv/primary 6 d/Tue st/10:00 et/11:00 f/40`. Expected: `An identical lesson already exists (Lesson ID: 5). Use the existing lesson ID.`
+3. Enter `add s/1 l/Music llv/Primary 6 d/Monday st/16:00 et/17:00 f/40`. Expected: `Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).`
+4. Enter `add s/1 l/Music llv/Primary 6 d/Tuesday`. Expected: `Missing required parameter: st/, et/, f/. l/Music was read as a new lesson.`
+5. Enter `add s/1 l/Music llv/Primary 6 d/Tuesday st/12:00 et/11:00 f/40`. Expected: `Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start time.`
+
+**A new student and a new lesson**
+
+1. Enter `add s/Farah Aziz c/93334444 slv/Secondary 1 l/History llv/Secondary 1 d/Friday st/14:00 et/15:00 f/55`. Expected: `Enrolled Farah Aziz [Student ID: 5] in History [Lesson ID: 6]. Payment status: Unpaid.`
+2. Enter `add s/Gina Ho c/94445555 slv/Primary 5 l/Music llv/Primary 5 d/Monday st/15:30 et/16:30 f/40`. Expected: `Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).` Gina Ho is not added either, even though nothing is wrong with her details.
+
+**A new student on their own**
+
+1. Enter `add s/Hana Yusof c/95556666 slv/Primary 3`. Expected: `Added student Hana Yusof [Student ID: 6].` Hana Yusof appears in the student list, with no lessons.
+2. Enter `add s/Hana Yusof c/95556666 slv/Primary 3` again. Expected: `A student with the same name and contact already exists (Student ID: 6). Use the existing student ID.`
+3. Enter `add s/Ivan Teo c/96667777`. Expected: `Missing required parameter: slv/. s/Ivan Teo was read as a new student.`
+4. Enter `add c/96667777 slv/Primary 3`. Expected: `Missing required parameter: s/.`
+5. Enter `add s/1`. Expected: `Alice Tan [Student ID: 1] already exists. To enroll them, add l/ with a lesson ID or the details of a new lesson.`
+
+**A new lesson on its own**
+
+1. Enter `add l/Chinese llv/Primary 3 d/Sunday st/9:00 et/10:00 f/35`. Expected: `Added lesson Chinese [Lesson ID: 7].` Chinese appears in the lesson list, with no students.
+2. Enter `add l/Chinese llv/Primary 3 d/Sunday st/9:00 et/10:00 f/35` again. Expected: `An identical lesson already exists (Lesson ID: 7). Use the existing lesson ID.`
+3. Enter `add l/Music llv/Primary 3 d/Sunday st/9:30 et/10:30 f/35`. Expected: `Lesson clashes with lesson 7 (Chinese, Sunday 09:00-10:00).`
+4. Enter `add llv/Primary 3 d/Sunday st/11:00 et/12:00 f/35`. Expected: `Missing required parameter: l/.`
+5. Enter `add l/1`. Expected: `Mathematics [Lesson ID: 1] already exists. To enroll a student in it, add s/ with a student ID or the details of a new student.`
+
+**Notes added to a successful `add`**
+
+1. Enter `add s/Alice Tan c/90001111 slv/Primary 6 l/1`. Expected: `Enrolled Alice Tan [Student ID: 7] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.`, followed by `Note: another student named Alice Tan already exists (Student ID: 1).`
+2. Enter `add s/1 l/Drawing llv/Primary 6 d/Wednesday st/9:00 et/10:00 f/0`. Expected: `Enrolled Alice Tan [Student ID: 1] in Drawing [Lesson ID: 8]. Payment status: Unpaid.`, followed by `Note: the fee is 0. Check that this lesson is meant to be free.`
+
+**Typing mistakes**
+
+1. Enter `add s/Jay Ong c/97778888slv/Primary 6 l/1` (no space before `slv/`). Expected: `slv/ was found inside the value of c/. Separate parameters with a space.`
+2. Enter `add s/0 l/2`. Expected: `s/0 is neither an ID nor a valid name. An ID is a positive whole number, such as s/3.`
+3. Enter `add s/2147483648 l/2`. Expected: `ID is too large. No student or lesson has an ID above 2147483647.`
+4. Enter `add s/1 l/2 extra words`. Expected: `Missing required parameter: llv/, d/, st/, et/, f/. l/2 extra words was read as a new lesson. To use an existing lesson, give only its ID, such as l/2.`
+5. Enter `add s/1 l/Art llv/Primary 6 d/Friday st/22:00 et/24:00 f/40`. Expected: `A lesson cannot end at 24:00 or 00:00. To end at midnight, use 23:59.`
+6. Enter `add s/1 s/2 l/1`. Expected: `A parameter can only be specified once.`
+7. Enter `add`. Expected: `Invalid command format. Use: add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]`
 
 ### Editing a student and a lesson
 
-1. Enter `edit student 1 c/90001111`. Expected: Alice's contact changes while her ID and enrollments stay the same.
-2. Enter `edit lesson 1 f/55`, then `list lessons`. Expected: Mathematics keeps lesson ID 1 and its enrollments, but its displayed fee becomes 55.
-3. Enter `edit student 1 s/Alice Tan`. Expected: the result says `No changes were made.`
+1. Enter `edit student 1 c/90001111`, followed by `list students`. Expected: Alice's contact becomes `90001111`; she retains ID 1, lesson IDs 1 and 2, and her unpaid status.
+2. Enter `edit lesson 1 f/55`, followed by `list lessons`. Expected: Mathematics retains lesson ID 1 and Alice remains enrolled, but its displayed fee becomes 55.
+3. Enter `edit student 1 s/Alice Tan`. Expected: `No changes were made.` The displayed student details remain unchanged.
+4. Enter `edit student 1 c/12`. Expected: the invalid-contact message is displayed and Alice's contact remains `90001111`.
+5. Enter `edit student 1 s/Bryan Lim c/98765432`. Expected: the app identifies student ID 2 as a duplicate; neither student changes.
+6. Enter `edit lesson 1 st/17:00`. Expected: the app asks for an end time later than the final start time; Mathematics remains at Monday 15:00-16:30.
+7. Enter `edit lesson 2 d/Monday st/16:00 et/17:00`. Expected: the app reports a clash with Mathematics (lesson ID 1); lesson 2 remains unchanged.
 
 ### Deleting a student or lesson
 
@@ -678,6 +938,62 @@ On first launch, the sample data has Alice Tan (student ID 1), Bryan Lim (ID 2),
 
 1. Enter `sort lesson fee desc`. Expected: the Secondary 2 Science lesson (ID 3, fee 60) appears first.
 2. Enter `sort student name desc`. Expected: the view switches to Students and Chloe appears first.
+
+### Filtering students and lessons
+
+1. Filtering by student or lesson ID
+
+   1. Enter `filter student 1` with the sample data.<br>
+      Expected: The displayed list switches to Lessons, showing only `Mathematics` and `Science` (the lessons student 1, Alice, is enrolled in). The status message reports the number of lessons shown.
+
+   1. Enter `filter lesson 1`.<br>
+      Expected: The displayed list switches to Students, showing only `Alice Tan` (the only student enrolled in lesson 1, Mathematics).
+
+   1. Enter `filter student 999` (an ID that does not exist).<br>
+      Expected: No list changes. An error message reports that the student could not be found.
+
+1. Filtering by day
+
+   1. Enter `filter day Monday`.<br>
+      Expected: The displayed list switches to Lessons, showing only lessons on Monday (`Mathematics` with the sample data). The student list is unaffected.
+
+   1. Enter `filter day Mon`.<br>
+      Expected: Rejected. The error names the specific problem and gives a valid example.
+
+1. Filtering by subject and/or lesson level
+
+   1. Enter `filter l/Science`.<br>
+      Expected: The displayed list switches to Lessons, showing both Science lessons regardless of level.
+
+   1. Enter `filter llv/Primary 6`.<br>
+      Expected: Shows lessons at Primary 6 level only (`Mathematics` and `Science`), across any subject.
+
+   1. Enter `filter l/Science llv/Primary 6`.<br>
+      Expected: Shows only lessons matching both (`Science` at Primary 6).
+
+1. Filtering by payment status
+
+   1. Enter `filter paid`.<br>
+      Expected: The displayed list switches to Students, showing only students marked as paid for the current month (`Bryan Lim` with the sample data).
+
+   1. Enter `filter unpaid`.<br>
+      Expected: Shows the remaining students (`Alice Tan` and `Chloe Ng`).
+
+1. Filtering by student level
+
+   1. Enter `filter slv/Primary 6`.<br>
+      Expected: The displayed list switches to Students, showing only `Alice Tan`, since she is the only student whose own level is Primary 6. (This differs from `filter llv/Primary 6` above, which matches lessons at that level, not students.)
+
+   1. Enter `filter slv/Secondary 2`.<br>
+      Expected: Shows only `Bryan Lim`.
+
+   1. Enter `filter l/Science slv/Primary 6` (combining a lesson filter with a student-level filter).<br>
+      Expected: Rejected. The error explains that filter forms cannot be mixed.
+
+1. Clearing the filter
+
+   1. After any of the above, enter `list`.<br>
+      Expected: Every student and every lesson is shown again.
 
 ### Viewing the weekly schedule
 
