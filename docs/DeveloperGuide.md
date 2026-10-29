@@ -77,6 +77,11 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * displays `Student` and `Lesson` objects from the `Model` component.
 
+`CommandBox` manages user text input and keyboard shortcuts. It delegates session-scoped command recall and command-word completion to `CommandHistory`:
+* Successful commands are recorded in memory in `CommandHistory`; consecutive duplicates are stored only once.
+* The `Up` and `Down` arrow keys traverse through previous commands (`previous()` and `next()`), automatically saving and restoring any unsubmitted text draft when navigating back to the newest position.
+* The `Tab` key triggers autocompletion via `CommandHistory#completeCommandWord`, completing the unique matching command word.
+
 ### Logic component
 
 **API**: [`Logic.java`](https://github.com/AY2627S1-CS2103T-T13-2/tp/blob/master/src/main/java/seedu/address/logic/Logic.java)
@@ -299,10 +304,13 @@ The activity diagram below illustrates the end-to-end execution workflow for bot
 
 ### Help feature
 
-The `help` command takes no required arguments. `AddressBookParser` constructs a `HelpCommand` directly because no
-command-specific parsing is needed. `HelpCommand#execute(Model)` returns a `CommandResult` whose `showHelp` flag is
-set. After `LogicManager` returns that result, `MainWindow` opens the `HelpWindow`, which displays the format of every
-available command and a link to the full User Guide.
+The `help` command takes no required arguments; any extraneous text is ignored. `AddressBookParser` constructs a `HelpCommand` directly because no command-specific parsing is needed.
+
+`HelpCommand#execute(Model)` returns a `CommandResult` whose `showHelp` flag is set (`isDataMutating()` returns `false`). After `LogicManager` returns that result, `MainWindow#handleHelp()` checks whether the `HelpWindow` is showing:
+* If not showing, `helpWindow.show()` opens the window centered on screen.
+* If already showing or minimized (iconified), `helpWindow.focus()` restores the window, brings it to the front, and requests focus.
+
+The `HelpWindow` displays the usage format of every available command, a clickable hyperlink to the User Guide, and a **Copy URL** button that copies the guide link to the system clipboard. Users can also open the help window by pressing `F1` or selecting `Help` > `Help` from the application menu bar.
 
 The sequence diagram below shows the help window being opened by `executeCommand("help")`.
 
@@ -371,6 +379,47 @@ The sequence diagram below shows `execute("filter student 1")`.
 #### Testing
 
 `FilterCommandParserTest` covers the student, lesson, day, payment, subject, level, student-level and fee forms, including malformed arguments and combining `slv/` or `f/` with every other form. `FilterCommandTest` checks the resulting model and list view, missing IDs and command equality. `ModelManagerTest` checks that payment filters update after payment changes and a month rollover, that the student-level filter selects the right students while leaving the lesson list unaffected, and that the fee filter selects the right lessons while leaving the student list unaffected.
+
+### Sort feature
+
+The `sort` command reorders the displayed student or lesson list according to a specified field and direction without modifying stored data.
+
+#### Parsing the arguments
+
+`SortCommandParser` parses the arguments:
+1. Splits the trimmed arguments by whitespace, requiring either 2 tokens (`[entity] [field]`) or 3 tokens (`[entity] [field] [direction]`).
+2. Validates that the entity is either `student` or `lesson` (case-insensitive).
+3. If direction is provided, validates that it is either `asc` or `desc` (case-insensitive); defaults to ascending (`true`) if omitted.
+4. Normalizes field names: for students, `paid` and `unpaid` are accepted as aliases for `payment`.
+5. Maps the combined entity and field name into a `SortField` enum constant:
+   * Student fields: `STUDENT_ID`, `STUDENT_NAME`, `STUDENT_PAYMENT`, `STUDENT_LEVEL`
+   * Lesson fields: `LESSON_ID`, `LESSON_SUBJECT`, `LESSON_LEVEL`, `LESSON_FEE`, `LESSON_TIME`
+6. If any token is unrecognized or invalid, throws a `ParseException` with `SortCommand.MESSAGE_USAGE`.
+7. Returns a `SortCommand(entity, fieldName, sortField, ascending)`.
+
+#### Execution and model updates
+
+`SortCommand#execute(Model)` executes as follows:
+1. Calls `Model#sort(SortField, boolean)`.
+2. `ModelManager#sort` constructs a `Comparator<?>` based on the specified `SortField`:
+   * `STUDENT_ID`: orders by student ID.
+   * `STUDENT_NAME`: orders case-insensitively by full name, breaking ties by student ID.
+   * `STUDENT_PAYMENT`: orders by payment status for the current calendar month (`isPaid(currentMonth())`), breaking ties by student ID. Ascending order places unpaid students before paid students.
+   * `STUDENT_LEVEL`: orders case-insensitively by level value, breaking ties by student ID.
+   * `LESSON_ID`: orders by lesson ID.
+   * `LESSON_SUBJECT`: orders case-insensitively by subject, breaking ties by lesson ID.
+   * `LESSON_LEVEL`: orders case-insensitively by level, breaking ties by lesson ID.
+   * `LESSON_FEE`: orders by numerical fee amount, breaking ties by lesson ID.
+   * `LESSON_TIME`: orders chronologically using `LESSON_ORDER` (weekday, start time, end time, then lesson ID).
+3. If descending order is specified (`!ascending`), the comparator is reversed via `Comparator#reversed()`.
+4. The comparator is set on the corresponding `SortedList` (`sortedStudents` or `sortedLessons`).
+5. For student sorting, `ModelManager` retains `studentSortField` and `studentSortAscending`. Whenever payment statuses change (via `mark` or `unmark`) or across month boundaries, `ModelManager` re-applies the sort comparator to keep the payment order updated.
+6. Calls `Model#setListView` to automatically switch the displayed UI view to the target entity (`ListView.STUDENTS` or `ListView.LESSONS`).
+7. Returns a `CommandResult` confirming the sorted entity, field name, and direction. `isDataMutating()` returns `false`, so no file save occurs.
+
+The sequence diagram below shows the Logic and Model interactions for `sort student payment desc`.
+
+<puml src="diagrams/SortSequenceDiagram.puml" alt="Interactions Inside the Logic and Model Components for the sort Command" />
 
 ### Schedule feature
 
@@ -462,6 +511,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* *` | tutor | view payment dates and history | check when a student paid in previous months |
 | `* *` | tutor | record a payment for a specific month | update an earlier month when a payment is received late |
 | `* *` | tutor | see how many students are paid and unpaid | assess outstanding payments at a glance |
+| `* * *` | tutor | sort students by payment status | quickly identify all students who still have unpaid fees at the top of the list |
+| `* * *` | tutor | sort students by name, level, or ID | browse and locate students alphabetically or by academic level |
+| `* * *` | tutor | sort lessons by chronological time, fee, subject, level, or ID | review my weekly schedule in order or find high-fee classes |
+| `* *` | tutor | sort records in ascending or descending order | view highest values or paid students first when needed |
+| `* *` | tutor | copy the User Guide link from the help window | easily access the complete documentation in my browser |
+| `* * *` | fast-typing tutor | traverse previous commands using the Up and Down arrow keys | repeat or edit recently executed commands without retyping them |
+| `* *` | fast-typing tutor | restore my drafted command when navigating past the newest history entry | check past commands without losing what I was typing |
+| `* *` | fast-typing tutor | autocomplete unique command words with the Tab key | type commands faster with fewer keystrokes |
 
 ### Use cases
 
@@ -868,6 +925,52 @@ Use case ends.
     * 3e2. System leaves the payment status unchanged.
     * Use case ends.
 
+**Use case: Sort students or lessons**
+
+**MSS**
+
+1. User enters a sort command specifying the entity (`student` or `lesson`), the sort field, and optionally the sort direction (`asc` or `desc`).
+2. System parses the entity, field, and direction (defaulting to `asc` if omitted).
+3. System applies the requested comparator to the corresponding list.
+4. System switches the active list view to the sorted entity's list (Students or Lessons).
+5. System displays the sorted records and a confirmation message.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The command format is invalid (e.g. missing arguments, extra tokens, or unrecognized entity/field/direction).
+    * 1a1. System displays `Invalid command format. Use: sort student id|name|level|payment|paid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
+    * Use case ends.
+
+* 1b. The direction token is not `asc` or `desc`.
+    * 1b1. System displays `Invalid command format. Use: sort student id|name|level|payment|paid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
+    * Use case ends.
+
+* 3a. The sorted list is empty.
+    * 3a1. System updates the sort order and displays the empty list with the confirmation message.
+    * Use case ends.
+
+**Use case: View help**
+
+**MSS**
+
+1. User enters `help` (or presses `F1`, or selects `Help` > `Help` from the menu bar).
+2. System opens the Help window displaying the command format summary and the User Guide link.
+3. System displays a confirmation message (`Opened help window.`).
+
+Use case ends.
+
+**Extensions**
+
+* 1a. User provides extra parameters after `help` (e.g. `help 123`).
+    * 1a1. System ignores extraneous parameters and opens the Help window as normal.
+    * Use case ends.
+
+* 2a. The Help window is already open.
+    * 2a1. System de-iconifies the window if minimized, brings it to the front, and requests focus.
+    * Use case ends.
+
 ### Non-Functional Requirements
 
 **Environment**
@@ -941,8 +1044,14 @@ On first launch, the sample data has Alice Tan (student ID 1), Bryan Lim (ID 2),
 ### Launch, help and exit
 
 1. Launch the JAR in a fresh folder. Expected: the Students view shows three sample students, not contacts.
-2. Enter `help`. Expected: the help window shows the available command formats. Close it, then press `F1` to open it again.
-3. Resize and move the main window, enter `exit`, and relaunch the JAR in the same folder. Expected: the window reopens with the saved size and location when that location is still available.
+2. Enter `help`. Expected: the help window shows the available command formats. Close it, then press `F1` to open it again. Click the "Copy URL" button and verify that the User Guide link is copied to your clipboard.
+3. Command box shortcuts:
+   1. Enter `list students`, then enter `list lessons`.
+   2. In the empty command box, press `Up`. Expected: `list lessons` appears. Press `Up` again. Expected: `list students` appears.
+   3. Press `Down`. Expected: `list lessons` appears. Press `Down` again. Expected: an empty text box appears.
+   4. Type `mark 1` without pressing Enter. Press `Up` twice to view history. Press `Down` twice back to the bottom. Expected: the draft `mark 1` is preserved and restored.
+   5. Clear the box, type `sc`, and press `Tab`. Expected: autocompletes to `schedule `.
+4. Resize and move the main window, enter `exit`, and relaunch the JAR in the same folder. Expected: the window reopens with the saved size and location when that location is still available.
 
 ### Listing and filtering
 
@@ -1075,8 +1184,32 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
 
 ### Sorting
 
-1. Enter `sort lesson fee desc`. Expected: the Secondary 2 Science lesson (ID 3, fee 60) appears first.
-2. Enter `sort student name desc`. Expected: the view switches to Students and Chloe appears first.
+1. Sorting students
+   1. Enter `sort student payment`. Expected: view switches to Students; unpaid students (Alice Tan, Chloe Ng) appear first, and Bryan Lim (paid) appears last.
+   2. Enter `sort student payment desc`. Expected: Bryan Lim (paid) appears first.
+   3. Enter `sort student name`. Expected: students appear in alphabetical order (Alice Tan, Bryan Lim, Chloe Ng).
+   4. Enter `sort student name desc`. Expected: students appear in reverse alphabetical order (Chloe Ng, Bryan Lim, Alice Tan).
+   5. Enter `sort student level`. Expected: students appear ordered by educational level.
+   6. Enter `sort student id`. Expected: students appear in ascending ID order (1, 2, 3).
+
+2. Sorting lessons
+   1. Enter `sort lesson fee desc`. Expected: view switches to Lessons; Secondary 2 Science (ID 3, fee 60) appears first.
+   2. Enter `sort lesson fee asc`. Expected: lowest fee lessons appear first.
+   3. Enter `sort lesson time`. Expected: lessons appear in chronological weekday and start-time order.
+   4. Enter `sort lesson subject`. Expected: lessons appear alphabetically by subject.
+   5. Enter `sort lesson id`. Expected: lessons appear in ascending lesson ID order.
+
+3. Automatic view switching
+   1. While viewing Lessons, enter `sort student name`. Expected: view switches to Students and sorts by name.
+   2. While viewing Students, enter `sort lesson fee desc`. Expected: view switches to Lessons and sorts by fee.
+
+4. Error handling and input validation
+   1. Missing arguments: `sort`, `sort student`, or `sort lesson`.<br>
+      Expected: Error displaying `Invalid command format. Use: sort student id|name|level|payment|paid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
+   2. Invalid entity or field: `sort teacher name`, `sort student age`, or `sort lesson duration`.<br>
+      Expected: Error displaying invalid command format.
+   3. Invalid direction or extra arguments: `sort student name ascending`, `sort lesson fee up`, or `sort student name asc extra`.<br>
+      Expected: Error displaying invalid command format.
 
 ### Filtering students and lessons
 

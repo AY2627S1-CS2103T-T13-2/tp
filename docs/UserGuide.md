@@ -54,9 +54,17 @@ With TuiTracker, you can view and update student and lesson details, manage enro
 
 ### Command-box shortcuts
 
-The command box keeps successful commands for the current session. Press **Up** and **Down** to move through that
-history; text you were drafting is restored when you move past the newest entry. Consecutive duplicate commands are
-stored once. Type the start of a command word and press **Tab** to complete it when there is only one match.
+TuiTracker provides keyboard shortcuts within the command box to speed up typing and command reuse:
+
+* **Command history traversal (`Up` / `Down` arrows):**
+  * Press **Up** to traverse backwards through previously executed commands in the current session (from newest to oldest).
+  * Press **Down** to traverse forwards toward newer commands.
+  * Only successfully executed commands are saved in history; invalid commands that cause errors are not saved.
+  * Consecutive identical commands are deduplicated and saved once.
+* **Draft preservation:**
+  * If you type an unsubmitted command draft and then press **Up** to browse previous commands, your draft is preserved. Pressing **Down** past the newest command restores your draft text exactly as it was.
+* **Command-word autocompletion (`Tab` key):**
+  * Type the beginning of a command word (e.g. `sc` or `un`) and press **Tab** to complete it when there is only one match (e.g. completes to `schedule ` or `unmark `).
 
 <box type="info" seamless>
 
@@ -471,24 +479,57 @@ combined with `student`, `lesson`, `day`, `l/`, `llv/`, or with each other.
 
 ### Sorting students and lessons: `sort`
 
-Sorts the currently displayed student or lesson records without changing saved data. The direction defaults to
-ascending and can be written explicitly as `asc` or `desc`.
+Sorts either student or lesson records without changing saved data. The sorting direction defaults to ascending and can be specified explicitly as `asc` or `desc`.
 
 **Format:** `sort student id|name|level|payment|paid [asc|desc]` or `sort lesson id|subject|level|fee|time [asc|desc]`
 
-* For students, you can sort by `id`, `name`, `level`, or payment status (`payment` / `paid`).
-* Sorting students by payment status in ascending order (default) places **unpaid** students at the top, making it easy for tutors to see who has yet to pay for the current month. Using `desc` places paid students at the top.
-* For lessons, you can sort by `id`, `subject`, `level`, `fee`, or `time` (chronological weekday and start-time order).
+**Parameters:**
 
-Examples:
+* Target entity: `student` or `lesson` (case-insensitive).
+  * Sorting students automatically switches the displayed view to the **Students** list.
+  * Sorting lessons automatically switches the displayed view to the **Lessons** list.
+* Student fields:
+  * `id`: by student ID.
+  * `name`: alphabetical by student full name (case-insensitive).
+  * `level`: alphabetical by education level (case-insensitive).
+  * `payment` (or `paid` / `unpaid`): by payment status for the current calendar month. Ascending order places **unpaid** students at the top (`false` before `true`), allowing tutors to immediately identify who has not yet paid. Descending order places paid students at the top.
+* Lesson fields:
+  * `id`: by lesson ID.
+  * `subject`: alphabetical by lesson subject (case-insensitive).
+  * `level`: alphabetical by education level (case-insensitive).
+  * `fee`: numerical lesson fee amount.
+  * `time`: chronological order by weekday (Monday to Sunday) and start time.
+* Direction: `asc` (ascending, default) or `desc` (descending). Letter case is ignored.
 
-* `sort student payment` or `sort student paid` sorts students with unpaid students at the top.
-* `sort student payment desc` shows paid students before unpaid students.
-* `sort student name` sorts students alphabetically by name.
-* `sort student level` sorts students by educational level.
-* `sort lesson fee desc` shows the highest-fee lessons first.
-* `sort lesson time` restores chronological weekday and start-time order.
-* `sort lesson id` sorts lessons by their identifier.
+**Tie-breakers:**
+
+* For students sorted by `name`, `level`, or `payment`, tied records are sorted by ascending student ID.
+* For lessons sorted by `subject`, `level`, or `fee`, tied records are sorted by ascending lesson ID. For `time`, tied start times are sorted by end time, then lesson ID.
+
+**Successful sorting:**
+
+* `Sorted students by payment in ascending order.`
+* `Sorted lessons by fee in descending order.`
+
+**Notes:**
+
+* The command updates only the displayed view order; saved tracker files are not modified.
+* The selected sort order is preserved when switching views or clearing filters with `list`.
+* When payment statuses update (e.g. through `mark` or `unmark`) or across month boundaries, the student list re-evaluates and dynamically updates the payment sort order.
+
+**Examples:**
+
+* `sort student payment` or `sort student paid` — sorts students with unpaid students at the top.
+* `sort student payment desc` — shows paid students before unpaid students.
+* `sort student name` — sorts students alphabetically by name.
+* `sort student level` — sorts students by educational level.
+* `sort lesson fee desc` — shows the highest-fee lessons first.
+* `sort lesson time` — restores chronological weekday and start-time order.
+* `sort lesson id` — sorts lessons by their identifier.
+
+**Errors:**
+
+* Missing arguments, invalid entity, unsupported field, or invalid direction — the app displays `Invalid command format. Use: sort student id|name|level|payment|paid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
 
 ### Viewing the weekly schedule: `schedule`
 
@@ -517,6 +558,18 @@ The schedule can be explored entirely from the keyboard:
 When focus moves to a day or lesson, the schedule scrolls to keep it visible. The focused heading or lesson is highlighted.
 
 If there are no lessons, the result box shows `No lessons are scheduled for this week.` An ID with no matching student shows `No student found with ID 999.` (using the entered ID). A missing ID or extra text shows `Invalid command format. Use: schedule [student ID]`; an unknown keyword shows `Unknown parameter. Use: schedule [student ID]`. Invalid IDs use the same ID error messages as other commands.
+
+### Viewing help: `help`
+
+Shows a help window containing a summary of all available commands and a link to this User Guide.
+
+**Format:** `help`
+
+* Opens a pop-up window listing the format and usage of all commands.
+* If the help window is already open or minimized, entering `help` restores it and brings it back to the front.
+* You can also open the help window by pressing `F1` or selecting **Help** > **Help** from the top menu bar.
+* The help window provides a **Copy URL** button to copy the link to this User Guide to your clipboard.
+* Any extraneous parameters are ignored (e.g., `help 123` works the same as `help`).
 
 ### Exiting the program: `exit`
 
