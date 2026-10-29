@@ -115,6 +115,16 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void parseLevel_invalidCharacter_messageNamesTheAllowedCharacters() {
+        String rule = "A level has 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter "
+                + "or number.";
+        assertThrows(ParseException.class, "Invalid student level. " + rule, () ->
+                ParserUtil.parseStudentLevel("P6 (Express)"));
+        assertThrows(ParseException.class, "Invalid lesson level. " + rule, () ->
+                ParserUtil.parseLessonLevel("Sec 1/2"));
+    }
+
+    @Test
     public void parseLessonLevel_usesTheLessonMessage() throws Exception {
         assertEquals(new Level("Primary 6"), ParserUtil.parseLessonLevel("Primary 6"));
         assertThrows(ParseException.class, Level.MESSAGE_CONSTRAINTS_LESSON, () -> ParserUtil.parseLessonLevel(""));
