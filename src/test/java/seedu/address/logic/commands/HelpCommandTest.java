@@ -26,7 +26,9 @@ public class HelpCommandTest {
         assertTrue(HelpCommand.MESSAGE_USAGE.contains(DeleteCommand.MESSAGE_USAGE));
         assertTrue(HelpCommand.MESSAGE_USAGE.contains(ListCommand.MESSAGE_USAGE));
         assertTrue(HelpCommand.MESSAGE_USAGE.contains(MarkCommand.MESSAGE_USAGE));
+        assertTrue(HelpCommand.MESSAGE_USAGE.contains(UnmarkCommand.MESSAGE_USAGE));
         assertTrue(HelpCommand.MESSAGE_USAGE.contains(ScheduleCommand.MESSAGE_USAGE));
+        assertTrue(HelpCommand.MESSAGE_USAGE.contains(SortCommand.MESSAGE_USAGE));
         assertTrue(HelpCommand.MESSAGE_USAGE.contains(FilterCommand.MESSAGE_USAGE));
         assertTrue(HelpCommand.MESSAGE_USAGE.contains(HelpCommand.COMMAND_WORD));
         assertTrue(HelpCommand.MESSAGE_USAGE.contains(ExitCommand.COMMAND_WORD));

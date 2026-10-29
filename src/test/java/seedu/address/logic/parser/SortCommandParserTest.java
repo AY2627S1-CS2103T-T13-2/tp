@@ -33,7 +33,6 @@ public class SortCommandParserTest {
                 SortField.STUDENT_ID, true));
         assertParseSuccess(parser, "student level", new SortCommand("student", "level",
                 SortField.STUDENT_LEVEL, true));
-
         // Lessons
         assertParseSuccess(parser, "lesson fee desc", new SortCommand("lesson", "fee",
                 SortField.LESSON_FEE, false));
@@ -45,6 +44,12 @@ public class SortCommandParserTest {
                 SortField.LESSON_ID, true));
         assertParseSuccess(parser, "lesson level desc", new SortCommand("lesson", "level",
                 SortField.LESSON_LEVEL, false));
+
+        // letter case is ignored
+        assertParseSuccess(parser, "STUDENT NAME ASC", new SortCommand("student", "name",
+                SortField.STUDENT_NAME, true));
+        assertParseSuccess(parser, "LESSON FEE DESC", new SortCommand("lesson", "fee",
+                SortField.LESSON_FEE, false));
     }
 
     @Test
