@@ -107,8 +107,8 @@ Displays either all students or all lessons. Use this command to switch between 
 
 **Displayed information:**
 
-* The student list shows each student's name, ID, contact number, level, payment status for the current month, and enrolled lesson IDs. Students are ordered by ascending ID.
-* The lesson list shows each lesson's subject, ID, level, weekly timeslot, fee per session, and enrolled students. Lessons are ordered by day of the week (Monday first), start time, then ID.
+* The student list shows each student's name, ID, contact number, level, payment status for the current month, and enrolled lesson IDs. Students are ordered by ascending ID by default, but any active sort order selected using the `sort` command is preserved.
+* The lesson list shows each lesson's subject, ID, level, weekly timeslot, fee per session, and enrolled students. Lessons are ordered by day of the week (Monday first), start time, then ID by default, but any active sort order selected using the `sort` command is preserved.
 
 **Notes:**
 
@@ -510,7 +510,6 @@ TuiTracker data is saved automatically as a JSON file `[JAR file location]/data/
 
 **Caution:**
 If your changes make the data file invalid, TuiTracker warns you at the next launch and opens in read-only recovery mode. It shows an empty list, but leaves the invalid file untouched and blocks data-changing commands. Back up the file, repair or replace it, then restart TuiTracker to resume editing.<br>
-If your changes make the data file invalid, TuiTracker starts with no students or lessons at the next run. The invalid file remains on disk until you run a command that changes stored data. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause TuiTracker to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
