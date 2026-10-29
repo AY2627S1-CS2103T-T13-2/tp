@@ -221,6 +221,19 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_emptyStudentOrLesson_saysWhichIsEmpty() {
+        String emptyStudent = "s/ is empty. Give the ID of an existing student or the name of a new student.";
+        String emptyLesson = "l/ is empty. Give the ID of an existing lesson or the subject of a new lesson.";
+
+        assertParseFailure(parser, " s/1 l/", emptyLesson);
+        assertParseFailure(parser, " s/ l/3", emptyStudent);
+        assertParseFailure(parser, " s/   l/3", emptyStudent);
+        assertParseFailure(parser, " s/ l/", emptyStudent); // the student is reported first
+        assertParseFailure(parser, " s/ c/91234567 slv/Primary 6", emptyStudent);
+        assertParseFailure(parser, " l/ llv/Primary 6 d/Monday st/15:00 et/16:00 f/50", emptyLesson);
+    }
+
+    @Test
     public void parse_newStudentWithMissingParameters_throwsParseException() {
         assertParseFailure(parser, " s/Alice Tan" + EXISTING_LESSON,
                 missing("c/, slv/") + readAsNewStudent("Alice Tan"));
