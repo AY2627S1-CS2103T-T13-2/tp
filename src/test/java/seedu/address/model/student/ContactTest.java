@@ -95,6 +95,20 @@ public class ContactTest {
     }
 
     @Test
+    public void isValidContact_bracketedGroupNextToAnotherGroup() {
+        // brackets already show where a group starts and ends, so no space or hyphen is needed next to them
+        assertTrue(Contact.isValidContact("+65(9222)3333"));
+        assertTrue(Contact.isValidContact("(9123)(4567)"));
+    }
+
+    @Test
+    public void constraintsMessage_statesHowDigitsCanBeGrouped() {
+        assertEquals("Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Digits can be split into "
+                + "groups by brackets or by a single space or hyphen, and a + can start the number, such as "
+                + "+65 (9123) 4567.", Contact.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
     public void isValidContact_atMostMaxLength() {
         assertTrue(Contact.isValidContact("1 2 3 4 5 6 7 8 9 1 2 3 4")); // exactly 25 characters
         assertFalse(Contact.isValidContact("+1 2 3 4 5 6 7 8 9 1 2 3 4")); // 26 characters

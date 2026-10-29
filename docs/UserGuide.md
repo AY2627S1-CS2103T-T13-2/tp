@@ -169,7 +169,7 @@ Parameter | Meaning | Needed when | Rules
 ----------|---------|-------------|------
 `s/` | The student: an ID, or the name of a new student | you enroll a student, or add one | A name has at most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter. The words `s/o` and `d/o` can be part of a name, such as `Ravi s/o Kumar`.
 `l/` | The lesson: an ID, or the subject of a new lesson | you enroll a student in a lesson, or add one | A subject has at most 50 characters: letters, numbers, spaces and `.` `,` `-` `(` `)` `&` `@`, with at least one letter.
-`c/` | The student's contact number | the student is new | 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a `+` can start the number, such as `+65 (9123) 4567`. Duplicates are compared by the digits only.
+`c/` | The student's contact number | the student is new | 3 to 15 digits, at most 25 characters in all. Digits can be split into groups by brackets or by a single space or hyphen, and a `+` can start the number, such as `+65 (9123) 4567`. Duplicates are compared by the digits only.
 `slv/` | The student's level, such as `Primary 6` | the student is new | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
 `llv/` | The lesson's level, such as `Primary 6` | the lesson is new | The same as `slv/`.
 `d/` | The day of the week | the lesson is new | `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Letter case is ignored.
@@ -227,7 +227,7 @@ Command | Message
 `add s/1` | Alice Tan [Student ID: 1] already exists. To enroll them, add l/ with a lesson ID or the details of a new lesson.
 `add l/1` | Mathematics [Lesson ID: 1] already exists. To enroll a student in it, add s/ with a student ID or the details of a new student.
 `add c/90000000 slv/Primary 6` | Missing required parameter: s/.
-`add s/Daniel Koh c/12 slv/Primary 6 l/1` | Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a + can start the number, such as +65 (9123) 4567.
+`add s/Daniel Koh c/12 slv/Primary 6 l/1` | Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Digits can be split into groups by brackets or by a single space or hyphen, and a + can start the number, such as +65 (9123) 4567.
 `add s/1 l/History llv/Primary 6 d/Monday st/9:60 et/10:00 f/35` | Invalid start time. Use the 24-hour format, such as 9:00 or 14:30.
 `add` | Invalid command format. Use: add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
 

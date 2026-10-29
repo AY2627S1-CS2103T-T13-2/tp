@@ -1076,7 +1076,7 @@ Use case ends.
 * **Command**: A text instruction that the user types into TuiTracker to perform an action, made up of a command word (e.g., `add`, `list`) followed by any required parameters, e.g., `delete student 12`.
 * **Command history**: The commands that ran successfully in the current session, which the user can bring back into the command box with the `Up` and `Down` keys. It is kept in memory only, and is cleared when TuiTracker closes.
 * **Command word**: The first word of a command, which specifies the action to perform, e.g., `add`, `delete`, `list` or `mark`.
-* **Contact**: The phone number of a student (or of the student's parent or guardian), with 3 to 15 digits and at most 25 characters in all, e.g., `91234567` or `+65 (9123) 4567`. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a `+` can start the number.
+* **Contact**: The phone number of a student (or of the student's parent or guardian), with 3 to 15 digits and at most 25 characters in all, e.g., `91234567` or `+65 (9123) 4567`. Digits can be split into groups by brackets or by a single space or hyphen, and a `+` can start the number.
 * **Current month**: The calendar month given by the date on the user's computer. Payment statuses apply only to the current month.
 * **Data file**: The local, human-editable JSON file in which TuiTracker stores all students, lessons and enrollments, at `data/tuitracker.json` by default.
 * **Display index**: The position of a record in a currently displayed list, starting from 1. It can change whenever the displayed list changes. Commands use permanent student and lesson IDs instead.
@@ -1156,7 +1156,7 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
 1. Enter `add s/Daniel Koh c/92223333 slv/Primary 6 l/1`. Expected: `Enrolled Daniel Koh [Student ID: 4] in Mathematics [Lesson ID: 1]. Payment status: Unpaid.` Daniel Koh appears in the student list.
 2. Enter `add s/daniel  koh c/9222 3333 slv/Primary 6 l/2`. Expected: `A student with the same name and contact already exists (Student ID: 4). Use the existing student ID.`
 3. Enter `add s/Eve Lee slv/Primary 6 l/1`. Expected: `Missing required parameter: c/. s/Eve Lee was read as a new student.`
-4. Enter `add s/Eve Lee c/12 slv/Primary 6 l/1`. Expected: `Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a + can start the number, such as +65 (9123) 4567.`
+4. Enter `add s/Eve Lee c/12 slv/Primary 6 l/1`. Expected: `Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Digits can be split into groups by brackets or by a single space or hyphen, and a + can start the number, such as +65 (9123) 4567.`
 
 **An existing student and a new lesson**
 
