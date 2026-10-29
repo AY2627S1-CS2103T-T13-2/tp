@@ -10,7 +10,7 @@
 
 ![Ui](images/Ui.png)
 
-**TuiTracker is a desktop application for managing your contact details.** While it has a GUI, most of the user interactions happen using a CLI (Command Line Interface).
+**TuiTracker is a desktop application for private tutors to manage their students, lessons, and monthly payments in one place.** While it has a GUI, most of the user interactions happen using a CLI (Command Line Interface).
 
 * If you are interested in using TuiTracker, head over to the [_Quick Start_ section of the **User Guide**](UserGuide.html#quick-start).
 * If you are interested in developing TuiTracker, the [**Developer Guide**](DeveloperGuide.html) is a good place to start.
