@@ -216,6 +216,8 @@ public class FilterCommand extends Command {
                     fee));
         }
 
+        // Falls through to here only when neither field above is set, since the parser never builds a
+        // FilterCommand with both subject/level unset and every other field null (see MESSAGE_FILTER_EXAMPLES).
         model.filterLessonsBySubjectAndLevel(subject, level);
         model.setListView(ListView.LESSONS);
         return new CommandResult(String.format(MESSAGE_SHOWING_LESSONS_MATCHING, model.getLessonList().size(),

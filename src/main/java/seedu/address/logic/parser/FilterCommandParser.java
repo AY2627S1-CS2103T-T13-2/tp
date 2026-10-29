@@ -61,6 +61,8 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         boolean hasStudentLevelFilter = argMultimap.getValue(PREFIX_STUDENT_LEVEL).isPresent();
         boolean hasFeeFilter = argMultimap.getValue(PREFIX_FEE).isPresent();
 
+        // l/ and llv/ count as one form since they combine freely with each other (see parseSubjectAndLevel).
+        // slv/ and f/ are each their own form, since neither combines with anything else, including each other.
         int exclusiveFormCount = (hasLessonFilter ? 1 : 0) + (hasStudentLevelFilter ? 1 : 0)
                 + (hasFeeFilter ? 1 : 0);
         if (exclusiveFormCount > 1) {
@@ -163,6 +165,8 @@ public class FilterCommandParser implements Parser<FilterCommand> {
 
         argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_FEE);
 
+        // Fee always stores its amount to two decimal places, so "50" and "50.00" parse to an equal Fee and
+        // therefore match the same lessons; the filter does not need to normalise the input string itself.
         Fee fee = ParserUtil.parseFee(argMultimap.getValue(PREFIX_FEE).get());
         return new FilterCommand(fee);
     }
