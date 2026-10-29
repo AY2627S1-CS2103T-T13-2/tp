@@ -46,9 +46,17 @@ public class LessonCard extends UiPart<Region> {
         level.setText("Level: " + lesson.getLevel());
         timeslot.setText(lesson.getTimeslot().toString());
         fee.setText("Fee: " + lesson.getFee());
-        students.setText("Students: " + (enrolledStudents.isEmpty() ? "none"
+        students.setText(enrolledStudentsText(enrolledStudents));
+    }
+
+    /**
+     * Returns the line that lists the students enrolled in a lesson, each as the student's ID followed by the name in
+     * brackets. The label says what the numbers are, so that they are not mistaken for a count.
+     */
+    static String enrolledStudentsText(List<Student> enrolledStudents) {
+        return "Enrolled students (ID and name): " + (enrolledStudents.isEmpty() ? "none"
                 : enrolledStudents.stream()
                         .map(student -> student.getId() + " (" + student.getName() + ")")
-                        .collect(Collectors.joining(", "))));
+                        .collect(Collectors.joining(", ")));
     }
 }

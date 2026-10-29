@@ -186,7 +186,7 @@ Each one is followed by the result you should see.
 1. `add s/4 l/2`: Enrolled Daniel Koh [Student ID: 4] in Science [Lesson ID: 2]. Payment status: Unpaid.
 1. `add s/2 l/Physics llv/Secondary 2 d/Friday st/14:00 et/15:00 f/55`: Enrolled Bryan Lim [Student ID: 2] in Physics [Lesson ID: 7]. Payment status: Paid.
 1. `add s/1 l/4`: Enrolled Alice Tan [Student ID: 1] in English [Lesson ID: 4]. Payment status: Unpaid. The result ends with `Note: Alice Tan's level (Primary 6) differs from the lesson's level (Primary 4).` A student can join a lesson of another level, but the note asks you to check that this is intended.
-1. `add s/Nora Lim c/90000000 slv/Primary 6`: Added student Nora Lim [Student ID: 6]. Nora is not enrolled in any lesson yet, so the student list shows `Lessons: none`.
+1. `add s/Nora Lim c/90000000 slv/Primary 6`: Added student Nora Lim [Student ID: 6]. Nora is not enrolled in any lesson yet, so the student list shows `Lesson IDs: none`.
 1. `add l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50`: Added lesson Mathematics [Lesson ID: 8]. No student is enrolled yet.
 1. `add s/6 l/8`: Enrolled Nora Lim [Student ID: 6] in Mathematics [Lesson ID: 8]. Payment status: Unpaid.
 
