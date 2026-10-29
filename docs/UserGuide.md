@@ -35,7 +35,7 @@ With TuiTracker, you can view and update student and lesson details, manage enro
 
    * `list lessons` : Lists all lessons.
 
-   * `add s/Alice Tan c/91234567 slv/Primary 6 l/Mathematics llv/Primary 6 d/Monday st/15:00 et/16:30 f/50.00` : Adds a student named `Alice Tan` to a new Mathematics lesson.
+   * `add s/Daniel Koh c/92223333 slv/Primary 6 l/Art llv/Primary 6 d/Tuesday st/10:00 et/11:00 f/40` : Adds a new student named `Daniel Koh` and enrolls them in a new Art lesson.
 
    * `edit student 1 c/90001111` : Updates the contact number of the student with ID 1.
 
