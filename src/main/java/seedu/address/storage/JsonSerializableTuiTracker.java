@@ -31,8 +31,8 @@ class JsonSerializableTuiTracker {
 
     public static final String MESSAGE_INCONSISTENT_DATA = "The data file is inconsistent: %s";
 
-    private final Integer nextStudentId;
-    private final Integer nextLessonId;
+    private final Long nextStudentId;
+    private final Long nextLessonId;
     private final List<JsonAdaptedStudent> students = new ArrayList<>();
     private final List<JsonAdaptedLesson> lessons = new ArrayList<>();
     private final List<JsonAdaptedEnrollment> enrollments = new ArrayList<>();
@@ -42,8 +42,8 @@ class JsonSerializableTuiTracker {
      * the highest ID in the file, and a missing list is empty.
      */
     @JsonCreator
-    public JsonSerializableTuiTracker(@JsonProperty("nextStudentId") Integer nextStudentId,
-            @JsonProperty("nextLessonId") Integer nextLessonId,
+    public JsonSerializableTuiTracker(@JsonProperty("nextStudentId") Long nextStudentId,
+            @JsonProperty("nextLessonId") Long nextLessonId,
             @JsonProperty("students") List<JsonAdaptedStudent> students,
             @JsonProperty("lessons") List<JsonAdaptedLesson> lessons,
             @JsonProperty("enrollments") List<JsonAdaptedEnrollment> enrollments) {
@@ -107,13 +107,13 @@ class JsonSerializableTuiTracker {
      * The data read from the file, before {@code TuiTracker} has checked that it is consistent.
      */
     private static class LoadedData implements ReadOnlyTuiTracker {
-        private final int nextStudentId;
-        private final int nextLessonId;
+        private final long nextStudentId;
+        private final long nextLessonId;
         private final ObservableList<Student> students;
         private final ObservableList<Lesson> lessons;
         private final List<Enrollment> enrollments;
 
-        LoadedData(int nextStudentId, int nextLessonId, List<Student> students, List<Lesson> lessons,
+        LoadedData(long nextStudentId, long nextLessonId, List<Student> students, List<Lesson> lessons,
                 List<Enrollment> enrollments) {
             this.nextStudentId = Math.max(IdGenerator.FIRST_ID, nextStudentId);
             this.nextLessonId = Math.max(IdGenerator.FIRST_ID, nextLessonId);
@@ -138,12 +138,12 @@ class JsonSerializableTuiTracker {
         }
 
         @Override
-        public int getNextStudentId() {
+        public long getNextStudentId() {
             return nextStudentId;
         }
 
         @Override
-        public int getNextLessonId() {
+        public long getNextLessonId() {
             return nextLessonId;
         }
     }

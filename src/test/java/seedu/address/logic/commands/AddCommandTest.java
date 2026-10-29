@@ -16,6 +16,8 @@ import static seedu.address.logic.commands.AddCommand.MESSAGE_LESSON_NEEDED;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_FREE_LESSON;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_LEVEL_MISMATCH;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_NOTE_SAME_NAME;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_NO_LESSON_ID_LEFT;
+import static seedu.address.logic.commands.AddCommand.MESSAGE_NO_STUDENT_ID_LEFT;
 import static seedu.address.logic.commands.AddCommand.MESSAGE_STUDENT_NEEDED;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
@@ -46,6 +48,7 @@ import seedu.address.logic.commands.AddCommand.NewLesson;
 import seedu.address.logic.commands.AddCommand.NewStudent;
 import seedu.address.logic.commands.AddCommand.StudentRef;
 import seedu.address.logic.parser.AddCommandParser;
+import seedu.address.model.IdGenerator;
 import seedu.address.model.ListView;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
@@ -334,6 +337,17 @@ public class AddCommandTest {
         return new ModelManager(builder.build(), new UserPrefs(), CLOCK);
     }
 
+    /**
+     * Returns a model holding the typical data, whose next new student and lesson get the given IDs.
+     */
+    private static Model modelWithNextIds(long nextStudentId, long nextLessonId) {
+        TuiTrackerBuilder builder = new TuiTrackerBuilder().withNextIds(nextStudentId, nextLessonId);
+        getTypicalStudents().forEach(builder::withStudent);
+        getTypicalLessons().forEach(builder::withLesson);
+        getTypicalEnrollments().forEach(builder::withEnrollment);
+        return new ModelManager(builder.build(), new UserPrefs(), CLOCK);
+    }
+
     private static AddCommand enroll(int studentId, int lessonId) {
         return new AddCommand(new ExistingStudent(new StudentId(studentId)),
                 new ExistingLesson(new LessonId(lessonId)));
@@ -369,7 +383,36 @@ public class AddCommandTest {
                 expectedModel);
     }
 
+    @Test
+    public void execute_noStudentIdLeft_throwsCommandException() {
+        Model model = modelWithNextIds(IdGenerator.ALL_IDS_USED, 1);
+
+        assertCommandFailure(new AddCommand(DANIEL_DETAILS, new ExistingLesson(MATHEMATICS.getId())), model,
+                MESSAGE_NO_STUDENT_ID_LEFT);
+        assertCommandFailure(new AddCommand(DANIEL_DETAILS), model, MESSAGE_NO_STUDENT_ID_LEFT);
+    }
+
+    @Test
+    public void execute_noIdLeftAndBothExist_stillEnrolls() throws Exception {
+        Model model = modelWithNextIds(IdGenerator.ALL_IDS_USED, IdGenerator.ALL_IDS_USED);
+
+        enroll(ALICE.getId().value, ENGLISH.getId().value).execute(model);
+
+        assertTrue(model.isEnrolled(ALICE.getId(), ENGLISH.getId()));
+    }
+
     //// creating a new lesson
+
+    @Test
+    public void execute_noLessonIdLeft_throwsCommandExceptionAndCreatesNoStudent() {
+        Model model = modelWithNextIds(1, IdGenerator.ALL_IDS_USED);
+
+        assertCommandFailure(new AddCommand(new ExistingStudent(ALICE.getId()), HISTORY_DETAILS), model,
+                MESSAGE_NO_LESSON_ID_LEFT);
+        assertCommandFailure(new AddCommand(HISTORY_DETAILS), model, MESSAGE_NO_LESSON_ID_LEFT);
+        // the new student is not created, so that a failed command changes nothing
+        assertCommandFailure(new AddCommand(DANIEL_DETAILS, HISTORY_DETAILS), model, MESSAGE_NO_LESSON_ID_LEFT);
+    }
 
     @Test
     public void execute_existingStudentAndNewLesson_createsAndEnrollsTheLesson() {

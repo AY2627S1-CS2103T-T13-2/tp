@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.commons.util.JsonUtil;
+import seedu.address.model.IdGenerator;
 import seedu.address.model.TuiTracker;
 import seedu.address.model.enrollment.EnrollmentList;
 import seedu.address.model.lesson.UniqueLessonList;
@@ -117,6 +118,18 @@ public class JsonSerializableTuiTrackerTest {
 
         assertEquals(8, fromFile.getNextStudentId());
         assertEquals(4, fromFile.getNextLessonId());
+    }
+
+    @Test
+    public void toModelType_allIdsUsed_isKept() throws Exception {
+        TuiTracker fromFile = read("allIdsUsed.json").toModelType();
+
+        assertEquals(IdGenerator.ALL_IDS_USED, fromFile.getNextStudentId());
+        assertEquals(4, fromFile.getNextLessonId());
+
+        // saving and loading again keeps the counter, which no longer fits in an int
+        TuiTracker reloaded = new JsonSerializableTuiTracker(fromFile).toModelType();
+        assertEquals(IdGenerator.ALL_IDS_USED, reloaded.getNextStudentId());
     }
 
     @Test

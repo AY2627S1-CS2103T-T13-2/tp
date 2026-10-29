@@ -55,6 +55,10 @@ public class AddCommand extends Command {
             "An identical lesson already exists (Lesson ID: %1$s). Use the existing lesson ID.";
     public static final String MESSAGE_ALREADY_ENROLLED = "The student is already enrolled in this lesson.";
     public static final String MESSAGE_LESSON_CLASH = "Lesson clashes with lesson %1$s (%2$s, %3$s).";
+    public static final String MESSAGE_NO_STUDENT_ID_LEFT = "Cannot add a new student: every student ID up to "
+            + Integer.MAX_VALUE + " has been used.";
+    public static final String MESSAGE_NO_LESSON_ID_LEFT = "Cannot add a new lesson: every lesson ID up to "
+            + Integer.MAX_VALUE + " has been used.";
     public static final String MESSAGE_NOTE_SAME_NAME =
             "Note: another student named %1$s already exists (Student ID: %2$s).";
     public static final String MESSAGE_NOTE_LEVEL_MISMATCH =
@@ -112,6 +116,7 @@ public class AddCommand extends Command {
      *   <li>a new student is not a duplicate, then a new lesson is not a duplicate, then the student is not
      *       already enrolled in the lesson (only possible when both already exist)</li>
      *   <li>a new lesson does not clash with an existing lesson</li>
+     *   <li>a new student, then a new lesson, can still get an ID</li>
      * </ol>
      * The duplicate check comes before the clash check because an identical lesson always overlaps the existing
      * one, so the clash check would otherwise hide the more helpful duplicate message.
@@ -148,6 +153,7 @@ public class AddCommand extends Command {
         checkOtherSideGiven(existingStudent, existingLesson);
         checkForDuplicates(model, existingStudent, existingLesson);
         checkForClash(model);
+        checkIdsLeft(model);
 
         // Notes point out what is probably a mistake but might be intended. They are worked out before anything is
         // created, so that a new student is never reported as its own namesake.
@@ -234,6 +240,20 @@ public class AddCommand extends Command {
             Lesson other = clash.get();
             throw new CommandException(String.format(MESSAGE_LESSON_CLASH, other.getId(), other.getSubject(),
                     other.getTimeslot()));
+        }
+    }
+
+    /**
+     * Throws if a new student or a new lesson cannot get an ID because every ID up to {@link Integer#MAX_VALUE}
+     * has been used. Both are checked before either is created, so that a new student is not left behind when
+     * the new lesson cannot be created.
+     */
+    private void checkIdsLeft(Model model) throws CommandException {
+        if (student instanceof NewStudent && !model.getTuiTracker().hasStudentIdLeft()) {
+            throw new CommandException(MESSAGE_NO_STUDENT_ID_LEFT);
+        }
+        if (lesson instanceof NewLesson && !model.getTuiTracker().hasLessonIdLeft()) {
+            throw new CommandException(MESSAGE_NO_LESSON_ID_LEFT);
         }
     }
 
