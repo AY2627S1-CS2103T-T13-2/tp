@@ -210,6 +210,32 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void sort_studentPaymentAscending_unpaidFirst() {
+        modelManager.sort(SortField.STUDENT_PAYMENT, true);
+        assertEquals(Arrays.asList(ALICE, CHLOE, BRYAN), modelManager.getStudentList());
+    }
+
+    @Test
+    public void sort_studentIdAndLevel_ordersLists() {
+        modelManager.sort(SortField.STUDENT_ID, false);
+        assertEquals(Arrays.asList(CHLOE, BRYAN, ALICE), modelManager.getStudentList());
+
+        modelManager.sort(SortField.STUDENT_LEVEL, true);
+        assertEquals(Arrays.asList(CHLOE, ALICE, BRYAN), modelManager.getStudentList());
+    }
+
+    @Test
+    public void sort_lessonIdAndLevel_ordersLists() {
+        modelManager.sort(SortField.LESSON_ID, true);
+        assertEquals(Arrays.asList(MATHEMATICS, SCIENCE_P6, SCIENCE_S2,
+                seedu.address.testutil.TypicalLessons.ENGLISH), modelManager.getLessonList());
+
+        modelManager.sort(SortField.LESSON_LEVEL, true);
+        assertEquals(Arrays.asList(seedu.address.testutil.TypicalLessons.ENGLISH, MATHEMATICS,
+                SCIENCE_P6, SCIENCE_S2), modelManager.getLessonList());
+    }
+
+    @Test
     public void filterLessonsByStudent_showsOnlyThatStudentsLessons() {
         modelManager.filterLessonsByStudent(ALICE.getId());
 

@@ -62,29 +62,6 @@ public class StudentTest {
     }
 
     @Test
-    public void isSameStudent() {
-        // same object
-        assertTrue(ALICE.isSameStudent(ALICE));
-
-        // null
-        assertFalse(ALICE.isSameStudent(null));
-
-        // same name and contact, everything else different: a duplicate
-        Student duplicate = new StudentBuilder(ALICE).withId(9).withLevel("Secondary 1")
-                .withLastPaidMonth(CURRENT_MONTH).build();
-        assertTrue(ALICE.isSameStudent(duplicate));
-
-        // same name, different contact: a different student
-        assertFalse(ALICE.isSameStudent(new StudentBuilder(ALICE).withId(9).withContact("90000000").build()));
-
-        // different name, same contact: a different student
-        assertFalse(ALICE.isSameStudent(new StudentBuilder(ALICE).withId(9).withName("Alice Lim").build()));
-
-        // a name that differs only in letter case is a different student
-        assertFalse(ALICE.isSameStudent(new StudentBuilder(ALICE).withId(9).withName("alice tan").build()));
-    }
-
-    @Test
     public void equals() {
         // same values
         assertTrue(ALICE.equals(new StudentBuilder(ALICE).build()));

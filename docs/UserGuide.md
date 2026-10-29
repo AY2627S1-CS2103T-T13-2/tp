@@ -341,55 +341,73 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 
 ### Marking a student as paid: `mark`
 
-Marks a student as paid for the current month using the student's ID. Use this command after receiving the student's payment for the current month.
+Marks one or more students, or all students enrolled in a lesson, as paid for the current month. Use this command after receiving payment for the current month.
 
-**Format:** `mark ID`
+**Format:** `mark ID [MORE_IDS]...` or `mark lesson LESSON_ID`
 
 **Parameters:**
 
-* `ID` — the student's positive whole-number ID, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`).
-* Leading and trailing spaces are ignored. No other text may follow the ID.
+* `ID` — one or more student positive whole-number IDs separated by spaces, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`). Duplicate IDs are merged.
+* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as paid.
+* Leading and trailing spaces are ignored.
 
 **Examples:**
 
-* `mark 1` — marks the student with ID 1 as paid for the current month.
-* `mark 0012` — marks student 12 as paid; leading zeros are ignored.
+* `mark 1` — marks student 1 as paid for the current month.
+* `mark 1 2 3` — marks students 1, 2, and 3 as paid for the current month.
+* `mark lesson 1` — marks all students enrolled in lesson 1 as paid for the current month.
 
 **Successful marking:**
 
-* The result box confirms the student's name, for example `Marked Alice Tan as paid for the current month.`
-* The student's payment status for the current month is updated to paid.
+* For a single student: `Marked Alice Tan as paid for the current month.`
+* For multiple students: `Marked Alice Tan, Bob Tan as paid for the current month.`
+* If some students were already marked as paid: `Marked Alice Tan as paid for the current month. (Already paid: Bob Tan)`
+* The payment status of the marked students for the current month is updated to paid.
 
 **Notes:**
 
 * The command records payment only for the current month.
-* A student who is already marked as paid for the current month cannot be marked again.
-* Student IDs and lesson IDs are separate. The ID must belong to a student.
+* If a single student is already marked as paid, the command fails and displays an error message.
+* When specifying multiple students or a lesson, if some students are already paid, the command marks the remaining unpaid students and informs you of those already paid. If all specified students or lesson students are already paid, no change is made and an error message is displayed.
+* Student IDs and lesson IDs are separate.
 * The ID must be a positive whole number. For example, `mark 0` and `mark -1` are invalid.
 
 **Errors:**
 
-* A missing ID or extra text after the ID — the app displays `Invalid command format. Use: mark ID`.
+* A missing ID or invalid format — the app displays `Invalid command format. Use: mark ID [MORE_IDS]... or mark lesson LESSON_ID`.
 * A malformed or non-positive ID — the app displays `ID must be a positive whole number.`
 * An ID above `2147483647` — the app displays `ID is too large. No student or lesson has an ID above 2147483647.`
-* No student has that ID — the app displays `No student found with ID 999.` (using the requested ID). An ID belonging only to a lesson does not match.
-* The student is already marked as paid for the current month — the app displays `Alice Tan is already marked as paid for the current month.` (using the student's name).
+* No student or lesson has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID).
+* No students are enrolled in the lesson — the app displays `No students are enrolled in Lesson 1.`
+* All specified students are already marked as paid — the app displays `Alice Tan is already marked as paid for the current month.` or `All specified students are already marked as paid for the current month.` or `All students in Lesson 1 are already marked as paid for the current month.`
 
 No data is changed on failure.
 
 ### Correcting a payment to unpaid: `unmark`
 
-Corrects an accidental payment entry by marking the student as unpaid for the current month.
+Marks one or more students, or all students enrolled in a lesson, as unpaid for the current month. Use this command to correct accidental payment entries.
 
-**Format:** `unmark ID`
+**Format:** `unmark ID [MORE_IDS]...` or `unmark lesson LESSON_ID`
 
-Examples:
+**Parameters:**
+
+* `ID` — one or more student positive whole-number IDs separated by spaces, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`). Duplicate IDs are merged.
+* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as unpaid.
+* Leading and trailing spaces are ignored.
+
+**Examples:**
 
 * `unmark 1` — marks student 1 as unpaid for the current month.
-* `unmark 0012` — marks student 12 as unpaid; leading zeros are ignored.
+* `unmark 1 2 3` — marks students 1, 2, and 3 as unpaid for the current month.
+* `unmark lesson 1` — marks all students enrolled in lesson 1 as unpaid for the current month.
 
-The student must exist and must currently be marked as paid. The change is saved immediately and is retained
-after restarting TuiTracker. The student's details and lesson enrollments are not changed.
+**Successful unmarking:**
+
+* For a single student: `Marked Alice Tan as unpaid for the current month.`
+* For multiple students: `Marked Alice Tan, Bob Tan as unpaid for the current month.`
+* If some students were already marked as unpaid: `Marked Alice Tan as unpaid for the current month. (Already unpaid: Bob Tan)`
+
+The change is saved immediately and is retained after restarting TuiTracker. The student's details and lesson enrollments are not changed.
 
 ### Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status: `filter`
 
@@ -429,14 +447,21 @@ that keyword and prefix filters cannot be mixed.
 Sorts the currently displayed student or lesson records without changing saved data. The direction defaults to
 ascending and can be written explicitly as `asc` or `desc`.
 
-**Format:** `sort student name|payment [asc|desc]` or `sort lesson subject|fee|time [asc|desc]`
+**Format:** `sort student id|name|level|payment|paid [asc|desc]` or `sort lesson id|subject|level|fee|time [asc|desc]`
+
+* For students, you can sort by `id`, `name`, `level`, or payment status (`payment` / `paid`).
+* Sorting students by payment status in ascending order (default) places **unpaid** students at the top, making it easy for tutors to see who has yet to pay for the current month. Using `desc` places paid students at the top.
+* For lessons, you can sort by `id`, `subject`, `level`, `fee`, or `time` (chronological weekday and start-time order).
 
 Examples:
 
-* `sort student name` sorts students alphabetically by name.
+* `sort student payment` or `sort student paid` sorts students with unpaid students at the top.
 * `sort student payment desc` shows paid students before unpaid students.
+* `sort student name` sorts students alphabetically by name.
+* `sort student level` sorts students by educational level.
 * `sort lesson fee desc` shows the highest-fee lessons first.
 * `sort lesson time` restores chronological weekday and start-time order.
+* `sort lesson id` sorts lessons by their identifier.
 
 ### Viewing the weekly schedule: `schedule`
 
@@ -474,7 +499,9 @@ Format: `exit`
 
 ### Saving the data
 
-TuiTracker automatically saves data after every command that changes stored data. You do not need to save manually.
+TuiTracker automatically saves data after each data-changing command. You do not need to save manually. 
+
+If the data file cannot be loaded at startup, data-changing commands are blocked until you repair or replace the file and restart TuiTracker.
 
 ### Editing the data file
 
@@ -483,9 +510,7 @@ TuiTracker data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, TuiTracker starts with no students or lessons at the next run. The invalid
-file remains on disk until you run a command that changes stored data. Still, we recommend backing up the file before
-editing it.<br>
+If your changes make the data file invalid, TuiTracker warns you at the next launch and opens in read-only recovery mode. It shows an empty list, but leaves the invalid file untouched and blocks data-changing commands. Back up the file, repair or replace it, then restart TuiTracker to resume editing.<br>
 Furthermore, certain edits can cause TuiTracker to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
@@ -502,24 +527,18 @@ _Details coming soon ..._
 
 --------------------------------------------------------------------------------------------------------------------
 
-## Known issues
-
-1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
-
---------------------------------------------------------------------------------------------------------------------
-
 ## Command summary
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> e.g., `add s/1 l/2`, `add s/Nora Lim c/90000000 slv/Primary 6`, `add l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50`
+**Add**    | `add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> e.g., `add s/Daniel Koh c/92223333 slv/Primary 6 l/1`, `add s/Nora Lim c/90000000 slv/Primary 6`, `add l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50`
 **Edit**   | `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]` <br> `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]`
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
 **Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid` or `filter [l/SUBJECT] [llv/LESSON_LEVEL]` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
-**Mark**   | `mark ID` <br> e.g., `mark 1`, `mark 0012`
-**Unmark** | `unmark ID` <br> e.g., `unmark 1`, `unmark 0012`
+**Mark**   | `mark ID [MORE_IDS]...` or `mark lesson LESSON_ID` <br> e.g., `mark 1`, `mark 1 2 3`, `mark lesson 1`
+**Unmark** | `unmark ID [MORE_IDS]...` or `unmark lesson LESSON_ID` <br> e.g., `unmark 1`, `unmark 1 2 3`, `unmark lesson 1`
 **Schedule** | `schedule [student ID]` <br> e.g., `schedule`, `schedule student 1`; shows recurring lessons from Monday to Sunday
-**Sort** | `sort student name\|payment [asc\|desc]` or `sort lesson subject\|fee\|time [asc\|desc]` <br> e.g., `sort student name`, `sort lesson fee desc`
+**Sort** | `sort student id\|name\|level\|payment\|paid [asc\|desc]` or `sort lesson id\|subject\|level\|fee\|time [asc\|desc]` <br> e.g., `sort student payment`, `sort lesson fee desc`
 **Help**   | `help`
 **Exit**   | `exit`
