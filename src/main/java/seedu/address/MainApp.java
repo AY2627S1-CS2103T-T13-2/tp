@@ -84,6 +84,13 @@ public class MainApp extends Application {
             logger.warning("Data file at " + storage.getTuiTrackerFilePath() + " could not be loaded."
                     + " Starting in read-only recovery mode without changing the file.");
             dataFileLoadFailed = true;
+            try {
+                Optional<Path> backupPath = storage.backupCorruptedTuiTracker();
+                backupPath.ifPresent(path ->
+                        logger.warning("Corrupted data file backed up to: " + path));
+            } catch (IOException ioe) {
+                logger.warning("Failed to back up corrupted data file: " + ioe.getMessage());
+            }
             initialData = new TuiTracker();
         }
 

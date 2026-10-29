@@ -65,4 +65,10 @@ public class StorageManager implements Storage {
         tuiTrackerStorage.saveTuiTracker(tuiTracker);
     }
 
+    @Override
+    public Optional<Path> backupCorruptedTuiTracker() throws IOException {
+        logger.fine("Attempting to backup corrupted data file: " + tuiTrackerStorage.getTuiTrackerFilePath());
+        return tuiTrackerStorage.backupCorruptedFile();
+    }
+
 }
