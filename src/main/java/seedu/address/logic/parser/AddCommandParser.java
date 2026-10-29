@@ -50,6 +50,7 @@ import seedu.address.model.lesson.Timeslot;
  *   <li>the command is well formed: no text before the first parameter, and at least one parameter</li>
  *   <li>no parameter is given more than once</li>
  *   <li>{@code s/} is given if any student parameter is, and {@code l/} if any lesson parameter is</li>
+ *   <li>{@code s/}, then {@code l/}, is not empty</li>
  *   <li>no parameter is given that does not belong to the form: student parameters first, then lesson parameters</li>
  *   <li>no required parameter is missing</li>
  *   <li>every value is valid: the student's values first ({@code s/}, {@code c/}, {@code slv/}), then the
@@ -70,6 +71,10 @@ public class AddCommandParser implements Parser<AddCommand> {
     /** Added after {@link #MESSAGE_READ_AS_NEW} when the value starts with an ID followed by more text. */
     public static final String MESSAGE_USE_ID_ONLY = " To use an existing %1$s, give only its ID, such as %2$s%3$s.";
     public static final String MESSAGE_ID_TOO_LARGE = ParserUtil.MESSAGE_ID_TOO_LARGE;
+    public static final String MESSAGE_EMPTY_STUDENT =
+            "s/ is empty. Give the ID of an existing student or the name of a new student.";
+    public static final String MESSAGE_EMPTY_LESSON =
+            "l/ is empty. Give the ID of an existing lesson or the subject of a new lesson.";
 
     private static final Logger logger = LogsCenter.getLogger(AddCommandParser.class);
 
@@ -117,6 +122,7 @@ public class AddCommandParser implements Parser<AddCommand> {
         checkWellFormed(argMultimap);
         argMultimap.verifyNoDuplicatePrefixesFor(ALL_PREFIXES);
         checkStudentAndLessonGiven(argMultimap);
+        checkStudentAndLessonNotEmpty(argMultimap);
 
         Optional<String> studentValue = argMultimap.getValue(PREFIX_STUDENT);
         Optional<String> lessonValue = argMultimap.getValue(PREFIX_LESSON);
@@ -196,6 +202,19 @@ public class AddCommandParser implements Parser<AddCommand> {
         }
         if (!missing.isEmpty()) {
             throw missingParameter(missing);
+        }
+    }
+
+    /**
+     * Throws if {@code s/} or {@code l/} is given with nothing after it. An empty value would otherwise be read as a
+     * new student or lesson, and the user would be told about missing parameters instead.
+     */
+    private static void checkStudentAndLessonNotEmpty(ArgumentMultimap argMultimap) throws ParseException {
+        if (argMultimap.getValue(PREFIX_STUDENT).filter(String::isEmpty).isPresent()) {
+            throw new ParseException(MESSAGE_EMPTY_STUDENT);
+        }
+        if (argMultimap.getValue(PREFIX_LESSON).filter(String::isEmpty).isPresent()) {
+            throw new ParseException(MESSAGE_EMPTY_LESSON);
         }
     }
 
