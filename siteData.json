@@ -74,6 +74,7 @@
         "deleting-a-student-or-lesson": "Deleting a student or lesson",
         "marking-and-correcting-payment": "Marking and correcting payment",
         "sorting": "Sorting",
+        "filtering-students-and-lessons": "Filtering students and lessons",
         "viewing-the-weekly-schedule": "Viewing the weekly schedule",
         "saving-and-loading-data": "Saving and loading data"
       },
@@ -129,7 +130,7 @@
         "deleting-a-student-or-a-lesson-delete": "Deleting a student or a lesson: delete",
         "marking-a-student-as-paid-mark": "Marking a student as paid: mark",
         "correcting-a-payment-to-unpaid-unmark": "Correcting a payment to unpaid: unmark",
-        "showing-a-student-s-lessons-a-lesson-s-students-lessons-by-day-subject-or-level-or-students-by-payment-status-filter": "Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status: filter",
+        "showing-a-student-s-lessons-a-lesson-s-students-lessons-by-day-subject-or-level-or-students-by-payment-status-or-level-filter": "Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status or level: filter",
         "sorting-students-and-lessons-sort": "Sorting students and lessons: sort",
         "viewing-the-weekly-schedule-schedule": "Viewing the weekly schedule: schedule",
         "exiting-the-program-exit": "Exiting the program: exit",
