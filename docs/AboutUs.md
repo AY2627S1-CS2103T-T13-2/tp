@@ -22,10 +22,6 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 <img src="images/shawnkokxk.png" width="200px">
 
 [[github](http://github.com/ShawnKokXK)]
-[[portfolio](team/johndoe.md)]
-
-* Role: Team Lead
-* Responsibilities: UI
 
 ### Chaw Qi Xuan
 
@@ -37,18 +33,10 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 <img src="images/eeyang2026.png" width="200px">
 
-[[homepage](https://github.com/eeyang2026/tp)]
 [[github](https://github.com/eeyang2026)]
-
-* Role: Developer
-* Responsibilities: Dev Ops + Threading
 
 ### Darren Song
 
 <img src="images/nerrad2004.png" width="200px">
 
 [[github](http://github.com/nerrad2004)]
-[[portfolio](team/johndoe.md)]
-
-* Role: Developer
-* Responsibilities: UI
