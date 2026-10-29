@@ -39,8 +39,8 @@ With TuiTracker, you can view and update student and lesson details, manage enro
 
    * `edit student 1 c/90001111` : Updates the contact number of the student with ID 1.
 
-   * `mark 1` : Marks the student with ID 1 as paid for the current month.
-   * `unmark 1` : Corrects student 1's payment status back to unpaid.
+   * `mark 1` : Marks the student with ID 1 as paid for the current month (supports multiple students or a lesson, e.g. `mark 1 2 3` or `mark lesson 1`).
+   * `unmark 1` : Corrects student 1's payment status back to unpaid (supports multiple students or a lesson, e.g. `unmark 1 2 3` or `unmark lesson 1`).
 
    * `delete student 3` : Deletes the student with ID 3.
 
@@ -339,7 +339,7 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 * An ID above `2147483647` — the app displays `ID is too large. No student or lesson has an ID above 2147483647.`
 * No record of the requested kind has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID). An ID belonging only to the other kind does not match. No data is changed on failure.
 
-### Marking a student as paid: `mark`
+### Marking a student or lesson as paid: `mark`
 
 Marks one or more students, or all students enrolled in a lesson, as paid for the current month. Use this command after receiving payment for the current month.
 
@@ -348,7 +348,7 @@ Marks one or more students, or all students enrolled in a lesson, as paid for th
 **Parameters:**
 
 * `ID` — one or more student positive whole-number IDs separated by spaces, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`). Duplicate IDs are merged.
-* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as paid.
+* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as paid. Letter case for `lesson` is ignored.
 * Leading and trailing spaces are ignored.
 
 **Examples:**
@@ -363,27 +363,29 @@ Marks one or more students, or all students enrolled in a lesson, as paid for th
 * For multiple students: `Marked Alice Tan, Bob Tan as paid for the current month.`
 * If some students were already marked as paid: `Marked Alice Tan as paid for the current month. (Already paid: Bob Tan)`
 * The payment status of the marked students for the current month is updated to paid.
+* The change is saved immediately and is retained after restarting TuiTracker. The student's details and lesson enrollments are not changed.
 
 **Notes:**
 
 * The command records payment only for the current month.
 * If a single student is already marked as paid, the command fails and displays an error message.
 * When specifying multiple students or a lesson, if some students are already paid, the command marks the remaining unpaid students and informs you of those already paid. If all specified students or lesson students are already paid, no change is made and an error message is displayed.
+* Duplicate student IDs are merged into a single entry before processing.
 * Student IDs and lesson IDs are separate.
 * The ID must be a positive whole number. For example, `mark 0` and `mark -1` are invalid.
 
 **Errors:**
 
-* A missing ID or invalid format — the app displays `Invalid command format. Use: mark ID [MORE_IDS]... or mark lesson LESSON_ID`.
+* A missing ID, invalid format, or extra text after the lesson ID — the app displays `Invalid command format. Use: mark ID [MORE_IDS]... or mark lesson LESSON_ID`.
 * A malformed or non-positive ID — the app displays `ID must be a positive whole number.`
 * An ID above `2147483647` — the app displays `ID is too large. No student or lesson has an ID above 2147483647.`
 * No student or lesson has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID).
 * No students are enrolled in the lesson — the app displays `No students are enrolled in Lesson 1.`
-* All specified students are already marked as paid — the app displays `Alice Tan is already marked as paid for the current month.` or `All specified students are already marked as paid for the current month.` or `All students in Lesson 1 are already marked as paid for the current month.`
+* All specified students are already marked as paid — the app displays `Alice Tan is already marked as paid for the current month.` (for a single student), `All specified students are already marked as paid for the current month.` (for multiple students), or `All students in Lesson 1 are already marked as paid for the current month.` (for a lesson).
 
 No data is changed on failure.
 
-### Correcting a payment to unpaid: `unmark`
+### Correcting a student or lesson payment to unpaid: `unmark`
 
 Marks one or more students, or all students enrolled in a lesson, as unpaid for the current month. Use this command to correct accidental payment entries.
 
@@ -392,7 +394,7 @@ Marks one or more students, or all students enrolled in a lesson, as unpaid for 
 **Parameters:**
 
 * `ID` — one or more student positive whole-number IDs separated by spaces, up to `2147483647`. Leading zeros are allowed and ignored (for example, `0012` refers to ID `12`). Duplicate IDs are merged.
-* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as unpaid.
+* `lesson LESSON_ID` — the keyword `lesson` followed by a lesson's positive whole-number ID, marking all students enrolled in that lesson as unpaid. Letter case for `lesson` is ignored.
 * Leading and trailing spaces are ignored.
 
 **Examples:**
@@ -406,8 +408,28 @@ Marks one or more students, or all students enrolled in a lesson, as unpaid for 
 * For a single student: `Marked Alice Tan as unpaid for the current month.`
 * For multiple students: `Marked Alice Tan, Bob Tan as unpaid for the current month.`
 * If some students were already marked as unpaid: `Marked Alice Tan as unpaid for the current month. (Already unpaid: Bob Tan)`
+* The payment status of the unmarked students for the current month is updated to unpaid.
+* The change is saved immediately and is retained after restarting TuiTracker. The student's details and lesson enrollments are not changed.
 
-The change is saved immediately and is retained after restarting TuiTracker. The student's details and lesson enrollments are not changed.
+**Notes:**
+
+* The command modifies payment status only for the current month.
+* If a single student is already unpaid, the command fails and displays an error message.
+* When specifying multiple students or a lesson, if some students are already unpaid, the command marks the remaining paid students as unpaid and informs you of those already unpaid. If all specified students or lesson students are already unpaid, no change is made and an error message is displayed.
+* Duplicate student IDs are merged into a single entry before processing.
+* Student IDs and lesson IDs are separate.
+* The ID must be a positive whole number. For example, `unmark 0` and `unmark -1` are invalid.
+
+**Errors:**
+
+* A missing ID, invalid format, or extra text after the lesson ID — the app displays `Invalid command format. Use: unmark ID [MORE_IDS]... or unmark lesson LESSON_ID`.
+* A malformed or non-positive ID — the app displays `ID must be a positive whole number.`
+* An ID above `2147483647` — the app displays `ID is too large. No student or lesson has an ID above 2147483647.`
+* No student or lesson has that ID — the app displays `No student found with ID 999.` or `No lesson found with ID 999.` (using the requested ID).
+* No students are enrolled in the lesson — the app displays `No students are enrolled in Lesson 1.`
+* All specified students are already unpaid — the app displays `Alice Tan is already unpaid for the current month.` (for a single student), `All specified students are already unpaid for the current month.` (for multiple students), or `All students in Lesson 1 are already unpaid for the current month.` (for a lesson).
+
+No data is changed on failure.
 
 ### Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status or level: `filter`
 

@@ -1,0 +1,59 @@
+@startuml
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+
+start
+:User enters `mark ...` or `unmark ...`;
+:Trim leading and trailing spaces;
+if () then ([starts with `lesson`])
+    if () then ([valid single positive lesson ID])
+        :Look up lesson in Model;
+        if () then ([lesson exists])
+            :Get enrolled students in lesson;
+            if () then ([at least one enrolled student])
+                :Partition students into eligible and already in target state;
+                if () then ([at least one student eligible])
+                    :Update payment status for eligible students;
+                    :Show confirmation (and report any already in target state);
+                else ([all students already in target state])
+                    :Show error: all students in lesson already in target state;
+                endif
+            else ([no enrolled students])
+                :Show error: no students enrolled in lesson;
+            endif
+        else ([lesson not found])
+            :Show lesson-not-found error;
+        endif
+    else ([invalid lesson ID or extra parameters])
+        :Show invalid command format error;
+    endif
+else ([student ID(s) given])
+    if () then ([all IDs are positive whole numbers])
+        :Deduplicate student IDs;
+        :Look up each student in Model;
+        if () then ([all students exist])
+            if () then ([single student])
+                if () then ([student is eligible])
+                    :Update payment status;
+                    :Show confirmation;
+                else ([already in target state])
+                    :Show error: student already in target state;
+                endif
+            else ([multiple students])
+                :Partition students into eligible and already in target state;
+                if () then ([at least one student eligible])
+                    :Update payment status for eligible students;
+                    :Show confirmation (and report any already in target state);
+                else ([all students already in target state])
+                    :Show error: all specified students already in target state;
+                endif
+            endif
+        else ([one or more students not found])
+            :Show student-not-found error;
+        endif
+    else ([non-positive or malformed ID])
+        :Show invalid ID error;
+    endif
+endif
+stop
+@enduml
