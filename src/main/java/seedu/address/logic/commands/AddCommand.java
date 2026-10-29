@@ -111,11 +111,12 @@ public class AddCommand extends Command {
      *       create</li>
      *   <li>a new student is not a duplicate, then a new lesson is not a duplicate, then the student is not
      *       already enrolled in the lesson (only possible when both already exist)</li>
-     *   <li>the student's level is the same as the lesson's level</li>
      *   <li>a new lesson does not clash with an existing lesson</li>
      * </ol>
      * The duplicate check comes before the clash check because an identical lesson always overlaps the existing
      * one, so the clash check would otherwise hide the more helpful duplicate message.
+     * A student whose level differs from the lesson's level is not rejected: that only adds a note to the result,
+     * when both the student and the lesson are given.
      */
     @Override
     public CommandResult execute(Model model) throws CommandException {

@@ -4,6 +4,8 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -84,6 +86,29 @@ public class JsonTuiTrackerStorage {
 
         FileUtil.createIfMissing(filePath);
         JsonUtil.saveJsonFile(new JsonSerializableTuiTracker(tuiTracker), filePath);
+    }
+
+    /**
+     * Backs up the corrupted storage file at the default file path if it exists.
+     *
+     * @return an {@code Optional} containing the backup {@code Path}, or empty if the file does not exist.
+     * @throws IOException if copying the file fails.
+     */
+    public Optional<Path> backupCorruptedFile() throws IOException {
+        return backupCorruptedFile(filePath);
+    }
+
+    /**
+     * Backs up the corrupted storage file at {@code filePath} if it exists.
+     *
+     * @param filePath location of the data. Cannot be null.
+     * @return an {@code Optional} containing the backup {@code Path}, or empty if the file does not exist.
+     * @throws IOException if copying the file fails.
+     */
+    public Optional<Path> backupCorruptedFile(Path filePath) throws IOException {
+        requireNonNull(filePath);
+        String timestamp = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").format(LocalDateTime.now());
+        return FileUtil.backupFile(filePath, ".corrupt." + timestamp + ".bak");
     }
 
 }

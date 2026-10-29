@@ -310,15 +310,15 @@ The sequence diagram below shows the help window being opened by `executeCommand
 
 ### Filter feature
 
-The `filter` command narrows the displayed list to one student's lessons, one lesson's students, lessons matching a day, subject or level, students with a selected payment status, or students at a given level. It changes the displayed view without changing saved data.
+The `filter` command narrows the displayed list to one student's lessons, one lesson's students, lessons matching a day, subject, level or fee, students with a selected payment status, or students at a given level. It changes the displayed view without changing saved data.
 
 #### Parsing the arguments
 
-`FilterCommandParser` accepts `student ID`, `lesson ID`, `day DAY`, the bare `paid` or `unpaid` keyword, one or both of `l/SUBJECT` and `llv/LESSON_LEVEL`, or `slv/STUDENT_LEVEL`.
+`FilterCommandParser` accepts `student ID`, `lesson ID`, `day DAY`, the bare `paid` or `unpaid` keyword, one or both of `l/SUBJECT` and `llv/LESSON_LEVEL`, `slv/STUDENT_LEVEL`, or `f/FEE`.
 
-1. The `student`, `lesson` and `day` forms require exactly two whitespace-separated tokens. The payment forms require one token. The subject/level and student-level forms use their command prefixes; `l/` and `llv/` may be combined with each other, but `slv/` cannot be combined with any other form.
+1. The `student`, `lesson` and `day` forms require exactly two whitespace-separated tokens. The payment forms require one token. The subject/level, student-level and fee forms use their command prefixes; `l/` and `llv/` may be combined with each other, but `slv/` and `f/` are each their own exclusive group and cannot be combined with any other form, including each other.
 2. An incomplete, unknown, mixed or repeated form raises a `ParseException` with a specific message before the view changes.
-3. IDs and days use the shared `ParserUtil` methods. Subject, lesson level and student level values are parsed with the corresponding domain parsers; `slv/` reuses `ParserUtil#parseStudentLevel`, the same method `add` and `edit` use for a student's own level.
+3. IDs and days use the shared `ParserUtil` methods. Subject, lesson level, student level and fee values are parsed with the corresponding domain parsers; `slv/` reuses `ParserUtil#parseStudentLevel`, the same method `add` and `edit` use for a student's own level, and `f/` reuses `ParserUtil#parseFee`, the same method `add` and `edit` use for a lesson's fee.
 
 The parser builds the corresponding `FilterCommand` directly. A filter selects existing records and never creates new ones.
 
@@ -327,9 +327,9 @@ The parser builds the corresponding `FilterCommand` directly. A filter selects e
 `FilterCommand#execute(Model)` branches on the selected filter kind:
 
 1. For `studentId`/`lessonId`, it first confirms the ID refers to an existing student or lesson, otherwise throws a `CommandException` (`MESSAGE_STUDENT_NOT_FOUND` / `MESSAGE_LESSON_NOT_FOUND`). A `DayOfWeek` needs no such check — unlike an ID, every value the parser can produce already refers to something real, so there is nothing to look up or fail to find.
-2. It delegates to the matching `Model` filter method and selects the relevant list: `LESSONS` for student, day, subject and level filters; `STUDENTS` for lesson, payment-status and student-level filters.
+2. It delegates to the matching `Model` filter method and selects the relevant list: `LESSONS` for student, day, subject, level and fee filters; `STUDENTS` for lesson, payment-status and student-level filters.
 
-Inside `ModelManager`, setting one filter clears the earlier filter fields. `refreshFilters()` then rebuilds the predicates for both `FilteredList`s. A day, subject or level filter narrows only lessons; payment status and student level each narrow only students. Mutating operations reapply the predicates. Payment changes and the month-boundary refresh also re-evaluate the current payment filter and payment sort.
+Inside `ModelManager`, setting one filter clears the earlier filter fields. `refreshFilters()` then rebuilds the predicates for both `FilteredList`s. A day, subject, level or fee filter narrows only lessons; payment status and student level each narrow only students. The fee filter matches exactly: `Fee` always stores its amount to two decimal places, so `f/50` and `f/50.00` both match a lesson with fee `$50.00`. Mutating operations reapply the predicates. Payment changes and the month-boundary refresh also re-evaluate the current payment filter and payment sort.
 
 The sequence diagram below shows `execute("filter student 1")`.
 
@@ -339,7 +339,7 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 **Aspect: how the active filter is stored**
 
-* **Alternative 1 (current choice):** seven nullable fields in `ModelManager`, one each for student, lesson, day, subject, level, paid status and student level. The subject and level fields may be set together; every other filter setter clears the previous fields.
+* **Alternative 1 (current choice):** eight nullable fields in `ModelManager`, one each for student, lesson, day, subject, level, paid status, student level and fee. The subject and level fields may be set together; every other filter setter clears the previous fields.
   * Pros: Each predicate can read the fields it needs, and `resetFilters()` clears them in one place.
   * Cons: The valid combinations are enforced by the setters rather than the type system, so a new filter setter must clear the previous fields correctly.
 * **Alternative 2:** a sealed type representing each filter form, including the combined subject and level form.
@@ -370,7 +370,7 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 #### Testing
 
-`FilterCommandParserTest` covers the student, lesson, day, payment, subject, level and student-level forms, including malformed arguments and combining `slv/` with every other form. `FilterCommandTest` checks the resulting model and list view, missing IDs and command equality. `ModelManagerTest` checks that payment filters update after payment changes and a month rollover, and that the student-level filter selects the right students while leaving the lesson list unaffected.
+`FilterCommandParserTest` covers the student, lesson, day, payment, subject, level, student-level and fee forms, including malformed arguments and combining `slv/` or `f/` with every other form. `FilterCommandTest` checks the resulting model and list view, missing IDs and command equality. `ModelManagerTest` checks that payment filters update after payment changes and a month rollover, that the student-level filter selects the right students while leaving the lesson list unaffected, and that the fee filter selects the right lessons while leaving the student list unaffected.
 
 ### Schedule feature
 
@@ -438,8 +438,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 |----------|--------|-------------|-----------------|
 | `* * *` | new tutor | see instructions for the available commands | learn how to use the application and check a command when I forget it |
 | `* * *` | tutor | enrol a student in a lesson whether the student or lesson is new or existing | set up my records without unnecessary separate steps |
+| `* * *` | tutor | add a student or a lesson without enrolling anyone yet | record a new student before choosing their lessons, or set up a lesson before anyone joins |
 | `* * *` | tutor | be warned when enrolling a student in a lesson at a different level | check whether the mismatch is intentional |
-| `* * *` | tutor | be warned when a new lesson overlaps another lesson on the same day | avoid double-booking my teaching time |
+| `* * *` | tutor | be prevented from creating a lesson that overlaps another lesson on the same day | avoid double-booking my teaching time |
 | `* * *` | tutor | be prevented from creating duplicate students, lessons, or enrollments | keep my records accurate |
 | `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
 | `* * *` | tutor | list my students with their contact details, levels, lessons, and payment statuses | review my roster and outstanding payments |
@@ -514,6 +515,66 @@ Use case ends.
 
     * 6a1. System displays a clash message naming the existing lesson and its timeslot.
     * 6a2. System makes no changes.
+    * Use case ends.
+
+* 9a. The changes cannot be saved.
+
+    * 9a1. System restores the original data.
+    * 9a2. System displays the applicable file-write or permission error.
+    * Use case ends.
+
+**Use case: Add a student or a lesson on its own**
+
+**MSS**
+
+1.  User enters an add command that gives the details of a new student, or of a new lesson, but not both.
+2.  System validates the command format and the parameters that the new record needs.
+3.  System checks that the new record is not a duplicate, and that a new lesson does not clash with another lesson on the same day.
+4.  System prepares a note for anything that is probably a mistake but might be intended.
+5.  System creates the record and assigns it a unique ID.
+6.  System saves the changes and displays the new record's ID, followed by any notes. Nobody is enrolled.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The command has an invalid format or a required parameter is missing.
+
+    * 1a1. System displays an error message that names the missing parameter.
+    * Use case ends.
+
+* 1b. The command gives the ID of an existing student or lesson instead of the details of a new one, such as `add s/3`.
+
+    * 1b1. System displays a message that the record already exists and asks for the other side, so that the user can enrol them.
+    * 1b2. System makes no changes.
+    * Use case ends.
+
+* 1c. The ID given does not belong to any student or lesson.
+
+    * 1c1. System displays an error message.
+    * Use case ends.
+
+* 3a. The new student or lesson is a duplicate.
+
+    * 3a1. System displays an error message that instructs the user to use the existing ID.
+    * 3a2. System makes no changes.
+    * Use case ends.
+
+* 3b. The new lesson clashes with an existing lesson.
+
+    * 3b1. System displays a clash message naming the existing lesson and its timeslot.
+    * 3b2. System makes no changes.
+    * Use case ends.
+
+* 4a. The new student has the same name as an existing student with a different contact, or the new lesson has a fee of 0.
+
+    * 4a1. System continues and adds a note for the user to check.
+    * Use case resumes at step 5.
+
+* 6a. The changes cannot be saved.
+
+    * 6a1. System restores the original data.
+    * 6a2. System displays the applicable file-write or permission error.
     * Use case ends.
 
 **Use case: View students or lessons**
@@ -680,44 +741,6 @@ Use case ends.
 * 2a. There are no lessons to display.
     * 2a1. System displays an empty weekly schedule and informs the user that no lessons are scheduled.
     * Use case ends.
-
-**Use case: Edit a student or lesson**
-
-**MSS**
-
-1. User requests to edit a student or lesson using its kind, ID, and updated fields.
-2. System identifies the specified student or lesson.
-3. System validates the updated fields, checking for duplicate details or lesson clashes.
-4. System updates the specified record while preserving its ID and existing enrolments.
-5. System saves the changes and displays the updated record details.
-
-Use case ends.
-
-**Extensions**
-
-* 1a. The command format is invalid, kind is missing or unknown, or ID is invalid.
-    * 1a1. System displays an error message showing the correct command format.
-    * Use case ends.
-
-* 2a. No student or lesson exists with the specified kind and ID.
-    * 2a1. System displays an error message stating that no record of the specified kind exists with the given ID.
-    * Use case ends.
-
-* 3a. The updated details result in a duplicate student, duplicate lesson, or lesson timeslot clash.
-    * 3a1. System displays an error message explaining the conflict.
-    * 3a2. System leaves all data unchanged.
-    * Use case ends.
-
-* 3b. The requested details are identical to the stored record.
-    * 3b1. System displays `No changes were made.`
-    * 3b2. System skips saving and leaves all data unchanged.
-    * Use case ends.
-
-* 4a. The edited record cannot be saved.
-    * 4a1. System restores the original data.
-    * 4a2. System displays the applicable file-write or permission error.
-    * Use case ends without a persistent change.
-
 
 **Use case: Mark monthly payment as paid (mark)**
 
@@ -1104,6 +1127,17 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
       Expected: Shows only `Bryan Lim`.
 
    1. Enter `filter l/Science slv/Primary 6` (combining a lesson filter with a student-level filter).<br>
+      Expected: Rejected. The error explains that filter forms cannot be mixed.
+
+1. Filtering by fee
+
+   1. Enter `filter f/60`.<br>
+      Expected: The displayed list switches to Lessons, showing only the Secondary 2 `Science` lesson (the only lesson with fee $60.00).
+
+   1. Enter `filter f/50.00` (same amount as `f/50`, written with explicit cents).<br>
+      Expected: Shows only `Mathematics` (fee $50.00); the two ways of writing the amount match the same lesson.
+
+   1. Enter `filter slv/Primary 6 f/50` (combining a student-level filter with a fee filter).<br>
       Expected: Rejected. The error explains that filter forms cannot be mixed.
 
 1. Clearing the filter

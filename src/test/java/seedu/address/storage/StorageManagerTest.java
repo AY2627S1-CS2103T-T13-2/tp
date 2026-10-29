@@ -2,15 +2,19 @@ package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalTuiTracker.getTypicalTuiTracker;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.commons.core.GuiSettings;
+import seedu.address.commons.util.FileUtil;
 import seedu.address.model.ReadOnlyTuiTracker;
 import seedu.address.model.TuiTracker;
 import seedu.address.model.UserPrefs;
@@ -63,6 +67,15 @@ public class StorageManagerTest {
     @Test
     public void getTuiTrackerFilePath() {
         assertNotNull(storageManager.getTuiTrackerFilePath());
+    }
+
+    @Test
+    public void backupCorruptedTuiTracker() throws Exception {
+        Path path = getTempFilePath("tt");
+        FileUtil.writeToFile(path, "invalid json");
+        Optional<Path> backup = storageManager.backupCorruptedTuiTracker();
+        assertTrue(backup.isPresent());
+        assertTrue(Files.exists(backup.get()));
     }
 
 }

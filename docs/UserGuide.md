@@ -226,7 +226,7 @@ Command | Message
 
 Updates one or more details of an existing student or lesson. Details that are not included in the command remain unchanged.
 
-Format:
+**Format:**
 
 * `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]`
 * `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]`
@@ -431,11 +431,11 @@ Marks one or more students, or all students enrolled in a lesson, as unpaid for 
 
 No data is changed on failure.
 
-### Showing a student's lessons, a lesson's students, lessons by day, subject or level, or students by payment status or level: `filter`
+### Showing a student's lessons, a lesson's students, lessons by day, subject, level or fee, or students by payment status or level: `filter`
 
-Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, only the lessons on one day of the week, only the lessons with a given subject, level, or both, only the students who are paid or unpaid for the current month, or only the students at a given level.
+Shows only the lessons that one student is enrolled in, only the students enrolled in one lesson, only the lessons on one day of the week, only the lessons with a given subject, level, or both, only the lessons with a given fee, only the students who are paid or unpaid for the current month, or only the students at a given level.
 
-Format: `filter student|lesson ID`, `filter day DAY`, `filter paid|unpaid`, `filter [l/SUBJECT] [llv/LESSON_LEVEL]` or `filter slv/STUDENT_LEVEL`
+Format: `filter student|lesson ID`, `filter day DAY`, `filter paid|unpaid`, `filter [l/SUBJECT] [llv/LESSON_LEVEL]`, `filter slv/STUDENT_LEVEL` or `filter f/FEE`
 
 * Shows a student's lessons: `filter student ID`.
 * Shows a lesson's students: `filter lesson ID`.
@@ -443,12 +443,13 @@ Format: `filter student|lesson ID`, `filter day DAY`, `filter paid|unpaid`, `fil
 * Shows students by payment status for the current month: `filter paid` or `filter unpaid`.
 * Shows lessons by subject, level, or both: `filter l/SUBJECT`, `filter llv/LESSON_LEVEL` or `filter l/SUBJECT llv/LESSON_LEVEL`. At least one of `l/` and `llv/` must be given, and they can be in any order. When both are given, only lessons matching both are shown.
 * Shows students at a given level: `filter slv/STUDENT_LEVEL`. This matches the student's own level, not the level of any lesson they are enrolled in.
+* Shows lessons at a given fee: `filter f/FEE`. `FEE` must match the lesson's fee exactly, e.g. `f/50` and `f/50.00` both match a lesson with fee `$50.00`.
 * `SUBJECT` and `LESSON_LEVEL` must match the lesson's subject and level exactly; letter case is ignored. For example, `l/mathematics` matches `Mathematics` but `l/Math` does not. The same applies to `STUDENT_LEVEL`.
 * The `ID` refers to the student ID or lesson ID shown in the displayed list, not its position in the list.
 * The specified `ID` must belong to an existing student or lesson.
 * `DAY` is the full day name, e.g. `Monday`; letter case is ignored.
 * Filtering replaces any earlier filter; only one filter can be active at a time.
-* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson, by payment status, or by student level, switches it to **Students**; filtering by a day, subject or level also switches it to **Lessons**.
+* Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson, by payment status, or by student level, switches it to **Students**; filtering by a day, subject, level or fee also switches it to **Lessons**.
 * To clear the filter and show every student and lesson again, use `list`.
 
 Examples:
@@ -461,11 +462,12 @@ Examples:
 * `filter llv/Primary 6` shows only the Primary 6 lessons.
 * `filter l/Mathematics llv/Primary 6` shows only the Primary 6 Mathematics lessons.
 * `filter slv/Primary 6` shows only the students at Primary 6.
+* `filter f/50` shows only the lessons with fee `$50.00`.
 
 If a filter is incomplete or mixes incompatible forms, TuiTracker explains the specific problem and includes a
 valid example. For instance, `filter student` suggests `filter student 1`, while combining `day` with `l/` explains
-that keyword and prefix filters cannot be mixed. The same restriction applies to `slv/`: it cannot be combined with
-`student`, `lesson`, `day`, `l/`, or `llv/`.
+that keyword and prefix filters cannot be mixed. The same restriction applies to `slv/` and `f/`: neither can be
+combined with `student`, `lesson`, `day`, `l/`, `llv/`, or with each other.
 
 ### Sorting students and lessons: `sort`
 
@@ -559,7 +561,7 @@ Action     | Format, Examples
 **Add**    | `add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> e.g., `add s/Daniel Koh c/92223333 slv/Primary 6 l/1`, `add s/Nora Lim c/90000000 slv/Primary 6`, `add l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50`
 **Edit**   | `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]` <br> `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]`
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
-**Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid`, `filter [l/SUBJECT] [llv/LESSON_LEVEL]` or `filter slv/STUDENT_LEVEL` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`, `filter slv/Primary 6`
+**Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid`, `filter [l/SUBJECT] [llv/LESSON_LEVEL]`, `filter slv/STUDENT_LEVEL` or `filter f/FEE` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`, `filter slv/Primary 6`, `filter f/50`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
 **Mark**   | `mark ID [MORE_IDS]...` or `mark lesson LESSON_ID` <br> e.g., `mark 1`, `mark 1 2 3`, `mark lesson 1`
 **Unmark** | `unmark ID [MORE_IDS]...` or `unmark lesson LESSON_ID` <br> e.g., `unmark 1`, `unmark 1 2 3`, `unmark lesson 1`

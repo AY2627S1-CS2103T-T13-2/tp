@@ -54,4 +54,12 @@ public interface Storage {
      */
     void saveTuiTracker(ReadOnlyTuiTracker tuiTracker) throws IOException;
 
+    /**
+     * Backs up the corrupted TuiTracker storage file if it exists.
+     *
+     * @return an {@code Optional} containing the backup {@code Path}, or empty if the file does not exist.
+     * @throws IOException if copying the file fails.
+     */
+    Optional<Path> backupCorruptedTuiTracker() throws IOException;
+
 }

@@ -34,7 +34,7 @@ import seedu.address.ui.UiManager;
  */
 public class MainApp extends Application {
 
-    public static final String VERSION = "V1.4";
+    public static final String VERSION = "V1.5";
 
     private static final Logger logger = LogsCenter.getLogger(MainApp.class);
     private static final Path USER_PREFS_FILE_PATH = Paths.get("preferences.json");
@@ -84,6 +84,13 @@ public class MainApp extends Application {
             logger.warning("Data file at " + storage.getTuiTrackerFilePath() + " could not be loaded."
                     + " Starting in read-only recovery mode without changing the file.");
             dataFileLoadFailed = true;
+            try {
+                Optional<Path> backupPath = storage.backupCorruptedTuiTracker();
+                backupPath.ifPresent(path ->
+                        logger.warning("Corrupted data file backed up to: " + path));
+            } catch (IOException ioe) {
+                logger.warning("Failed to back up corrupted data file: " + ioe.getMessage());
+            }
             initialData = new TuiTracker();
         }
 

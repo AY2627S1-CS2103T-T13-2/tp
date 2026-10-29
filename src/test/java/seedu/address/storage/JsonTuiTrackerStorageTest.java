@@ -2,12 +2,14 @@ package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalLessons.HISTORY;
 import static seedu.address.testutil.TypicalStudents.DANIEL;
 import static seedu.address.testutil.TypicalTuiTracker.getTypicalTuiTracker;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.commons.exceptions.DataLoadingException;
+import seedu.address.commons.util.FileUtil;
 import seedu.address.model.ReadOnlyTuiTracker;
 import seedu.address.model.TuiTracker;
 
@@ -105,5 +108,34 @@ public class JsonTuiTrackerStorageTest {
     public void getTuiTrackerFilePath() {
         Path path = testFolder.resolve("any.json");
         assertEquals(path, new JsonTuiTrackerStorage(path).getTuiTrackerFilePath());
+    }
+
+    @Test
+    public void backupCorruptedFile_existingFile_backupCreated() throws IOException {
+        Path filePath = testFolder.resolve("corruptData.json");
+        FileUtil.writeToFile(filePath, "invalid json");
+        JsonTuiTrackerStorage storage = new JsonTuiTrackerStorage(filePath);
+
+        Optional<Path> backup = storage.backupCorruptedFile();
+        assertTrue(backup.isPresent());
+        assertTrue(Files.exists(backup.get()));
+        assertTrue(backup.get().getFileName().toString().startsWith("corruptData.json.corrupt."));
+        assertTrue(backup.get().getFileName().toString().endsWith(".bak"));
+        assertEquals("invalid json", FileUtil.readFromFile(backup.get()));
+    }
+
+    @Test
+    public void backupCorruptedFile_missingFile_returnsEmpty() throws IOException {
+        Path filePath = testFolder.resolve("nonExistent.json");
+        JsonTuiTrackerStorage storage = new JsonTuiTrackerStorage(filePath);
+
+        Optional<Path> backup = storage.backupCorruptedFile();
+        assertFalse(backup.isPresent());
+    }
+
+    @Test
+    public void backupCorruptedFile_nullPath_throwsNullPointerException() {
+        JsonTuiTrackerStorage storage = new JsonTuiTrackerStorage(testFolder.resolve("test.json"));
+        assertThrows(NullPointerException.class, () -> storage.backupCorruptedFile(null));
     }
 }
