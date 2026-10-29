@@ -255,7 +255,7 @@ Parameter | Meaning | Used when | Rules
 `student\|lesson` | The type of record to edit | always | Must be exactly `student` or `lesson`. Letter case is ignored.
 `ID` | The existing record's ID | always | A positive whole number up to `2147483647`. Leading zeros are allowed and ignored, so `0012` refers to ID `12`.
 `s/` | The student's name | editing a student | At most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter. The words `s/o` and `d/o` can be part of a name, such as `Ravi s/o Kumar`.
-`c/` | The student's contact number | editing a student | 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a `+` can start the number, such as `+65 (9123) 4567`.
+`c/` | The student's contact number | editing a student | 3 to 15 digits, at most 25 characters in all. Digits can be split into groups by brackets or by a single space or hyphen, and a `+` can start the number, such as `+65 (9123) 4567`.
 `slv/` | The student's level, such as `Primary 6` | editing a student | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
 `l/` | The lesson's subject | editing a lesson | At most 50 characters: letters, numbers, spaces and `.` `,` `-` `(` `)` `&` `@`, with at least one letter.
 `llv/` | The lesson's level, such as `Primary 6` | editing a lesson | The same rules as `slv/`.
