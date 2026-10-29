@@ -226,7 +226,7 @@ Command | Message
 
 Updates one or more details of an existing student or lesson. Details that are not included in the command remain unchanged.
 
-Format:
+**Format:**
 
 * `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]`
 * `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]`

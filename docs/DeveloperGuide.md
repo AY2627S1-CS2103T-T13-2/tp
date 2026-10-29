@@ -656,44 +656,6 @@ Use case ends.
     * 2a1. System displays an empty weekly schedule and informs the user that no lessons are scheduled.
     * Use case ends.
 
-**Use case: Edit a student or lesson**
-
-**MSS**
-
-1. User requests to edit a student or lesson using its kind, ID, and updated fields.
-2. System identifies the specified student or lesson.
-3. System validates the updated fields, checking for duplicate details or lesson clashes.
-4. System updates the specified record while preserving its ID and existing enrolments.
-5. System saves the changes and displays the updated record details.
-
-Use case ends.
-
-**Extensions**
-
-* 1a. The command format is invalid, kind is missing or unknown, or ID is invalid.
-    * 1a1. System displays an error message showing the correct command format.
-    * Use case ends.
-
-* 2a. No student or lesson exists with the specified kind and ID.
-    * 2a1. System displays an error message stating that no record of the specified kind exists with the given ID.
-    * Use case ends.
-
-* 3a. The updated details result in a duplicate student, duplicate lesson, or lesson timeslot clash.
-    * 3a1. System displays an error message explaining the conflict.
-    * 3a2. System leaves all data unchanged.
-    * Use case ends.
-
-* 3b. The requested details are identical to the stored record.
-    * 3b1. System displays `No changes were made.`
-    * 3b2. System skips saving and leaves all data unchanged.
-    * Use case ends.
-
-* 4a. The edited record cannot be saved.
-    * 4a1. System restores the original data.
-    * 4a2. System displays the applicable file-write or permission error.
-    * Use case ends without a persistent change.
-
-
 **Use case: Mark a student's monthly payment as paid**
 
 **MSS**
