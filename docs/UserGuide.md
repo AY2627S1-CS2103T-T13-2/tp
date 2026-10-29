@@ -122,6 +122,7 @@ Displays either all students or all lessons. Use this command to switch between 
 **Notes:**
 
 * `list` and `list students` have the same effect.
+* Leaving the schedule with `list` clears its selected student. A later `schedule student ID` selects that student's schedule again.
 * This command changes only the displayed list and filter. It does not modify any student, lesson, enrollment, or payment data.
 
 **Errors:**
@@ -249,7 +250,7 @@ Updates one or more details of an existing student or lesson. Details that are n
 Parameter | Meaning | Used when | Rules
 ----------|---------|-----------|------
 `student\|lesson` | The type of record to edit | always | Must be exactly `student` or `lesson`. Letter case is ignored.
-`ID` | The existing record's ID | always | A positive whole number. Leading zeros are allowed and ignored, so `0012` refers to ID `12`.
+`ID` | The existing record's ID | always | A positive whole number up to `2147483647`. Leading zeros are allowed and ignored, so `0012` refers to ID `12`.
 `s/` | The student's name | editing a student | At most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter. The words `s/o` and `d/o` can be part of a name, such as `Ravi s/o Kumar`.
 `c/` | The student's contact number | editing a student | 3 to 15 digits, at most 25 characters in all. Groups of digits can be separated by one space or hyphen, a group can be in brackets, and a `+` can start the number, such as `+65 (9123) 4567`.
 `slv/` | The student's level, such as `Primary 6` | editing a student | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
@@ -279,8 +280,10 @@ Each one starts from the sample data and is followed by the result you should se
 * The record's ID never changes.
 * Editing a student preserves their payment status and lesson enrollments.
 * Editing a lesson preserves its student enrollments.
+* Editing keeps the current view, filter and sort order. Use `list students` or `list lessons` to inspect the edited record if it is in another view.
+* Active filters are reapplied after an edit. A record that no longer matches the filter disappears from that list; it is still stored and can be shown using `list students` or `list lessons`.
 * Student duplicates are compared using the name without regard to letter case or extra spaces, and using only the digits of the contact number. Lesson duplicates have the same subject and level without regard to letter case or extra spaces, and the same final day, start time, and end time.
-* An edit that results in the same name as another student but a different contact number goes ahead with a note naming that student and ID.
+* A successful edit that includes `s/` or `c/` adds a note if the student's final name matches another student's name but their contact numbers differ. A level-only edit does not add this namesake note.
 * Changing a student's level goes ahead even if it differs from their enrolled lessons. The result adds one note per mismatching lesson, including its ID. Changing a lesson's level similarly adds one note per affected student.
 * Changing a lesson fee to `0` goes ahead with a note asking you to check that it is meant to be free.
 * A change in letter case still counts as an edit, including for a student's or lesson's level.
@@ -302,6 +305,7 @@ Command | Message
 `edit student 1 l/English` | Only s/, c/ and slv/ can be used when editing a student.
 `edit lesson 1 c/90001111` | Only l/, llv/, d/, st/, et/ and f/ can be used when editing a lesson.
 `edit student 0 c/90001111` | ID must be a positive whole number.
+`edit student 2147483648 c/90001111` | ID is too large. No student or lesson has an ID above 2147483647.
 `edit lesson 99 f/55` | No lesson found with ID 99.
 `edit student 1 s/bryan lim c/9876-5432` | Another student with the same name and contact already exists (Student ID: 2).
 `edit lesson 2 l/mathematics d/Mon st/15:00 et/16:30` | Another identical lesson already exists (Lesson ID: 1).
@@ -585,7 +589,7 @@ If the data file cannot be loaded at startup, data-changing commands are blocked
 
 ### Editing the data file
 
-TuiTracker data is saved automatically as a JSON file `[JAR file location]/data/tuitracker.json`. Advanced users are welcome to update data directly by editing that data file.
+TuiTracker saves data to `data/tuitracker.json` relative to the folder from which you launch the app (the terminal's current working directory). Following the Quick start instructions makes this the folder containing the JAR. If you launch the JAR from another folder, the data file is stored under that folder instead. Advanced users can edit the data file after closing TuiTracker; back it up first.
 
 <box type="warning" seamless>
 
@@ -612,7 +616,7 @@ _Details coming soon ..._
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]` <br> e.g., `add s/Daniel Koh c/92223333 slv/Primary 6 l/1`, `add s/Nora Lim c/90000000 slv/Primary 6`, `add l/Mathematics llv/Primary 6 d/Friday st/15:00 et/16:00 f/50`
-**Edit**   | `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]` <br> `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]`
+**Edit**   | `edit student ID [s/NAME] [c/CONTACT] [slv/STUDENT_LEVEL]` <br> `edit lesson ID [l/SUBJECT] [llv/LESSON_LEVEL] [d/DAY] [st/START_TIME] [et/END_TIME] [f/FEE]` <br> e.g., `edit student 1 c/90001111`, `edit lesson 1 f/55`
 **Delete** | `delete student\|lesson ID` <br> `delete student 3`, `delete lesson 2`
 **Filter** | `filter student\|lesson ID`, `filter day DAY`, `filter paid\|unpaid`, `filter [l/SUBJECT] [llv/LESSON_LEVEL]`, `filter slv/STUDENT_LEVEL` or `filter f/FEE` <br> e.g., `filter student 1`, `filter lesson 2`, `filter day Monday`, `filter paid`, `filter l/Mathematics llv/Primary 6`, `filter slv/Primary 6`, `filter f/50`
 **List**   | `list [students\|lessons]` <br> e.g., `list`, `list students`, `list lessons`
