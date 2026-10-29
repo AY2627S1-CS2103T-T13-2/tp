@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_FEE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_LESSON;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_LESSON_LEVEL;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_STUDENT_LEVEL;
@@ -10,6 +11,7 @@ import java.time.DayOfWeek;
 import seedu.address.logic.commands.FilterCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.common.Level;
+import seedu.address.model.lesson.Fee;
 import seedu.address.model.lesson.LessonId;
 import seedu.address.model.lesson.Subject;
 import seedu.address.model.student.StudentId;
@@ -19,22 +21,22 @@ import seedu.address.model.student.StudentId;
  *
  * <p>The arguments are either a keyword and a value ({@code student ID}, {@code lesson ID} or {@code day DAY}),
  * the bare keyword {@code paid} or {@code unpaid}, one or both of {@code l/SUBJECT} and {@code llv/LESSON_LEVEL},
- * or {@code slv/STUDENT_LEVEL}.
+ * {@code slv/STUDENT_LEVEL}, or {@code f/FEE}.
  */
 public class FilterCommandParser implements Parser<FilterCommand> {
 
     public static final String MESSAGE_INVALID_SUBJECT = Subject.MESSAGE_CONSTRAINTS;
     public static final String MESSAGE_FILTER_EXAMPLES = "Choose a filter form. Examples: filter student 1, "
             + "filter lesson 2, filter day Monday, filter paid, filter l/Mathematics llv/Primary 6, "
-            + "or filter slv/Primary 6.";
+            + "filter slv/Primary 6, or filter f/50.";
     public static final String MESSAGE_MISSING_FILTER_VALUE = "The %1$s filter needs a value. "
             + "Example: filter %1$s %2$s.";
     public static final String MESSAGE_UNKNOWN_FILTER = "Unknown filter type '%1$s'. Use student, lesson, day, "
-            + "paid, unpaid, l/SUBJECT, llv/LESSON_LEVEL, or slv/STUDENT_LEVEL. Example: filter student 1.";
+            + "paid, unpaid, l/SUBJECT, llv/LESSON_LEVEL, slv/STUDENT_LEVEL, or f/FEE. Example: filter student 1.";
     public static final String MESSAGE_EXTRA_FILTER_ARGUMENTS = "Too many values for the %1$s filter. "
             + "Example: filter %1$s %2$s.";
     public static final String MESSAGE_MIXED_FILTER_FORMS = "Do not combine a student, lesson, or day filter with "
-            + "l/, llv/, or slv/. Example: filter l/Mathematics llv/Primary 6.";
+            + "l/, llv/, slv/, or f/. Example: filter l/Mathematics llv/Primary 6.";
 
     private static final String KEYWORD_STUDENT = "student";
     private static final String KEYWORD_LESSON = "lesson";
@@ -53,16 +55,24 @@ public class FilterCommandParser implements Parser<FilterCommand> {
 
         // A leading space lets a prefix at the very start of the arguments be recognised.
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" " + args, PREFIX_LESSON, PREFIX_LESSON_LEVEL,
-                PREFIX_STUDENT_LEVEL);
+                PREFIX_STUDENT_LEVEL, PREFIX_FEE);
         boolean hasLessonFilter = argMultimap.getValue(PREFIX_LESSON).isPresent()
                 || argMultimap.getValue(PREFIX_LESSON_LEVEL).isPresent();
         boolean hasStudentLevelFilter = argMultimap.getValue(PREFIX_STUDENT_LEVEL).isPresent();
+        boolean hasFeeFilter = argMultimap.getValue(PREFIX_FEE).isPresent();
 
-        if (hasLessonFilter && hasStudentLevelFilter) {
+        // l/ and llv/ count as one form since they combine freely with each other (see parseSubjectAndLevel).
+        // slv/ and f/ are each their own form, since neither combines with anything else, including each other.
+        int exclusiveFormCount = (hasLessonFilter ? 1 : 0) + (hasStudentLevelFilter ? 1 : 0)
+                + (hasFeeFilter ? 1 : 0);
+        if (exclusiveFormCount > 1) {
             throw new ParseException(MESSAGE_MIXED_FILTER_FORMS);
         }
         if (hasStudentLevelFilter) {
             return parseStudentLevel(argMultimap);
+        }
+        if (hasFeeFilter) {
+            return parseFee(argMultimap);
         }
         if (hasLessonFilter) {
             return parseSubjectAndLevel(argMultimap);
@@ -146,6 +156,19 @@ public class FilterCommandParser implements Parser<FilterCommand> {
 
         Level level = ParserUtil.parseStudentLevel(argMultimap.getValue(PREFIX_STUDENT_LEVEL).get());
         return new FilterCommand(level);
+    }
+
+    private static FilterCommand parseFee(ArgumentMultimap argMultimap) throws ParseException {
+        if (!argMultimap.getPreamble().isEmpty()) {
+            throw new ParseException(MESSAGE_MIXED_FILTER_FORMS);
+        }
+
+        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_FEE);
+
+        // Fee always stores its amount to two decimal places, so "50" and "50.00" parse to an equal Fee and
+        // therefore match the same lessons; the filter does not need to normalise the input string itself.
+        Fee fee = ParserUtil.parseFee(argMultimap.getValue(PREFIX_FEE).get());
+        return new FilterCommand(fee);
     }
 
     private static boolean isKeyword(String keyword) {

@@ -288,15 +288,15 @@ The sequence diagram below shows the help window being opened by `executeCommand
 
 ### Filter feature
 
-The `filter` command narrows the displayed list to one student's lessons, one lesson's students, lessons matching a day, subject or level, students with a selected payment status, or students at a given level. It changes the displayed view without changing saved data.
+The `filter` command narrows the displayed list to one student's lessons, one lesson's students, lessons matching a day, subject, level or fee, students with a selected payment status, or students at a given level. It changes the displayed view without changing saved data.
 
 #### Parsing the arguments
 
-`FilterCommandParser` accepts `student ID`, `lesson ID`, `day DAY`, the bare `paid` or `unpaid` keyword, one or both of `l/SUBJECT` and `llv/LESSON_LEVEL`, or `slv/STUDENT_LEVEL`.
+`FilterCommandParser` accepts `student ID`, `lesson ID`, `day DAY`, the bare `paid` or `unpaid` keyword, one or both of `l/SUBJECT` and `llv/LESSON_LEVEL`, `slv/STUDENT_LEVEL`, or `f/FEE`.
 
-1. The `student`, `lesson` and `day` forms require exactly two whitespace-separated tokens. The payment forms require one token. The subject/level and student-level forms use their command prefixes; `l/` and `llv/` may be combined with each other, but `slv/` cannot be combined with any other form.
+1. The `student`, `lesson` and `day` forms require exactly two whitespace-separated tokens. The payment forms require one token. The subject/level, student-level and fee forms use their command prefixes; `l/` and `llv/` may be combined with each other, but `slv/` and `f/` are each their own exclusive group and cannot be combined with any other form, including each other.
 2. An incomplete, unknown, mixed or repeated form raises a `ParseException` with a specific message before the view changes.
-3. IDs and days use the shared `ParserUtil` methods. Subject, lesson level and student level values are parsed with the corresponding domain parsers; `slv/` reuses `ParserUtil#parseStudentLevel`, the same method `add` and `edit` use for a student's own level.
+3. IDs and days use the shared `ParserUtil` methods. Subject, lesson level, student level and fee values are parsed with the corresponding domain parsers; `slv/` reuses `ParserUtil#parseStudentLevel`, the same method `add` and `edit` use for a student's own level, and `f/` reuses `ParserUtil#parseFee`, the same method `add` and `edit` use for a lesson's fee.
 
 The parser builds the corresponding `FilterCommand` directly. A filter selects existing records and never creates new ones.
 
@@ -305,9 +305,9 @@ The parser builds the corresponding `FilterCommand` directly. A filter selects e
 `FilterCommand#execute(Model)` branches on the selected filter kind:
 
 1. For `studentId`/`lessonId`, it first confirms the ID refers to an existing student or lesson, otherwise throws a `CommandException` (`MESSAGE_STUDENT_NOT_FOUND` / `MESSAGE_LESSON_NOT_FOUND`). A `DayOfWeek` needs no such check — unlike an ID, every value the parser can produce already refers to something real, so there is nothing to look up or fail to find.
-2. It delegates to the matching `Model` filter method and selects the relevant list: `LESSONS` for student, day, subject and level filters; `STUDENTS` for lesson, payment-status and student-level filters.
+2. It delegates to the matching `Model` filter method and selects the relevant list: `LESSONS` for student, day, subject, level and fee filters; `STUDENTS` for lesson, payment-status and student-level filters.
 
-Inside `ModelManager`, setting one filter clears the earlier filter fields. `refreshFilters()` then rebuilds the predicates for both `FilteredList`s. A day, subject or level filter narrows only lessons; payment status and student level each narrow only students. Mutating operations reapply the predicates. Payment changes and the month-boundary refresh also re-evaluate the current payment filter and payment sort.
+Inside `ModelManager`, setting one filter clears the earlier filter fields. `refreshFilters()` then rebuilds the predicates for both `FilteredList`s. A day, subject, level or fee filter narrows only lessons; payment status and student level each narrow only students. The fee filter matches exactly: `Fee` always stores its amount to two decimal places, so `f/50` and `f/50.00` both match a lesson with fee `$50.00`. Mutating operations reapply the predicates. Payment changes and the month-boundary refresh also re-evaluate the current payment filter and payment sort.
 
 The sequence diagram below shows `execute("filter student 1")`.
 
@@ -317,7 +317,7 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 **Aspect: how the active filter is stored**
 
-* **Alternative 1 (current choice):** seven nullable fields in `ModelManager`, one each for student, lesson, day, subject, level, paid status and student level. The subject and level fields may be set together; every other filter setter clears the previous fields.
+* **Alternative 1 (current choice):** eight nullable fields in `ModelManager`, one each for student, lesson, day, subject, level, paid status, student level and fee. The subject and level fields may be set together; every other filter setter clears the previous fields.
   * Pros: Each predicate can read the fields it needs, and `resetFilters()` clears them in one place.
   * Cons: The valid combinations are enforced by the setters rather than the type system, so a new filter setter must clear the previous fields correctly.
 * **Alternative 2:** a sealed type representing each filter form, including the combined subject and level form.
@@ -348,7 +348,7 @@ The sequence diagram below shows `execute("filter student 1")`.
 
 #### Testing
 
-`FilterCommandParserTest` covers the student, lesson, day, payment, subject, level and student-level forms, including malformed arguments and combining `slv/` with every other form. `FilterCommandTest` checks the resulting model and list view, missing IDs and command equality. `ModelManagerTest` checks that payment filters update after payment changes and a month rollover, and that the student-level filter selects the right students while leaving the lesson list unaffected.
+`FilterCommandParserTest` covers the student, lesson, day, payment, subject, level, student-level and fee forms, including malformed arguments and combining `slv/` or `f/` with every other form. `FilterCommandTest` checks the resulting model and list view, missing IDs and command equality. `ModelManagerTest` checks that payment filters update after payment changes and a month rollover, that the student-level filter selects the right students while leaving the lesson list unaffected, and that the fee filter selects the right lessons while leaving the student list unaffected.
 
 ### Schedule feature
 
@@ -988,6 +988,17 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
       Expected: Shows only `Bryan Lim`.
 
    1. Enter `filter l/Science slv/Primary 6` (combining a lesson filter with a student-level filter).<br>
+      Expected: Rejected. The error explains that filter forms cannot be mixed.
+
+1. Filtering by fee
+
+   1. Enter `filter f/60`.<br>
+      Expected: The displayed list switches to Lessons, showing only the Secondary 2 `Science` lesson (the only lesson with fee $60.00).
+
+   1. Enter `filter f/50.00` (same amount as `f/50`, written with explicit cents).<br>
+      Expected: Shows only `Mathematics` (fee $50.00); the two ways of writing the amount match the same lesson.
+
+   1. Enter `filter slv/Primary 6 f/50` (combining a student-level filter with a fee filter).<br>
       Expected: Rejected. The error explains that filter forms cannot be mixed.
 
 1. Clearing the filter

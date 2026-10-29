@@ -217,6 +217,11 @@ public interface Model {
     void filterStudentsByLevel(Level level);
 
     /**
+     * Shows only the lessons with the given fee, replacing any earlier filter. The student list is unaffected.
+     */
+    void filterLessonsByFee(Fee fee);
+
+    /**
      * Clears any filter, so that every student and every lesson is shown.
      */
     void resetFilters();
