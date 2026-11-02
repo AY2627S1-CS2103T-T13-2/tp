@@ -593,19 +593,17 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 For all use cases below, the System is the tuition management application and the Actor is the user.
 
-**Use case: Enrol a student in a lesson**
+**Use case: Enroll a student in a lesson**
 
 **MSS**
 
-1.  User enters an add command containing a student and a lesson.
-2.  System validates the command format and required parameters.
-3.  System retrieves the existing student and lesson, or prepares new records using the supplied details.
-4.  System checks whether the student level matches the lesson level and prepares a note if it does not.
-5.  System checks that the student, lesson and enrolment are not duplicates.
-6.  System checks that a newly created lesson does not clash with another lesson on the same day.
-7.  System creates any required student or lesson records and assigns unique IDs.
-8.  System enrols the student in the lesson; a new student's payment status starts unpaid, while an existing student's current-month status is retained.
-9.  System saves the changes and displays the student and lesson IDs.
+1.  User enters an add command that gives a student and a lesson, each either by its ID or by the details of a new one.
+2.  System validates the command format and the parameters that each new record needs.
+3.  System finds the student and the lesson that were given by ID.
+4.  System checks that neither new record is a duplicate, that the student is not already enrolled in the lesson, and that a new lesson does not clash with another lesson on the same day.
+5.  System prepares a note for anything that is probably a mistake but might be intended.
+6.  System creates any new student or lesson, assigns each a unique ID, and enrolls the student in the lesson.
+7.  System saves the changes and displays the student and lesson IDs and the student's payment status for the current month, followed by any notes. A new student starts as unpaid, and an existing student keeps their status.
 
 Use case ends.
 
@@ -613,40 +611,47 @@ Use case ends.
 
 * 1a. The command has an invalid format or a required parameter is missing.
 
-    * 1a1. System displays an error message.
+    * 1a1. System displays an error message describing the problem, such as the missing parameter.
     * Use case ends.
 
-* 2a. A supplied student or lesson ID does not exist.
+* 3a. No student or lesson has the ID given.
 
-    * 2a1. System displays an error message.
+    * 3a1. System displays an error message naming the ID.
     * Use case ends.
 
-* 4a. The student level does not match the lesson level.
+* 4a. The new student or lesson is a duplicate.
 
-    * 4a1. System continues the enrollment and adds a note naming both levels so the user can check the mismatch.
-
-* 5a. The student or lesson is a duplicate.
-
-    * 5a1. System displays an error message instructing the user to use the existing ID.
-    * 5a2. System makes no changes.
+    * 4a1. System displays an error message that instructs the user to use the existing ID.
+    * 4a2. System makes no changes.
     * Use case ends.
 
-* 5b. The student is already enrolled in the lesson.
+* 4b. The student is already enrolled in the lesson.
 
-    * 5b1. System reports that the student is already enrolled in this lesson.
-    * 5b2. System makes no changes.
+    * 4b1. System reports that the student is already enrolled in this lesson.
+    * 4b2. System makes no changes.
     * Use case ends.
 
-* 6a. The new lesson clashes with an existing lesson.
+* 4c. The new lesson clashes with an existing lesson.
 
-    * 6a1. System displays a clash message naming the existing lesson and its timeslot.
-    * 6a2. System makes no changes.
+    * 4c1. System displays a clash message naming the existing lesson and its timeslot.
+    * 4c2. System makes no changes.
     * Use case ends.
 
-* 9a. The changes cannot be saved.
+* 4d. No ID is left for a new student or lesson.
 
-    * 9a1. System restores the original data.
-    * 9a2. System displays the applicable file-write or permission error.
+    * 4d1. System displays an error message.
+    * 4d2. System makes no changes.
+    * Use case ends.
+
+* 5a. The student's level differs from the lesson's level, the new student has the same name as an existing student with a different contact, or the new lesson has a fee of 0.
+
+    * 5a1. System continues and adds a note for the user to check.
+    * Use case resumes at step 6.
+
+* 7a. The changes cannot be saved.
+
+    * 7a1. System restores the original data.
+    * 7a2. System displays the applicable file-write or permission error.
     * Use case ends.
 
 **Use case: Add a student or a lesson on its own**
@@ -666,12 +671,12 @@ Use case ends.
 
 * 1a. The command has an invalid format or a required parameter is missing.
 
-    * 1a1. System displays an error message that names the missing parameter.
+    * 1a1. System displays an error message describing the problem, such as the missing parameter.
     * Use case ends.
 
 * 1b. The command gives the ID of an existing student or lesson instead of the details of a new one, such as `add s/3`.
 
-    * 1b1. System displays a message that the record already exists and asks for the other side, so that the user can enrol them.
+    * 1b1. System displays a message that the record already exists and asks for the other side, so that the user can enroll them.
     * 1b2. System makes no changes.
     * Use case ends.
 
@@ -690,6 +695,12 @@ Use case ends.
 
     * 3b1. System displays a clash message naming the existing lesson and its timeslot.
     * 3b2. System makes no changes.
+    * Use case ends.
+
+* 3c. No ID is left for the new record.
+
+    * 3c1. System displays an error message.
+    * 3c2. System makes no changes.
     * Use case ends.
 
 * 4a. The new student has the same name as an existing student with a different contact, or the new lesson has a fee of 0.
