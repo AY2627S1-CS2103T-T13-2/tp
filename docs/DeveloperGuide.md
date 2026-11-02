@@ -479,7 +479,7 @@ The `sort` command reorders the displayed student or lesson list according to a 
    * `LESSON_SUBJECT`: orders case-insensitively by subject, breaking ties by lesson ID.
    * `LESSON_LEVEL`: orders case-insensitively by level, breaking ties by lesson ID.
    * `LESSON_FEE`: orders by numerical fee amount, breaking ties by lesson ID.
-   * `LESSON_TIME`: orders chronologically using `LESSON_ORDER` (weekday, start time, end time, then lesson ID).
+   * `LESSON_TIME`: orders chronologically using `LESSON_ORDER` (weekday, start time, then lesson ID).
 3. If descending order is specified (`!ascending`), the comparator is reversed via `Comparator#reversed()`.
 4. The comparator is set on the corresponding `SortedList` (`sortedStudents` or `sortedLessons`).
 5. For student sorting, `ModelManager` retains `studentSortField` and `studentSortAscending`. Whenever payment statuses change (via `mark` or `unmark`) or across month boundaries, `ModelManager` re-applies the sort comparator to keep the payment order updated.
