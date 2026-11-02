@@ -557,7 +557,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | new tutor | see instructions for the available commands | learn how to use the application and check a command when I forget it |
 | `* * *` | tutor | enrol a student in a lesson whether the student or lesson is new or existing | set up my records without unnecessary separate steps |
 | `* * *` | tutor | add a student or a lesson without enrolling anyone yet | record a new student before choosing their lessons, or set up a lesson before anyone joins |
-| `* * *` | tutor | be warned when enrolling a student in a lesson at a different level | check whether the mismatch is intentional |
+| `* * *` | tutor | be notified when a student's level differs from a lesson's level during enrollment or after editing either level | check whether the mismatch is intentional |
 | `* * *` | tutor | be prevented from creating a lesson that overlaps another lesson on the same day | avoid double-booking my teaching time |
 | `* * *` | tutor | be prevented from creating duplicate students, lessons, or enrollments | keep my records accurate |
 | `* *` | tutor | be notified when a new student has the same name as an existing student, or a new lesson has a fee of 0 | check that it is not a mistake |
