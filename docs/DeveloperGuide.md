@@ -1382,4 +1382,7 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
 1. In a fresh folder, enter `add s/Nora Lim c/90000000 slv/Primary 6`, then `exit`. Expected: `data/tuitracker.json` is created beside the JAR.
 2. Relaunch the JAR in the same folder and enter `list students`. Expected: Nora is still present with student ID 4.
 3. Close the app, rename `data/tuitracker.json` to a backup name, and relaunch. Expected: the three sample students appear because the data file is missing. Close the app before restoring the backup.
-4. To examine a corrupted file, use a separate disposable folder: create a saved data file, close the app, and remove a closing brace from its JSON. Relaunch. The current app logs a loading warning and starts with an empty tracker. **Do not enter a data-changing command against that file**: it could overwrite the corrupted file.
+4. To test corrupt-file recovery, use a separate disposable folder. Create a saved data file, close the app, and remove a closing brace from its JSON.
+   1. Relaunch. Expected: an error dialog explains that the app is in read-only recovery mode, the window title includes `(read-only)`, and the student list is empty. The original corrupt file is left unchanged; the app also attempts to create a backup copy.
+   2. Enter `add s/Nora Lim c/90000000 slv/Primary 6`. Expected: `Cannot change data because the data file could not be loaded. The file has not been overwritten. Back it up, repair or replace it, then restart TuiTracker.`
+   3. Inspect the corrupt data file. Expected: it has not been overwritten. Repair or replace it, then restart TuiTracker before making changes.

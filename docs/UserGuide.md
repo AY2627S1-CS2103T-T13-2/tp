@@ -339,12 +339,12 @@ Deletes a student or lesson using its ID. Use this command when you want to remo
 
 * `delete student 3` — deletes the student with ID 3.
 * `delete lesson 2` — deletes the lesson with ID 2.
-* `delete STUDENT 0012` — deletes student 12; keyword case and leading zeros are ignored.
+* `delete STUDENT 0001` — deletes student 1; keyword case and leading zeros are ignored.
 
 **Successful deletion:**
 
-* The result box confirms the deleted record, for example `Deleted student: Alice Tan (ID: 12)`. If the deleted student was selected in the schedule, the result also says `The schedule now shows all lessons.`
-* Deleting a lesson confirms its subject, level, timeslot and ID, for example `Deleted lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 7)`.
+* The result box confirms the deleted record, for example `Deleted student: Alice Tan (ID: 1)`. If the deleted student was selected in the schedule, the result also says `The schedule now shows all lessons.`
+* Deleting a lesson confirms its subject, level, timeslot and ID, for example `Deleted lesson: Mathematics | Primary 6 | Monday 15:00-16:30 (ID: 1)`.
 
 **Notes:**
 
