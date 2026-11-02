@@ -11,7 +11,7 @@ import seedu.address.model.SortField;
 /** Sorts a student or lesson list without changing stored data. */
 public class SortCommand extends Command {
     public static final String COMMAND_WORD = "sort";
-    public static final String MESSAGE_USAGE = "sort student id|name|level|payment|paid [asc|desc] or "
+    public static final String MESSAGE_USAGE = "sort student id|name|level|payment|paid|unpaid [asc|desc] or "
             + "sort lesson id|subject|level|fee|time [asc|desc]";
     public static final String MESSAGE_SUCCESS = "Sorted %1$s by %2$s in %3$s order.";
 

@@ -1058,11 +1058,11 @@ Use case ends.
 **Extensions**
 
 * 1a. The command format is invalid (e.g. missing arguments, extra tokens, or unrecognized entity/field/direction).
-    * 1a1. System displays `Invalid command format. Use: sort student id|name|level|payment|paid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
+    * 1a1. System displays `Invalid command format. Use: sort student id|name|level|payment|paid|unpaid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
     * Use case ends.
 
 * 1b. The direction token is not `asc` or `desc`.
-    * 1b1. System displays `Invalid command format. Use: sort student id|name|level|payment|paid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
+    * 1b1. System displays `Invalid command format. Use: sort student id|name|level|payment|paid|unpaid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
     * Use case ends.
 
 * 3a. The sorted list is empty.
@@ -1339,7 +1339,7 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
 
 4. Error handling and input validation
    1. Missing arguments: `sort`, `sort student`, or `sort lesson`.<br>
-      Expected: Error displaying `Invalid command format. Use: sort student id|name|level|payment|paid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
+      Expected: Error displaying `Invalid command format. Use: sort student id|name|level|payment|paid|unpaid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
    2. Invalid entity or field: `sort teacher name`, `sort student age`, or `sort lesson duration`.<br>
       Expected: Error displaying invalid command format.
    3. Invalid direction or extra arguments: `sort student name ascending`, `sort lesson fee up`, or `sort student name asc extra`.<br>
