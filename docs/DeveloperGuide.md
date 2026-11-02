@@ -1329,7 +1329,10 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
       Expected: The displayed list switches to Lessons, showing only lessons on Monday (`Mathematics` with the sample data). The student list is unaffected.
 
    1. Enter `filter day Mon`.<br>
-      Expected: Rejected. The error names the specific problem and gives a valid example.
+      Expected: Shows the same result as `filter day Monday`; `Mon` is an accepted short form of the day name.
+
+   1. Enter `filter day Tues`.<br>
+      Expected: Accepted as a short form of Tuesday; since no sample lesson falls on Tuesday, the Lessons view is empty and the result reports 0 lessons.
 
 1. Filtering by subject and/or lesson level
 
