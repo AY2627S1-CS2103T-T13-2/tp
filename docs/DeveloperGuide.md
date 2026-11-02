@@ -1357,8 +1357,11 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
 
 1. Clearing the filter
 
-   1. After any of the above, enter `list`.<br>
-      Expected: Every student and every lesson is shown again.
+   1. After filtering lessons (e.g. `filter day Monday`), enter `list`.<br>
+      Expected: The filter is cleared on both lists, but `list` always switches the displayed view to Students, showing all three students — it does not show lessons alongside them.
+
+   1. Enter `list lessons`.<br>
+      Expected: The lesson filter was already cleared by the previous step, so this shows all four lessons.
 
 ### Viewing the weekly schedule
 
