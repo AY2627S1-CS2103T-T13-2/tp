@@ -555,13 +555,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | Priority | As a … | I want to … | So that I can … |
 |----------|--------|-------------|-----------------|
 | `* * *` | new tutor | see instructions for the available commands | learn how to use the application and check a command when I forget it |
-| `* * *` | tutor | enrol a student in a lesson whether the student or lesson is new or existing | set up my records without unnecessary separate steps |
+| `* * *` | tutor | enroll a student in a lesson whether the student or lesson is new or existing | set up my records without unnecessary separate steps |
 | `* * *` | tutor | add a student or a lesson without enrolling anyone yet | record a new student before choosing their lessons, or set up a lesson before anyone joins |
 | `* * *` | tutor | be notified when a student's level differs from a lesson's level during enrollment or after editing either level | check whether the mismatch is intentional |
 | `* * *` | tutor | be prevented from creating a lesson that overlaps another lesson on the same day | avoid double-booking my teaching time |
 | `* * *` | tutor | be prevented from creating duplicate students, lessons, or enrollments | keep my records accurate |
-| `* *` | tutor | be notified when a new student has the same name as an existing student, or a new lesson has a fee of 0 | check that it is not a mistake |
-| `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
+| `* * *` | tutor | have a failed command leave all existing records unchanged | avoid incomplete records |
 | `* * *` | tutor | have my changes saved automatically, and keep my data file safe if it cannot be read | avoid losing my records |
 | `* * *` | tutor | list my students with their contact details, levels, lessons, and payment statuses | review my roster and outstanding payments |
 | `* * *` | tutor | list my lessons with their timeslots, fees, and enrolled students | review my teaching schedule |
@@ -578,16 +577,17 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | see only the students enrolled in a lesson | check who is in a class |
 | `* * *` | tutor | see only the students who have not paid this month | follow up on outstanding fees |
 | `* * *` | tutor | see only the lessons on a given day, or with a given subject, level or fee, or only the students at a given level | find the lessons or students I am looking for quickly |
+| `* * *` | tutor | sort students by payment status | quickly identify all students who still have unpaid fees at the top of the list |
+| `* * *` | tutor | sort students by name, level, or ID | browse and locate students alphabetically or by academic level |
+| `* * *` | tutor | sort lessons by chronological time, fee, subject, level, or ID | review my weekly schedule in order or find high-fee classes |
+| `* * *` | fast-typing tutor | traverse previous commands using the Up and Down arrow keys | repeat or edit recently executed commands without retyping them |
+| `* *` | tutor | be notified when a new student has the same name as an existing student, or a new lesson has a fee of 0 | check that it is not a mistake |
 | `* *` | tutor | be shown matching existing students or lessons when adding an enrollment | reuse a record instead of creating a duplicate |
 | `* *` | tutor | use common aliases for education levels | enter levels quickly without creating accidental mismatches |
 | `* *` | tutor | change a student’s current-month status from paid back to unpaid | correct a payment recorded by mistake |
 | `* *` | tutor | mark multiple students or an entire lesson as unpaid | revert accidental bulk payment updates |
-| `* * *` | tutor | sort students by payment status | quickly identify all students who still have unpaid fees at the top of the list |
-| `* * *` | tutor | sort students by name, level, or ID | browse and locate students alphabetically or by academic level |
-| `* * *` | tutor | sort lessons by chronological time, fee, subject, level, or ID | review my weekly schedule in order or find high-fee classes |
 | `* *` | tutor | sort records in ascending or descending order | view highest values or paid students first when needed |
 | `* *` | tutor | copy the User Guide link from the help window | easily access the complete documentation in my browser |
-| `* * *` | fast-typing tutor | traverse previous commands using the Up and Down arrow keys | repeat or edit recently executed commands without retyping them |
 | `* *` | fast-typing tutor | restore my drafted command when navigating past the newest history entry | check past commands without losing what I was typing |
 | `* *` | fast-typing tutor | autocomplete unique command words with the Tab key | type commands faster with fewer keystrokes |
 
