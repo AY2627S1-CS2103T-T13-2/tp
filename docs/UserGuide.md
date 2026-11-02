@@ -610,7 +610,10 @@ Furthermore, certain edits can cause TuiTracker to behave in unexpected ways (e.
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous TuiTracker home folder.
+**A**: Follow the [Quick start](#quick-start) instructions on the new computer, then close TuiTracker on both computers.
+Copy your existing `data/tuitracker.json` from the old computer's launch folder to `data/tuitracker.json` inside the new
+JAR's folder. Create the destination `data` folder if it does not exist, and back up any existing destination file before
+replacing it. Launch TuiTracker from the new JAR's folder to load the copied records.
 
 --------------------------------------------------------------------------------------------------------------------
 
