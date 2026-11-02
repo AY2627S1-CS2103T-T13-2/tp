@@ -149,20 +149,24 @@ The `add` command enrolls a student in a lesson, creating either record if it is
 `AddCommandParser` does not build a `Student` or a `Lesson`. It builds an `AddCommand` that holds a description of each side:
 
 * `AddCommand.StudentRef` is either an `ExistingStudent` (an ID) or a `NewStudent` (a name, a contact and a level).
-* `AddCommand.LessonRef` is either an `ExistingLesson` (an ID) or a `NewLesson` (a subject, a level, a timeslot and a fee).
+* `AddCommand.LessonRef` is either an `ExistingLesson` (an ID) or a `NewLesson` (a subject, a level, a timeslot (day, start and end) and a fee).
 
 These are `sealed` interfaces implemented by records, so the compiler checks that every case is handled and `equals` comes for free, which the parser tests rely on. When only one side is given, `AddCommand` is built with that side alone, and the other side is `null`.
 
+<puml src="diagrams/AddReferenceClassDiagram.puml" alt="AddCommand holds a StudentRef and a LessonRef, each either an existing record or a new one" />
+
 The parser works in this order, and reports the first problem it finds:
 
-1. The command is well formed: no text before the first parameter, and at least one parameter.
-2. No parameter is given more than once.
-3. No parameter is joined to another value without a space, such as the `slv/` in `c/92223333slv/Primary 6`. Without this check, the joined parameter would be reported as missing.
-4. `s/` is given if any student parameter (`c/`, `slv/`) is, and `l/` is given if any lesson parameter (`llv/`, `d/`, `st/`, `et/`, `f/`) is. Which of `s/` and `l/` are given, and whether each is a whole number (an existing record) or not (a new one), decides everything after this.
-5. Neither `s/` nor `l/` is a number that is not a valid ID, such as `0`, `-1` or `1.5`, and neither is an ID larger than any record can have. Without this check, such a number would be read as the name of a new student or the subject of a new lesson.
-6. No parameter is given that does not belong to the form. For example, `c/` is not allowed with an existing student.
-7. No required parameter is missing, for example `c/` and `slv/` for a new student. The message also says which value was read as a new student or lesson, and suggests giving only the ID when the value is an ID followed by more text.
-8. Every value is valid, student first and then lesson, using the shared `ParserUtil` methods, which carry the exact error messages.
+1. No parameter is joined to another value without a space, such as the `slv/` in `c/92223333slv/Primary 6`. Without this check, the joined parameter would be reported as missing.
+2. No unknown parameter is given, such as `x/`.
+3. The command is well formed: no text before the first parameter, and at least one parameter.
+4. No parameter is given more than once.
+5. `s/` is given if any student parameter (`c/`, `slv/`) is, and `l/` is given if any lesson parameter (`llv/`, `d/`, `st/`, `et/`, `f/`) is.
+6. Neither `s/` nor `l/` is empty.
+7. Neither `s/` nor `l/` is a number that is not a valid ID, such as `0`, `-1` or `1.5`, and neither is an ID larger than any record can have. Without this check, such a number would be read as the name of a new student or the subject of a new lesson. Which of `s/` and `l/` are given, and whether each is a whole number (an existing record) or not (a new one), decides everything after this.
+8. No parameter is given that does not belong to the form. For example, `c/` is not allowed with an existing student.
+9. No required parameter is missing, for example `c/` and `slv/` for a new student. The message also says which value was read as a new student or lesson, and suggests giving only the ID when the value is an ID followed by more text.
+10. Every value is valid, student first and then lesson, using the shared `ParserUtil` methods, which carry the exact error messages.
 
 #### Executing the command
 
@@ -172,6 +176,7 @@ The parser works in this order, and reports the first problem it finds:
 2. An existing student or lesson is not given alone. There would be nothing to create and no one to enroll, so the message names the record and asks for the other side.
 3. A new student is not a duplicate, a new lesson is not a duplicate, and the student is not already enrolled in the lesson. Duplicates are found with `Name#isSameName`, `Contact#isSameContact` and `Subject#isSameSubject`, which ignore letter case, extra spaces and (for contacts) everything but the digits. `equals` on these classes stays exact, so that `edit` can still change only the letter case of a value.
 4. A new lesson does not clash with an existing lesson. This also applies to a new lesson given alone.
+5. An ID is left for each new record. IDs are never reused, so once every ID up to 2147483647 has been used, which can only happen if the data file was edited, no new student or lesson can be created.
 
 It then works out the notes for things that are probably mistakes but might be intended, in this order: a new student with the same name as an existing student, a student whose level differs from the lesson's level (only when both sides are given), and a new lesson whose fee is 0. Notes do not stop the command; each one is added to the result on its own line.
 

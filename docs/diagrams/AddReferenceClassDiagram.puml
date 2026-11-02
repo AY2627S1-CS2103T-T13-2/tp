@@ -1,0 +1,33 @@
+@startuml
+!include style.puml
+skinparam arrowThickness 1.1
+skinparam arrowColor LOGIC_COLOR_T4
+skinparam classBackgroundColor LOGIC_COLOR
+
+Class AddCommand
+Class AddCommandParser
+
+Class "<<sealed interface>>\nStudentRef" as StudentRef
+Class "<<record>>\nExistingStudent" as ExistingStudent
+Class "<<record>>\nNewStudent" as NewStudent
+
+Class "<<sealed interface>>\nLessonRef" as LessonRef
+Class "<<record>>\nExistingLesson" as ExistingLesson
+Class "<<record>>\nNewLesson" as NewLesson
+
+AddCommandParser ..> AddCommand : <<create>>
+AddCommand --> "0..1" StudentRef : student
+AddCommand --> "0..1" LessonRef : lesson
+StudentRef -right[hidden]- LessonRef
+
+ExistingStudent .up.|> StudentRef
+NewStudent .up.|> StudentRef
+ExistingLesson .up.|> LessonRef
+NewLesson .up.|> LessonRef
+
+note bottom of ExistingStudent : id
+note bottom of NewStudent : name, contact, level
+note bottom of ExistingLesson : id
+note bottom of NewLesson : subject, level,\ntimeslot (day, start, end), fee
+note right of AddCommand : At least one of student\nand lesson is given.
+@enduml
