@@ -516,8 +516,9 @@ Sorts either student or lesson records without changing saved data. The sorting 
 
 **Tie-breakers:**
 
-* For students sorted by `name`, `level`, or `payment`, tied records are sorted by ascending student ID.
-* For lessons sorted by `subject`, `level`, or `fee`, tied records are sorted by ascending lesson ID. For `time`, tied start times are sorted by end time, then lesson ID.
+* In ascending order, students tied on `name`, `level`, or `payment` are sorted by ascending student ID, and lessons tied on `subject`, `level`, or `fee` are sorted by ascending lesson ID.
+* Descending order reverses the entire comparison, including the ID tie-breaker, so tied records are sorted by descending ID.
+* For `time`, lessons are compared by weekday, then start time, then lesson ID. Descending order reverses this same sequence.
 
 **Successful sorting:**
 
