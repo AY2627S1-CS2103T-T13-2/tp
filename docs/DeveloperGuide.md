@@ -560,7 +560,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | be warned when enrolling a student in a lesson at a different level | check whether the mismatch is intentional |
 | `* * *` | tutor | be prevented from creating a lesson that overlaps another lesson on the same day | avoid double-booking my teaching time |
 | `* * *` | tutor | be prevented from creating duplicate students, lessons, or enrollments | keep my records accurate |
+| `* *` | tutor | be notified when a new student has the same name as an existing student, or a new lesson has a fee of 0 | check that it is not a mistake |
 | `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
+| `* * *` | tutor | have my changes saved automatically, and keep my data file safe if it cannot be read | avoid losing my records |
 | `* * *` | tutor | list my students with their contact details, levels, lessons, and payment statuses | review my roster and outstanding payments |
 | `* * *` | tutor | list my lessons with their timeslots, fees, and enrolled students | review my teaching schedule |
 | `* * *` | tutor | correct or update an existing student or lesson without changing its identity or related records | keep details accurate without recreating the record and its enrollments |
@@ -572,14 +574,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | mark all students in a lesson as paid at once | record class fees in a single command |
 | `* * *` | tutor | have payment statuses reset for a new month | distinguish this month’s unpaid fees from last month’s payments |
 | `* * *` | tutor | view all my recurring lessons in a weekly schedule | spot busy periods and gaps in my teaching week |
-| `* *` | tutor | be shown matching existing students or lessons when adding an enrollment | reuse a record instead of creating a duplicate |
-| `* *` | tutor | use common aliases for education levels | enter levels quickly without creating accidental mismatches |
-| `* *` | tutor | undo an accidental addition | correct a mistake without manually deleting its records |
 | `* *` | tutor | change a student’s current-month status from paid back to unpaid | correct a payment recorded by mistake |
 | `* *` | tutor | mark multiple students or an entire lesson as unpaid | revert accidental bulk payment updates |
-| `* *` | tutor | view payment dates and history | check when a student paid in previous months |
-| `* *` | tutor | record a payment for a specific month | update an earlier month when a payment is received late |
-| `* *` | tutor | see how many students are paid and unpaid | assess outstanding payments at a glance |
 | `* * *` | tutor | sort students by payment status | quickly identify all students who still have unpaid fees at the top of the list |
 | `* * *` | tutor | sort students by name, level, or ID | browse and locate students alphabetically or by academic level |
 | `* * *` | tutor | sort lessons by chronological time, fee, subject, level, or ID | review my weekly schedule in order or find high-fee classes |
