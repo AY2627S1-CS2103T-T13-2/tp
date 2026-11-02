@@ -1092,17 +1092,19 @@ Use case ends.
 * **Lesson**: A weekly class conducted by the tutor, defined by its subject, level, day, start time, end time and fee.
 * **Lesson clash**: The situation where two lessons on the same day have overlapping timeslots, e.g., `15:00-16:30` and `16:00-17:00` on Monday. A lesson that starts exactly when another ends (e.g., `15:00-16:00` and `16:00-17:00`) does not clash with it.
 * **Lesson fee**: The amount charged for one session of a lesson: 0 or more, with at most 7 digits before the decimal point and at most two decimal places. A fee of 0 is for a free lesson.
-* **Lesson ID**: A unique positive integer assigned to a lesson when it is created. It never changes, and is used to refer to the lesson in commands.
+* **Lesson ID**: A unique positive integer assigned to a lesson when it is created. It never changes, and is used to refer to the lesson in commands. IDs are never reused, even after the lesson is deleted.
 * **Level**: The education level of a student or lesson, e.g., `Primary 6` or `Secondary 2`, made up of letters, numbers, spaces and hyphens, with at most 30 characters. Levels are compared without considering letter case or extra spaces, so `Primary 6` and `primary   6` are the same level, but `P6` and `Primary 6` are different levels.
 * **Level matching**: Comparing a student's level with a lesson's level when the student is enrolled. A student can join a lesson of another level, but `add` and `edit` then add a note naming both levels.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS.
+* **Note**: A line added to a successful result to point out something that is probably a mistake but might be intended, e.g., a fee of 0. A note does not stop the command.
 * **Parameter**: A value given after the command word to provide the details a command needs, e.g., the student ID `12` in `delete student 12`. Some parameters are written after a _prefix_.
 * **Payment status**: Whether a student has paid for the current month (_Paid_) or not (_Unpaid_). TuiTracker stores the last month each student paid for, so every student becomes _Unpaid_ when a new month starts, without any change to the data file.
 * **Prefix**: A short label ending in `/` that marks which parameter a value belongs to, e.g., `c/` in `c/91234567` marks a contact. Parameters with prefixes can be given in any order.
 * **Read-only recovery mode**: The mode TuiTracker starts in when the data file cannot be read. It shows no records, blocks every command that changes data, and leaves the data file as it is, so that the user can repair or replace it.
 * **Sort order**: The order in which the displayed list shows students or lessons, set by `sort`, e.g., students by name. It is kept when the list is filtered or switched, but is not saved to the data file.
+* **Sample data**: The 3 students and 4 lessons, with their enrollments, that TuiTracker starts with when no data file exists. The examples in this guide use them.
 * **Student**: A person taught by the tutor, defined by their name, contact and level.
-* **Student ID**: A unique positive integer assigned to a student when they are created. It never changes, and is used to refer to the student in commands. Not to be confused with a _display index_.
+* **Student ID**: A unique positive integer assigned to a student when they are created. It never changes, and is used to refer to the student in commands. IDs are never reused, even after the student is deleted. Not to be confused with a _display index_.
 * **Subject**: The subject taught in a lesson, e.g., `Mathematics`.
 * **Timeslot**: The day, start time and end time of a lesson, e.g., Monday `15:00-16:30`. Times use the 24-hour format with a one- or two-digit hour (`9:00` or `09:00`), and are stored and shown as `HH:mm`. A lesson must end later on the same day it starts, by `23:59` at the latest.
 * **Tutor**: The user of TuiTracker, i.e., a private tutor who manages their own students, lessons and payments.
