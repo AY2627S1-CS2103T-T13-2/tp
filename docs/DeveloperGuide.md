@@ -367,9 +367,17 @@ The sequence diagram below shows the Logic component interactions when executing
 
 <puml src="diagrams/MarkSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `mark` Command" />
 
-The activity diagram below illustrates the end-to-end execution workflow for both `mark` and `unmark` commands, covering single-student, multi-student, and lesson-wide operations.
+The overview below shows how `mark` and `unmark` select a target workflow. The two smaller activity diagrams then show the student and lesson paths separately so that each remains readable at normal page width.
 
-<puml src="diagrams/MarkActivityDiagram.puml" alt="Activity Diagram for the `mark` and `unmark` Commands" />
+<puml src="diagrams/MarkActivityDiagram.puml" alt="Overview of the `mark` and `unmark` Workflows" />
+
+For one or more student IDs, the command validates and resolves every student before making any update. It then handles a single student directly or partitions multiple students by their current payment state.
+
+<puml src="diagrams/MarkStudentActivityDiagram.puml" alt="Student-target Activity Diagram for the `mark` and `unmark` Commands" />
+
+For a lesson ID, the command resolves the lesson and its enrollments before partitioning all enrolled students by their current payment state.
+
+<puml src="diagrams/MarkLessonActivityDiagram.puml" alt="Lesson-target Activity Diagram for the `mark` and `unmark` Commands" />
 
 ### Help feature
 

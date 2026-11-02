@@ -1,0 +1,25 @@
+@startuml
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+
+start
+:Parse positive whole-number student IDs;
+if () then ([invalid ID])
+    :Show invalid ID error;
+    stop
+endif
+:Deduplicate IDs;
+:Look up every student;
+if () then ([student missing])
+    :Show student-not-found error;
+    stop
+endif
+:Partition eligible and already-in-state students;
+if () then ([at least one eligible])
+    :Update eligible students;
+    :Show confirmation and any already-in-state names;
+else ([none eligible])
+    :Show the single- or multi-student already-in-state error;
+endif
+stop
+@enduml

@@ -1,0 +1,29 @@
+@startuml
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+
+start
+:Parse one positive whole-number lesson ID;
+if () then ([invalid ID or extra text])
+    :Show invalid command format error;
+    stop
+endif
+:Look up the lesson;
+if () then ([lesson missing])
+    :Show lesson-not-found error;
+    stop
+endif
+:Get enrolled students;
+if () then ([none enrolled])
+    :Show no-students error;
+    stop
+endif
+:Partition eligible and already-in-state students;
+if () then ([at least one eligible])
+    :Update eligible students;
+    :Show confirmation and already-in-state names;
+else ([none eligible])
+    :Show all-already-in-state error;
+endif
+stop
+@enduml
