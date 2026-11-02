@@ -483,10 +483,12 @@ Examples:
 * `filter slv/Primary 6` shows only the students at Primary 6.
 * `filter f/50` shows only the lessons with fee `$50.00`.
 
-If a filter is incomplete or mixes incompatible forms, TuiTracker explains the specific problem and includes a
-valid example. For instance, `filter student` suggests `filter student 1`, while combining `day` with `l/` explains
-that keyword and prefix filters cannot be mixed. The same restriction applies to `slv/` and `f/`: neither can be
-combined with `student`, `lesson`, `day`, `l/`, `llv/`, or with each other.
+If a filter is incomplete or mixes incompatible forms, TuiTracker explains the specific problem. For the `student`,
+`lesson` and `day` forms, and for mixed forms, this includes a valid example: `filter student` suggests
+`filter student 1`, while combining `day` with `l/` explains that keyword and prefix filters cannot be mixed. The
+same restriction applies to `slv/` and `f/`: neither can be combined with `student`, `lesson`, `day`, `l/`, `llv/`,
+or with each other. For the `l/`, `llv/`, `slv/` and `f/` prefix forms, an invalid value instead reports that
+field's own constraints, e.g. `filter slv/` reports the student-level constraints, without a full example command.
 
 ### Sorting students and lessons: `sort`
 
