@@ -580,7 +580,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | see only the lessons on a given day, or with a given subject, level or fee, or only the students at a given level | find the lessons or students I am looking for quickly |
 | `* *` | tutor | be shown matching existing students or lessons when adding an enrollment | reuse a record instead of creating a duplicate |
 | `* *` | tutor | use common aliases for education levels | enter levels quickly without creating accidental mismatches |
-| `* *` | tutor | undo an accidental addition | correct a mistake without manually deleting its records |
 | `* *` | tutor | change a student’s current-month status from paid back to unpaid | correct a payment recorded by mistake |
 | `* *` | tutor | mark multiple students or an entire lesson as unpaid | revert accidental bulk payment updates |
 | `* * *` | tutor | sort students by payment status | quickly identify all students who still have unpaid fees at the top of the list |
