@@ -149,20 +149,24 @@ The `add` command enrolls a student in a lesson, creating either record if it is
 `AddCommandParser` does not build a `Student` or a `Lesson`. It builds an `AddCommand` that holds a description of each side:
 
 * `AddCommand.StudentRef` is either an `ExistingStudent` (an ID) or a `NewStudent` (a name, a contact and a level).
-* `AddCommand.LessonRef` is either an `ExistingLesson` (an ID) or a `NewLesson` (a subject, a level, a timeslot and a fee).
+* `AddCommand.LessonRef` is either an `ExistingLesson` (an ID) or a `NewLesson` (a subject, a level, a timeslot (day, start and end) and a fee).
 
 These are `sealed` interfaces implemented by records, so the compiler checks that every case is handled and `equals` comes for free, which the parser tests rely on. When only one side is given, `AddCommand` is built with that side alone, and the other side is `null`.
 
+<puml src="diagrams/AddReferenceClassDiagram.puml" alt="AddCommand holds a StudentRef and a LessonRef, each either an existing record or a new one" />
+
 The parser works in this order, and reports the first problem it finds:
 
-1. The command is well formed: no text before the first parameter, and at least one parameter.
-2. No parameter is given more than once.
-3. No parameter is joined to another value without a space, such as the `slv/` in `c/92223333slv/Primary 6`. Without this check, the joined parameter would be reported as missing.
-4. `s/` is given if any student parameter (`c/`, `slv/`) is, and `l/` is given if any lesson parameter (`llv/`, `d/`, `st/`, `et/`, `f/`) is. Which of `s/` and `l/` are given, and whether each is a whole number (an existing record) or not (a new one), decides everything after this.
-5. Neither `s/` nor `l/` is a number that is not a valid ID, such as `0`, `-1` or `1.5`, and neither is an ID larger than any record can have. Without this check, such a number would be read as the name of a new student or the subject of a new lesson.
-6. No parameter is given that does not belong to the form. For example, `c/` is not allowed with an existing student.
-7. No required parameter is missing, for example `c/` and `slv/` for a new student. The message also says which value was read as a new student or lesson, and suggests giving only the ID when the value is an ID followed by more text.
-8. Every value is valid, student first and then lesson, using the shared `ParserUtil` methods, which carry the exact error messages.
+1. No parameter is joined to another value without a space, such as the `slv/` in `c/92223333slv/Primary 6`. Without this check, the joined parameter would be reported as missing.
+2. No unknown parameter is given, such as `x/`.
+3. The command is well formed: no text before the first parameter, and at least one parameter.
+4. No parameter is given more than once.
+5. `s/` is given if any student parameter (`c/`, `slv/`) is, and `l/` is given if any lesson parameter (`llv/`, `d/`, `st/`, `et/`, `f/`) is.
+6. Neither `s/` nor `l/` is empty.
+7. Neither `s/` nor `l/` is a number that is not a valid ID, such as `0`, `-1` or `1.5`, and neither is an ID larger than any record can have. Without this check, such a number would be read as the name of a new student or the subject of a new lesson. Which of `s/` and `l/` are given, and whether each is a whole number (an existing record) or not (a new one), decides everything after this.
+8. No parameter is given that does not belong to the form. For example, `c/` is not allowed with an existing student.
+9. No required parameter is missing, for example `c/` and `slv/` for a new student. The message also says which value was read as a new student or lesson, and suggests giving only the ID when the value is an ID followed by more text.
+10. Every value is valid, student first and then lesson, using the shared `ParserUtil` methods, which carry the exact error messages.
 
 #### Executing the command
 
@@ -172,6 +176,7 @@ The parser works in this order, and reports the first problem it finds:
 2. An existing student or lesson is not given alone. There would be nothing to create and no one to enroll, so the message names the record and asks for the other side.
 3. A new student is not a duplicate, a new lesson is not a duplicate, and the student is not already enrolled in the lesson. Duplicates are found with `Name#isSameName`, `Contact#isSameContact` and `Subject#isSameSubject`, which ignore letter case, extra spaces and (for contacts) everything but the digits. `equals` on these classes stays exact, so that `edit` can still change only the letter case of a value.
 4. A new lesson does not clash with an existing lesson. This also applies to a new lesson given alone.
+5. An ID is left for each new record. IDs are never reused, so once every ID up to 2147483647 has been used, which can only happen if the data file was edited, no new student or lesson can be created.
 
 It then works out the notes for things that are probably mistakes but might be intended, in this order: a new student with the same name as an existing student, a student whose level differs from the lesson's level (only when both sides are given), and a new lesson whose fee is 0. Notes do not stop the command; each one is added to the result on its own line.
 
@@ -555,7 +560,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | be warned when enrolling a student in a lesson at a different level | check whether the mismatch is intentional |
 | `* * *` | tutor | be prevented from creating a lesson that overlaps another lesson on the same day | avoid double-booking my teaching time |
 | `* * *` | tutor | be prevented from creating duplicate students, lessons, or enrollments | keep my records accurate |
+| `* *` | tutor | be notified when a new student has the same name as an existing student, or a new lesson has a fee of 0 | check that it is not a mistake |
 | `* * *` | tutor | have a failed enrollment leave all existing records unchanged | avoid incomplete records |
+| `* * *` | tutor | have my changes saved automatically, and keep my data file safe if it cannot be read | avoid losing my records |
 | `* * *` | tutor | list my students with their contact details, levels, lessons, and payment statuses | review my roster and outstanding payments |
 | `* * *` | tutor | list my lessons with their timeslots, fees, and enrolled students | review my teaching schedule |
 | `* * *` | tutor | correct or update an existing student or lesson without changing its identity or related records | keep details accurate without recreating the record and its enrollments |
@@ -576,9 +583,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* *` | tutor | undo an accidental addition | correct a mistake without manually deleting its records |
 | `* *` | tutor | change a student’s current-month status from paid back to unpaid | correct a payment recorded by mistake |
 | `* *` | tutor | mark multiple students or an entire lesson as unpaid | revert accidental bulk payment updates |
-| `* *` | tutor | view payment dates and history | check when a student paid in previous months |
-| `* *` | tutor | record a payment for a specific month | update an earlier month when a payment is received late |
-| `* *` | tutor | see how many students are paid and unpaid | assess outstanding payments at a glance |
 | `* * *` | tutor | sort students by payment status | quickly identify all students who still have unpaid fees at the top of the list |
 | `* * *` | tutor | sort students by name, level, or ID | browse and locate students alphabetically or by academic level |
 | `* * *` | tutor | sort lessons by chronological time, fee, subject, level, or ID | review my weekly schedule in order or find high-fee classes |
@@ -592,19 +596,17 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 For all use cases below, the System is the tuition management application and the Actor is the user.
 
-**Use case: Enrol a student in a lesson**
+**Use case: Enroll a student in a lesson**
 
 **MSS**
 
-1.  User enters an add command containing a student and a lesson.
-2.  System validates the command format and required parameters.
-3.  System retrieves the existing student and lesson, or prepares new records using the supplied details.
-4.  System checks whether the student level matches the lesson level and prepares a note if it does not.
-5.  System checks that the student, lesson and enrolment are not duplicates.
-6.  System checks that a newly created lesson does not clash with another lesson on the same day.
-7.  System creates any required student or lesson records and assigns unique IDs.
-8.  System enrols the student in the lesson; a new student's payment status starts unpaid, while an existing student's current-month status is retained.
-9.  System saves the changes and displays the student and lesson IDs.
+1.  User enters an add command that gives a student and a lesson, each either by its ID or by the details of a new one.
+2.  System validates the command format and the parameters that each new record needs.
+3.  System finds the student and the lesson that were given by ID.
+4.  System checks that neither new record is a duplicate, that the student is not already enrolled in the lesson, and that a new lesson does not clash with another lesson on the same day.
+5.  System prepares a note for anything that is probably a mistake but might be intended.
+6.  System creates any new student or lesson, assigns each a unique ID, and enrolls the student in the lesson.
+7.  System saves the changes and displays the student and lesson IDs and the student's payment status for the current month, followed by any notes. A new student starts as unpaid, and an existing student keeps their status.
 
 Use case ends.
 
@@ -612,40 +614,47 @@ Use case ends.
 
 * 1a. The command has an invalid format or a required parameter is missing.
 
-    * 1a1. System displays an error message.
+    * 1a1. System displays an error message describing the problem, such as the missing parameter.
     * Use case ends.
 
-* 2a. A supplied student or lesson ID does not exist.
+* 3a. No student or lesson has the ID given.
 
-    * 2a1. System displays an error message.
+    * 3a1. System displays an error message naming the ID.
     * Use case ends.
 
-* 4a. The student level does not match the lesson level.
+* 4a. The new student or lesson is a duplicate.
 
-    * 4a1. System continues the enrollment and adds a note naming both levels so the user can check the mismatch.
-
-* 5a. The student or lesson is a duplicate.
-
-    * 5a1. System displays an error message instructing the user to use the existing ID.
-    * 5a2. System makes no changes.
+    * 4a1. System displays an error message that instructs the user to use the existing ID.
+    * 4a2. System makes no changes.
     * Use case ends.
 
-* 5b. The student is already enrolled in the lesson.
+* 4b. The student is already enrolled in the lesson.
 
-    * 5b1. System reports that the student is already enrolled in this lesson.
-    * 5b2. System makes no changes.
+    * 4b1. System reports that the student is already enrolled in this lesson.
+    * 4b2. System makes no changes.
     * Use case ends.
 
-* 6a. The new lesson clashes with an existing lesson.
+* 4c. The new lesson clashes with an existing lesson.
 
-    * 6a1. System displays a clash message naming the existing lesson and its timeslot.
-    * 6a2. System makes no changes.
+    * 4c1. System displays a clash message naming the existing lesson and its timeslot.
+    * 4c2. System makes no changes.
     * Use case ends.
 
-* 9a. The changes cannot be saved.
+* 4d. No ID is left for a new student or lesson.
 
-    * 9a1. System restores the original data.
-    * 9a2. System displays the applicable file-write or permission error.
+    * 4d1. System displays an error message.
+    * 4d2. System makes no changes.
+    * Use case ends.
+
+* 5a. The student's level differs from the lesson's level, the new student has the same name as an existing student with a different contact, or the new lesson has a fee of 0.
+
+    * 5a1. System continues and adds a note for the user to check.
+    * Use case resumes at step 6.
+
+* 7a. The changes cannot be saved.
+
+    * 7a1. System restores the original data.
+    * 7a2. System displays the applicable file-write or permission error.
     * Use case ends.
 
 **Use case: Add a student or a lesson on its own**
@@ -665,12 +674,12 @@ Use case ends.
 
 * 1a. The command has an invalid format or a required parameter is missing.
 
-    * 1a1. System displays an error message that names the missing parameter.
+    * 1a1. System displays an error message describing the problem, such as the missing parameter.
     * Use case ends.
 
 * 1b. The command gives the ID of an existing student or lesson instead of the details of a new one, such as `add s/3`.
 
-    * 1b1. System displays a message that the record already exists and asks for the other side, so that the user can enrol them.
+    * 1b1. System displays a message that the record already exists and asks for the other side, so that the user can enroll them.
     * 1b2. System makes no changes.
     * Use case ends.
 
@@ -689,6 +698,12 @@ Use case ends.
 
     * 3b1. System displays a clash message naming the existing lesson and its timeslot.
     * 3b2. System makes no changes.
+    * Use case ends.
+
+* 3c. No ID is left for the new record.
+
+    * 3c1. System displays an error message.
+    * 3c2. System makes no changes.
     * Use case ends.
 
 * 4a. The new student has the same name as an existing student with a different contact, or the new lesson has a fee of 0.
@@ -1091,17 +1106,19 @@ Use case ends.
 * **Lesson**: A weekly class conducted by the tutor, defined by its subject, level, day, start time, end time and fee.
 * **Lesson clash**: The situation where two lessons on the same day have overlapping timeslots, e.g., `15:00-16:30` and `16:00-17:00` on Monday. A lesson that starts exactly when another ends (e.g., `15:00-16:00` and `16:00-17:00`) does not clash with it.
 * **Lesson fee**: The amount charged for one session of a lesson: 0 or more, with at most 7 digits before the decimal point and at most two decimal places. A fee of 0 is for a free lesson.
-* **Lesson ID**: A unique positive integer assigned to a lesson when it is created. It never changes, and is used to refer to the lesson in commands.
+* **Lesson ID**: A unique positive integer assigned to a lesson when it is created. It never changes, and is used to refer to the lesson in commands. IDs are never reused, even after the lesson is deleted.
 * **Level**: The education level of a student or lesson, e.g., `Primary 6` or `Secondary 2`, made up of letters, numbers, spaces and hyphens, with at most 30 characters. Levels are compared without considering letter case or extra spaces, so `Primary 6` and `primary   6` are the same level, but `P6` and `Primary 6` are different levels.
 * **Level matching**: Comparing a student's level with a lesson's level when the student is enrolled. A student can join a lesson of another level, but `add` and `edit` then add a note naming both levels.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS.
+* **Note**: A line added to a successful result to point out something that is probably a mistake but might be intended, e.g., a fee of 0. A note does not stop the command.
 * **Parameter**: A value given after the command word to provide the details a command needs, e.g., the student ID `12` in `delete student 12`. Some parameters are written after a _prefix_.
 * **Payment status**: Whether a student has paid for the current month (_Paid_) or not (_Unpaid_). TuiTracker stores the last month each student paid for, so every student becomes _Unpaid_ when a new month starts, without any change to the data file.
 * **Prefix**: A short label ending in `/` that marks which parameter a value belongs to, e.g., `c/` in `c/91234567` marks a contact. Parameters with prefixes can be given in any order.
 * **Read-only recovery mode**: The mode TuiTracker starts in when the data file cannot be read. It shows no records, blocks every command that changes data, and leaves the data file as it is, so that the user can repair or replace it.
 * **Sort order**: The order in which the displayed list shows students or lessons, set by `sort`, e.g., students by name. It is kept when the list is filtered or switched, but is not saved to the data file.
+* **Sample data**: The 3 students and 4 lessons, with their enrollments, that TuiTracker starts with when no data file exists. The examples in this guide use them.
 * **Student**: A person taught by the tutor, defined by their name, contact and level.
-* **Student ID**: A unique positive integer assigned to a student when they are created. It never changes, and is used to refer to the student in commands. Not to be confused with a _display index_.
+* **Student ID**: A unique positive integer assigned to a student when they are created. It never changes, and is used to refer to the student in commands. IDs are never reused, even after the student is deleted. Not to be confused with a _display index_.
 * **Subject**: The subject taught in a lesson, e.g., `Mathematics`.
 * **Timeslot**: The day, start time and end time of a lesson, e.g., Monday `15:00-16:30`. Times use the 24-hour format with a one- or two-digit hour (`9:00` or `09:00`), and are stored and shown as `HH:mm`. A lesson must end later on the same day it starts, by `23:59` at the latest.
 * **Tutor**: The user of TuiTracker, i.e., a private tutor who manages their own students, lessons and payments.

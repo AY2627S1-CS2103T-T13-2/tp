@@ -133,9 +133,9 @@ Displays either all students or all lessons. Use this command to switch between 
 
 ### Adding a student, a lesson, or a student to a lesson: `add`
 
-Enrolls a student in a lesson. The student and the lesson can each be **new** (the app creates them) or **existing** (you refer to them by their ID).
+Use the `add` command to enroll a student in a lesson. The student and the lesson can each be **new** (the app creates them) or **existing** (you refer to them by their ID).
 
-You can also add a new student or a new lesson **on its own**, without enrolling anyone, by leaving out the other side. Enroll them later with `add s/ID l/ID`.
+You can also use the `add` command to add a new student or a new lesson **on its own**, without enrolling anyone. If you wish to enroll them, you may do so later with `add s/ID l/ID`.
 
 Format: `add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]`
 
@@ -146,43 +146,47 @@ Format: `add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LE
 
 #### How `s/` and `l/` work
 
-* `s/` is the student. A **whole number**, such as `3`, means the existing student with that ID. Anything else, such as `Daniel Koh`, is the **name of a new student**.
-* `l/` is the lesson. A **whole number**, such as `1`, means the existing lesson with that ID. Anything else, such as `Mathematics`, is the **subject of a new lesson**.
-* A name or a subject must contain at least one letter, so it can never be mistaken for an ID.
+* `s/` is the student. Use a **whole number**, such as `3`, to refer to the existing student with that ID. Use anything else, such as `Daniel Koh`, to give the **name of a new student** you wish to add.
+* `l/` is the lesson. Use a **whole number**, such as `1`, to refer to the existing lesson with that ID. Use anything else, such as `Mathematics`, to refer to the **subject of the new lesson** you wish to add.
 
-Which other parameters you give depends on what is new. You can give the parameters in any order.
+Which other parameters you give depends on whether the student and lesson you are referring to are existing or new, and whether you wish to enroll a student in a lesson or just perform a standalone creation of a student or lesson. You can give the parameters in any order.
 
-Student | Lesson | What you give
+Using a parameter that does not belong, such as `c/` when referring to an existing student (where `s/ID` is enough), is not allowed. The two tables below show the full command and required parameters for each type of desired action.
+
+#### For enrollment
+Student | Lesson | Command
 --------|--------|--------------
-existing | existing | `s/ID l/ID`
-new | existing | `s/NAME c/CONTACT slv/STUDENT_LEVEL l/ID`
-existing | new | `s/ID l/SUBJECT llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE`
-new | new | all of the above
-new | none | `s/NAME c/CONTACT slv/STUDENT_LEVEL`
-none | new | `l/SUBJECT llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE`
+existing | existing | `add s/ID l/ID`
+new | existing | `add s/NAME c/CONTACT slv/STUDENT_LEVEL l/ID`
+existing | new | `add s/ID l/SUBJECT llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE`
+new | new | `add s/NAME l/SUBJECT c/CONTACT slv/STUDENT_LEVEL llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE`
 
-At least one of `s/` and `l/` is needed. An existing student or lesson given on its own, such as `add s/3`, is an error that asks you for the other side, since there is nothing new to add.
+#### For standalone creation of a student or lesson
+Student | Lesson | Command
+--------|--------|--------------
+new | none | `add s/NAME c/CONTACT slv/STUDENT_LEVEL`
+none | new | `add l/SUBJECT llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE`
 
-#### Parameters
+An existing student or lesson cannot be given on its own, such as `add s/3`, since there is nothing new to add. To enroll them, also give the other side.
 
-Parameter | Meaning | Needed when | Rules
-----------|---------|-------------|------
-`s/` | The student: an ID, or the name of a new student | you enroll a student, or add one | A name has at most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter. The words `s/o` and `d/o` can be part of a name, such as `Ravi s/o Kumar`.
-`l/` | The lesson: an ID, or the subject of a new lesson | you enroll a student in a lesson, or add one | A subject has at most 50 characters: letters, numbers, spaces and `.` `,` `-` `(` `)` `&` `@`, with at least one letter.
-`c/` | The student's contact number | the student is new | 3 to 15 digits, at most 25 characters in all. Digits can be split into groups by brackets or by a single space or hyphen, and a `+` can start the number, such as `+65 (9123) 4567`. Duplicates are compared by the digits only.
-`slv/` | The student's level, such as `Primary 6` | the student is new | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
-`llv/` | The lesson's level, such as `Primary 6` | the lesson is new | The same as `slv/`.
-`d/` | The day of the week | the lesson is new | `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Letter case is ignored.
-`st/` | The start time | the lesson is new | In the 24-hour format, such as `9:00`, `09:00` or `14:30`.
-`et/` | The end time | the lesson is new | In the same format, and later than the start time on the same day: a lesson cannot run past midnight. To end at midnight, use `23:59`, not `24:00` or `00:00`. To teach past midnight, add two lessons, such as `23:00`-`23:59` and `00:00`-`01:00` the next day.
-`f/` | The fee for one session | the lesson is new | 0 or more, with at most seven digits before the decimal point and at most two decimal places, such as `50` or `45.50`. A fee of `0` is accepted for a free lesson, and the result ends with a note asking you to check it.
+#### Parameter constraints
 
-Using a parameter that does not belong, such as `c/` with an existing student, is an error.
+Parameter | Meaning                                                                      | Rules
+----------|------------------------------------------------------------------------------|------
+`s/` | The ID of an existing student, or the name of a new student you wish to add  | An ID has to be a positive whole number. A name has at most 100 characters: letters, numbers, spaces and `.` `,` `'` `-` `(` `)` `&` `@`, with at least one letter.
+`l/` | The ID of an existing lesson, or the subject of a new lesson you wish to add | An ID has to be a positive whole number. A subject has at most 50 characters: letters, numbers, spaces and `.` `,` `-` `(` `)` `&` `@`, with at least one letter.
+`c/` | The student's contact number                                                 | 3 to 15 digits, at most 25 characters in all. Digits can be split into groups by brackets or by a single space or hyphen, and a `+` can start the number, such as `+65 (9123) 4567`.
+`slv/` | The student's level, such as `Primary 6`                                     | 1 to 30 characters: letters, numbers, spaces and hyphens, with at least one letter or number.
+`llv/` | The lesson's level, such as `Primary 6`                                      | The same as `slv/`.
+`d/` | The day of the week                                                          | `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Case-insensitive.
+`st/` | The start time                                                               | In the 24-hour format, such as `9:00`, `09:00` or `14:30`.
+`et/` | The end time                                                                 | In the same format, and later than the start time on the same day: a lesson cannot run past midnight. To end at midnight, use `23:59`, not `24:00` or `00:00`. To teach past midnight, add two lessons, such as `23:00`-`23:59` and `00:00`-`01:00` the next day.
+`f/` | The fee for one session                                                      | 0 or more, with at most seven digits before the decimal point and at most two decimal places, such as `50` or `45.50`. A fee of `0` is accepted, with a note.
 
-#### How duplicates are detected
+#### What counts as a duplicate
 
 * A new student is a duplicate of an existing one when both the name and the contact number match. Names are compared ignoring letter case and extra spaces, so `alice  TAN` matches `Alice Tan`. Contact numbers are compared by their digits only. A duplicate is an error that gives the existing student's ID.
-* A new student with the same name as an existing student but a different contact number is added, and the result ends with a line such as `Note: another student named Alice Tan already exists (Student ID: 1).` Check that this is really a different person.
+* A new student with the same name as an existing student but a different contact number gets added successfully, but with the note `Note: another student named Alice Tan already exists (Student ID: 1).` You should check that this is really a different person.
 * A new lesson is a duplicate of an existing one when the subject, the level and the day and times all match. Subjects and levels are compared ignoring letter case and extra spaces. A duplicate is an error that gives the existing lesson's ID.
 
 #### Examples
@@ -203,36 +207,36 @@ The result always gives the new ID, so you can use it even if an active filter h
 
 #### Possible sources of errors
 
-Each of these starts from the sample data. The command is shown first, then the message you see.
+Each of these starts from the sample data. Each row shows the command, what is wrong with it, and the message you see.
 
-Command | Message
---------|--------
-`add s/1 l/1` | The student is already enrolled in this lesson.
-`add s/1 l/99` | No lesson found with ID 99.
-`add s/99 l/1` | No student found with ID 99.
-`add s/Alice Tan c/91234567 slv/Primary 6 l/1` | A student with the same name and contact already exists (Student ID: 1). Use the existing student ID.
-`add s/1 l/Mathematics llv/Primary 6 d/Monday st/15:00 et/16:30 f/60` | An identical lesson already exists (Lesson ID: 1). Use the existing lesson ID.
-`add s/1 l/History llv/Primary 6 d/Monday st/16:00 et/17:00 f/35` | Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).
-`add s/Daniel Koh slv/Primary 6 l/1` | Missing required parameter: c/. s/Daniel Koh was read as a new student.
-`add s/1 l/2 extra words` | Missing required parameter: llv/, d/, st/, et/, f/. l/2 extra words was read as a new lesson. To use an existing lesson, give only its ID, such as l/2.
-`add s/Daniel Koh c/92223333slv/Primary 6 l/1` | slv/ was found inside the value of c/. Separate parameters with a space.
-`add s/1 l/2 x/value` | Unknown parameter: x/. Use: add s/STUDENT l/LESSON [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
-`add s/0 l/1` | s/0 is neither an ID nor a valid name. An ID is a positive whole number, such as s/3.
-`add s/1 l/` | l/ is empty. Give the ID of an existing lesson or the subject of a new lesson.
-`add s/2147483648 l/1` | ID is too large. No student or lesson has an ID above 2147483647.
-`add s/1 l/Art llv/Primary 6 d/Friday st/17:00 et/16:00 f/40` | Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start time.
-`add s/1 l/Art llv/Primary 6 d/Friday st/23:00 et/01:00 f/40` | Invalid end time. A lesson must end later on the same day it starts, so it cannot run past midnight. To teach past midnight, split it into two lessons, such as 23:00-23:59 and 00:00-01:00 the next day.
-`add s/1 l/1 c/91234567` | c/ and slv/ can only be used when adding a new student.
-`add s/1 l/1 d/Monday` | llv/, d/, st/, et/ and f/ can only be used when adding a new lesson.
-`add s/1 s/2 l/1` | A parameter can only be specified once.
-`add s/1` | Alice Tan [Student ID: 1] already exists. To enroll them, add l/ with a lesson ID or the details of a new lesson.
-`add l/1` | Mathematics [Lesson ID: 1] already exists. To enroll a student in it, add s/ with a student ID or the details of a new student.
-`add c/90000000 slv/Primary 6` | Missing required parameter: s/.
-`add s/Daniel Koh c/12 slv/Primary 6 l/1` | Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Digits can be split into groups by brackets or by a single space or hyphen, and a + can start the number, such as +65 (9123) 4567.
-`add s/1 l/History llv/Primary 6 d/Monday st/9:60 et/10:00 f/35` | Invalid start time. Use the 24-hour format, such as 9:00 or 14:30.
-`add` | Invalid command format. Use: add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
+Command | Problem                                                                                                                                                                              | Error Message
+--------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------
+`add s/1 l/1` | Alice Tan (student ID 1) is already enrolled in Mathematics (lesson ID 1).                                                                                                           | The student is already enrolled in this lesson.
+`add s/1 l/99` | No existing lesson has ID 99.                                                                                                                                                        | No lesson found with ID 99.
+`add s/99 l/1` | No existing student has ID 99.                                                                                                                                                       | No student found with ID 99.
+`add s/Alice Tan c/91234567 slv/Primary 6 l/1` | A student with the same name and contact number already exists (with student ID 1).                                                                                                  | A student with the same name and contact already exists (Student ID: 1). Use the existing student ID.
+`add s/1 l/Mathematics llv/Primary 6 d/Monday st/15:00 et/16:30 f/60` | A Primary 6 Mathematics lesson on Monday from 15:00 to 16:30 already exists (with lesson ID 1).                                                                                      | An identical lesson already exists (Lesson ID: 1). Use the existing lesson ID.
+`add s/1 l/History llv/Primary 6 d/Monday st/16:00 et/17:00 f/35` | The new lesson, on Monday from 16:00 to 17:00, overlaps lesson ID 1, which runs on Monday from 15:00 to 16:30.                                                                       | Lesson clashes with lesson 1 (Mathematics, Monday 15:00-16:30).
+`add s/Daniel Koh slv/Primary 6 l/1` | `s/` has a name, so the app reads it as a new student, which also needs `c/` and `slv/`. Here `c/` is missing. | Missing required parameter: c/. s/Daniel Koh was read as a new student.
+`add s/1 l/2 extra words` | `l/` is followed by more than just a number, so `2 extra words` is read as the subject of a new lesson instead of an ID. As such, `llv/`, `d/`, `st/`, `et/` and `f/` are expected. | Missing required parameter: llv/, d/, st/, et/, f/. l/2 extra words was read as a new lesson. To use an existing lesson, give only its ID, such as l/2.
+`add s/Daniel Koh c/92223333slv/Primary 6 l/1` | There is no space before `slv/`, so it is read as part of the contact number.                                                                                                        | slv/ was found inside the value of c/. Separate parameters with a space.
+`add s/1 l/2 x/value` | `x/` is not a parameter of `add`.                                                                                                                                                    | Unknown parameter: x/. Use: add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
+`add s/0 l/1` | `0` is not an ID, since IDs start from 1. It is not a name either, since a name needs at least one letter.                                                                           | s/0 is neither an ID nor a valid name. An ID is a positive whole number, such as s/3.
+`add s/1 l/` | `l/` has no value after it.                                                                                                                                                          | l/ is empty. Give the ID of an existing lesson or the subject of a new lesson.
+`add s/2147483648 l/1` | The ID is larger than any ID the app can give.                                                                                                                                       | ID is too large. No student or lesson has an ID above 2147483647.
+`add s/1 l/Art llv/Primary 6 d/Friday st/17:00 et/16:00 f/40` | The lesson ends before it starts.                                                                                                                                                    | Invalid end time. Use the 24-hour format, such as 9:00 or 14:30, and enter a time later than the start time.
+`add s/1 l/Art llv/Primary 6 d/Friday st/23:00 et/01:00 f/40` | The lesson runs past midnight into the next day, but a lesson must start and end on the same day.                                                                                    | Invalid end time. A lesson must end later on the same day it starts, so it cannot run past midnight. To teach past midnight, split it into two lessons, such as 23:00-23:59 and 00:00-01:00 the next day.
+`add s/1 l/1 c/91234567` | The student with ID 1 already exists, so their contact number cannot be given here. To change it, use `edit`.                                                                                    | c/ and slv/ can only be used when adding a new student.
+`add s/1 l/1 d/Monday` | The lesson with ID 1 already exists, so its day cannot be given here. To change it, use `edit`.                                                                                                  | llv/, d/, st/, et/ and f/ can only be used when adding a new lesson.
+`add s/1 s/2 l/1` | `s/` is given twice. To enroll several students, use one `add` for each student.                                                                                                     | A parameter can only be specified once.
+`add s/1` | The student with ID 1 already exists and no lesson is given, so there is nothing to add or enroll.                                                                                               | Alice Tan [Student ID: 1] already exists. To enroll them, add l/ with a lesson ID or the details of a new lesson.
+`add l/1` | The lesson with ID 1 already exists and no student is given, so there is nothing to add or enroll.                                                                                               | Mathematics [Lesson ID: 1] already exists. To enroll a student in it, add s/ with a student ID or the details of a new student.
+`add c/90000000 slv/Primary 6` | The contact number and level are given, but not the student's name.                                                                                                                  | Missing required parameter: s/.
+`add s/Daniel Koh c/12 slv/Primary 6 l/1` | `12` has only 2 digits, but a contact number needs at least 3.                                                                                                                       | Invalid contact. Use 3 to 15 digits, at most 25 characters in all. Digits can be split into groups by brackets or by a single space or hyphen, and a + can start the number, such as +65 (9123) 4567.
+`add s/1 l/History llv/Primary 6 d/Monday st/9:60 et/10:00 f/35` | `9:60` is not a time, since minutes go up to 59.                                                                                                                                     | Invalid start time. Use the 24-hour format, such as 9:00 or 14:30.
+`add` | Nothing is given after `add`.                                                                                                                                                        | Invalid command format. Use: add [s/STUDENT] [l/LESSON] [c/CONTACT slv/STUDENT_LEVEL] [llv/LESSON_LEVEL d/DAY st/START_TIME et/END_TIME f/FEE]
 
-IDs are never reused, so each kind of record can have at most 2147483647 IDs. Once every student ID has been used, which can only happen if the data file was edited, adding a new student shows `Cannot add a new student: every student ID up to 2147483647 has been used.` A new lesson shows the same message for lesson IDs. Existing students can still be enrolled in existing lessons.
+IDs are never reused, so each kind of record can have at most 2147483647 IDs. Once every student ID has been used, which can practically happen only if the data file was edited, adding a new student shows `Cannot add a new student: every student ID up to 2147483647 has been used.` A new lesson shows the same message for lesson IDs. Existing students can still be enrolled in existing lessons.
 
 ### Editing a student or lesson: `edit`
 
@@ -600,10 +604,6 @@ TuiTracker saves data to `data/tuitracker.json` relative to the folder from whic
 If your changes make the data file invalid, TuiTracker warns you at the next launch and opens in read-only recovery mode. It shows an empty list, but leaves the invalid file untouched and blocks data-changing commands. Back up the file, repair or replace it, then restart TuiTracker to resume editing.<br>
 Furthermore, certain edits can cause TuiTracker to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
-
-### Archiving data files `[coming in v2.0]`
-
-_Details coming soon ..._
 
 --------------------------------------------------------------------------------------------------------------------
 
