@@ -469,7 +469,7 @@ Format: `filter student|lesson ID`, `filter day DAY`, `filter paid|unpaid`, `fil
 * `DAY` is the full day name, e.g. `Monday`; letter case is ignored.
 * Filtering replaces any earlier filter; only one filter can be active at a time.
 * Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson, by payment status, or by student level, switches it to **Students**; filtering by a day, subject, level or fee also switches it to **Lessons**.
-* To clear the filter and show every student and lesson again, use `list`.
+* To clear the filter, use `list`. This clears the filter on both lists but displays only one view at a time: `list` or `list students` shows every student, while `list lessons` shows every lesson.
 
 Examples:
 * `filter student 1` shows only the lessons that the student with ID `1` is enrolled in.
