@@ -379,8 +379,8 @@ Marks one or more students, or all students enrolled in a lesson, as paid for th
 **Successful marking:**
 
 * For a single student: `Marked Alice Tan as paid for the current month.`
-* For multiple students: `Marked Alice Tan, Bob Tan as paid for the current month.`
-* If some students were already marked as paid: `Marked Alice Tan as paid for the current month. (Already paid: Bob Tan)`
+* For multiple students: `Marked Alice Tan, Chloe Ng as paid for the current month.`
+* If some students were already marked as paid: `Marked Alice Tan, Chloe Ng as paid for the current month. (Already paid: Bryan Lim)`
 * The payment status of the marked students for the current month is updated to paid.
 * The change is saved immediately and is retained after restarting TuiTracker. The student's details and lesson enrollments are not changed.
 
@@ -425,8 +425,8 @@ Marks one or more students, or all students enrolled in a lesson, as unpaid for 
 **Successful unmarking:**
 
 * For a single student: `Marked Alice Tan as unpaid for the current month.`
-* For multiple students: `Marked Alice Tan, Bob Tan as unpaid for the current month.`
-* If some students were already marked as unpaid: `Marked Alice Tan as unpaid for the current month. (Already unpaid: Bob Tan)`
+* For multiple students: `Marked Bryan Lim, Chloe Ng as unpaid for the current month.`
+* If some students were already marked as unpaid: `Marked Bryan Lim as unpaid for the current month. (Already unpaid: Alice Tan, Chloe Ng)`
 * The payment status of the unmarked students for the current month is updated to unpaid.
 * The change is saved immediately and is retained after restarting TuiTracker. The student's details and lesson enrollments are not changed.
 
@@ -581,7 +581,7 @@ Shows a help window containing a summary of all available commands and a link to
 * Opens a pop-up window listing the format and usage of all commands.
 * If the help window is already open or minimized, entering `help` restores it and brings it back to the front.
 * You can also open the help window by pressing `F1` or selecting **Help** > **Help** from the top menu bar.
-* The help window provides a **Copy URL** button to copy the link to this User Guide to your clipboard.
+* The help window provides a **Copy help** button that copies all command formats and this User Guide URL to your clipboard.
 * Any extraneous parameters are ignored (e.g., `help 123` works the same as `help`).
 
 ### Exiting the program: `exit`
