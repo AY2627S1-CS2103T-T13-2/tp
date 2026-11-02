@@ -466,7 +466,7 @@ Format: `filter student|lesson ID`, `filter day DAY`, `filter paid|unpaid`, `fil
 * `SUBJECT` and `LESSON_LEVEL` must match the lesson's subject and level exactly; letter case is ignored. For example, `l/mathematics` matches `Mathematics` but `l/Math` does not. The same applies to `STUDENT_LEVEL`.
 * The `ID` refers to the student ID or lesson ID shown in the displayed list, not its position in the list.
 * The specified `ID` must belong to an existing student or lesson.
-* `DAY` is the full day name, e.g. `Monday`; letter case is ignored.
+* `DAY` is `Monday` to `Sunday`, or a short form: `Mon`, `Tue`, `Tues`, `Wed`, `Thu`, `Thur`, `Thurs`, `Fri`, `Sat`, `Sun`. Letter case is ignored.
 * Filtering replaces any earlier filter; only one filter can be active at a time.
 * Filtering by a student switches the displayed list to **Lessons**; filtering by a lesson, by payment status, or by student level, switches it to **Students**; filtering by a day, subject, level or fee also switches it to **Lessons**.
 * To clear the filter, use `list`. This clears the filter on both lists but displays only one view at a time: `list` or `list students` shows every student, while `list lessons` shows every lesson.
@@ -483,10 +483,12 @@ Examples:
 * `filter slv/Primary 6` shows only the students at Primary 6.
 * `filter f/50` shows only the lessons with fee `$50.00`.
 
-If a filter is incomplete or mixes incompatible forms, TuiTracker explains the specific problem and includes a
-valid example. For instance, `filter student` suggests `filter student 1`, while combining `day` with `l/` explains
-that keyword and prefix filters cannot be mixed. The same restriction applies to `slv/` and `f/`: neither can be
-combined with `student`, `lesson`, `day`, `l/`, `llv/`, or with each other.
+If a filter is incomplete or mixes incompatible forms, TuiTracker explains the specific problem. For the `student`,
+`lesson` and `day` forms, and for mixed forms, this includes a valid example: `filter student` suggests
+`filter student 1`, while combining `day` with `l/` explains that keyword and prefix filters cannot be mixed. The
+same restriction applies to `slv/` and `f/`: neither can be combined with `student`, `lesson`, `day`, `l/`, `llv/`,
+or with each other. For the `l/`, `llv/`, `slv/` and `f/` prefix forms, an invalid value instead reports that
+field's own constraints, e.g. `filter slv/` reports the student-level constraints, without a full example command.
 
 ### Sorting students and lessons: `sort`
 

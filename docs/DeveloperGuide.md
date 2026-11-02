@@ -1007,6 +1007,42 @@ Use case ends.
     * 3e2. System leaves the payment status unchanged.
     * Use case ends.
 
+**Use case: Filter students or lessons**
+
+**MSS**
+
+1.  User enters a filter command specifying a filter form (e.g. a student ID, lesson ID, day, payment status, subject, level, or fee) and its value.
+2.  System parses the filter form and value.
+3.  System confirms that a specified student or lesson ID belongs to an existing record.
+4.  System applies the filter, replacing any earlier filter, and switches the active list view to the relevant list (Students or Lessons).
+5.  System displays the filtered records and a confirmation message.
+
+Use case ends.
+
+**Extensions**
+
+* 1a. The command format is incomplete, unknown, or mixes incompatible filter forms.
+    * 1a1. System displays a message naming the specific problem, with a valid example for the student, lesson, day, and mixed-form cases.
+    * Use case ends.
+
+* 2a. A subject, level, or fee value does not satisfy that field's constraints.
+    * 2a1. System displays that field's constraint message.
+    * Use case ends.
+
+* 3a. The specified student or lesson ID does not belong to an existing record.
+    * 3a1. System displays that the student or lesson could not be found.
+    * Use case ends.
+
+* 5a. The filtered list is empty.
+    * 5a1. System displays the empty list with the confirmation message.
+    * Use case ends.
+
+* 5b. The user enters another filter command.
+    * 5b1. System replaces the active filter with the new one and repeats the use case from step 2.
+
+* 5c. The user enters `list`, `list students`, or `list lessons` to clear the filter (see Use case: View students or lessons).
+    * Use case ends.
+
 **Use case: Sort students or lessons**
 
 **MSS**
@@ -1328,7 +1364,10 @@ Run all the steps in this section in order, in one fresh folder, as the IDs in t
       Expected: The displayed list switches to Lessons, showing only lessons on Monday (`Mathematics` with the sample data). The student list is unaffected.
 
    1. Enter `filter day Mon`.<br>
-      Expected: Rejected. The error names the specific problem and gives a valid example.
+      Expected: Shows the same result as `filter day Monday`; `Mon` is an accepted short form of the day name.
+
+   1. Enter `filter day Tues`.<br>
+      Expected: Accepted as a short form of Tuesday; since no sample lesson falls on Tuesday, the Lessons view is empty and the result reports 0 lessons.
 
 1. Filtering by subject and/or lesson level
 
