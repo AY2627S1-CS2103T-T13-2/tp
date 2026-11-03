@@ -343,10 +343,10 @@ The `mark` command records that students have paid for the current calendar mont
 
 Both commands share a unified syntax and execution pattern:
 
-* **Student mode (`mark ID [MORE_IDS]...` / `unmark ID [MORE_IDS]...`)**: Accepts one or more positive whole-number student IDs separated by whitespace. `MarkCommandParser` / `UnmarkCommandParser` parses each token via `ParserUtil#parseStudentId`, and deduplicates the list using a `LinkedHashSet` to preserve the user's input order while discarding duplicate IDs.
+* **Student mode (`mark ID [MORE_IDS]...` / `unmark ID [MORE_IDS]...`)**: Accepts one or more positive whole-number student IDs separated by whitespace. `MarkCommandParser` / `UnmarkCommandParser` parses each token via `ParserUtil#parseStudentId`. The command constructor deduplicates the list using a `LinkedHashSet` to preserve the user's input order while discarding duplicate IDs.
 * **Lesson mode (`mark lesson LESSON_ID` / `unmark lesson LESSON_ID`)**: Case-insensitively checks if the first argument token is `lesson`. If so, exactly one subsequent token is parsed as a positive whole-number lesson ID via `ParserUtil#parseLessonId`.
 
-If the user provides an empty argument string, extraneous parameters after `lesson LESSON_ID`, or non-positive/malformed numbers, a `ParseException` with `MESSAGE_INVALID_COMMAND_FORMAT` is thrown.
+If the user provides an empty argument string or extraneous parameters after `lesson LESSON_ID`, a `ParseException` with `MESSAGE_INVALID_COMMAND_FORMAT` is thrown. Non-positive or malformed IDs instead produce `ID must be a positive whole number.`.
 
 During execution, `MarkCommand` and `UnmarkCommand` branch based on the target type:
 
@@ -379,7 +379,7 @@ The `help` command takes no required arguments; any extraneous text is ignored. 
 * If not showing, `helpWindow.show()` opens the window centered on screen.
 * If already showing or minimized (iconified), `helpWindow.focus()` restores the window, brings it to the front, and requests focus.
 
-The `HelpWindow` displays the usage format of every available command, a clickable hyperlink to the User Guide, and a **Copy URL** button that copies the guide link to the system clipboard. Users can also open the help window by pressing `F1` or selecting `Help` > `Help` from the application menu bar.
+The `HelpWindow` displays the usage format of every available command and the User Guide URL as plain text in a read-only text area. Its **Copy help** button copies the complete help text, including the URL, to the system clipboard. Users can also open the help window by pressing `F1` or selecting `Help` > `Help` from the application menu bar.
 
 The sequence diagram below shows the help window being opened by `executeCommand("help")`.
 
@@ -1171,7 +1171,7 @@ On first launch, the sample data has Alice Tan (student ID 1), Bryan Lim (ID 2),
 ### Launch, help and exit
 
 1. Launch the JAR in a fresh folder. Expected: the Students view shows three sample students, not contacts.
-2. Enter `help`. Expected: the help window shows the available command formats. Close it, then press `F1` to open it again. Click the "Copy URL" button and verify that the User Guide link is copied to your clipboard.
+2. Enter `help`. Expected: the help window shows the available command formats and User Guide URL. Close it, then press `F1` to open it again. Click the "Copy help" button and verify that the complete help text, including the URL, is copied to your clipboard.
 3. Command box shortcuts:
    1. Enter `list students`, then enter `list lessons`.
    2. In the empty command box, press `Up`. Expected: `list lessons` appears. Press `Up` again. Expected: `list students` appears.
