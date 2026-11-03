@@ -1177,7 +1177,7 @@ On first launch, the sample data has Alice Tan (student ID 1), Bryan Lim (ID 2),
    2. In the empty command box, press `Up`. Expected: `list lessons` appears. Press `Up` again. Expected: `list students` appears.
    3. Press `Down`. Expected: `list lessons` appears. Press `Down` again. Expected: an empty text box appears.
    4. Type `mark 1` without pressing Enter. Press `Up` twice to view history. Press `Down` twice back to the bottom. Expected: the draft `mark 1` is preserved and restored.
-   5. Clear the box, type `sc`, and press `Tab`. Expected: autocompletes to `schedule `.
+   5. Clear the box, type `sc`, and press `Tab`. Expected: autocompletes to `schedule ` and focus remains in the command box. Type `student 1` immediately; expected: the box contains `schedule student 1`.
 4. Resize and move the main window, enter `exit`, and relaunch the JAR in the same folder. Expected: the window reopens with the saved size and location when that location is still available.
 
 ### Listing and filtering

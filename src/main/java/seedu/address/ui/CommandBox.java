@@ -48,6 +48,8 @@ public class CommandBox extends UiPart<Region> {
     public CommandBox(CommandExecutor commandExecutor) {
         super(FXML);
         this.commandExecutor = commandExecutor;
+        // Handle Tab before JavaFX's built-in focus traversal can move focus away from the command box.
+        commandTextField.addEventFilter(KeyEvent.KEY_PRESSED, this::handleKeyPressed);
         // calls #setStyleToDefault() whenever there is a change to the text of the command box.
         commandTextField.textProperty().addListener((unused1, unused2, unused3) -> setStyleToDefault());
     }
@@ -77,14 +79,13 @@ public class CommandBox extends UiPart<Region> {
     }
 
     /** Handles command history navigation and command-word completion. */
-    @FXML
     private void handleKeyPressed(KeyEvent event) {
         String replacement = null;
         if (event.getCode() == KeyCode.UP) {
             replacement = commandHistory.previous(commandTextField.getText());
         } else if (event.getCode() == KeyCode.DOWN) {
             replacement = commandHistory.next(commandTextField.getText());
-        } else if (event.getCode() == KeyCode.TAB) {
+        } else if (event.getCode() == KeyCode.TAB && !event.isShiftDown()) {
             replacement = CommandHistory.completeCommandWord(commandTextField.getText(), COMMAND_WORDS);
         }
         if (replacement != null) {
