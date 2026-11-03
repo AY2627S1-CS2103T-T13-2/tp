@@ -494,7 +494,7 @@ field's own constraints, e.g. `filter slv/` reports the student-level constraint
 
 Sorts either student or lesson records without changing saved data. The sorting direction defaults to ascending and can be specified explicitly as `asc` or `desc`.
 
-**Format:** `sort student id|name|level|payment|paid [asc|desc]` or `sort lesson id|subject|level|fee|time [asc|desc]`
+**Format:** `sort student id|name|level|payment|paid|unpaid [asc|desc]` or `sort lesson id|subject|level|fee|time [asc|desc]`
 
 **Parameters:**
 
@@ -532,7 +532,7 @@ Sorts either student or lesson records without changing saved data. The sorting 
 
 **Examples:**
 
-* `sort student payment` or `sort student paid` — sorts students with unpaid students at the top.
+* `sort student payment`, `sort student paid`, or `sort student unpaid` — sorts students with unpaid students at the top.
 * `sort student payment desc` — shows paid students before unpaid students.
 * `sort student name` — sorts students alphabetically by name.
 * `sort student level` — sorts students by educational level.
@@ -542,7 +542,7 @@ Sorts either student or lesson records without changing saved data. The sorting 
 
 **Errors:**
 
-* Missing arguments, invalid entity, unsupported field, or invalid direction — the app displays `Invalid command format. Use: sort student id|name|level|payment|paid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
+* Missing arguments, invalid entity, unsupported field, or invalid direction — the app displays `Invalid command format. Use: sort student id|name|level|payment|paid|unpaid [asc|desc] or sort lesson id|subject|level|fee|time [asc|desc]`.
 
 ### Viewing the weekly schedule: `schedule`
 
