@@ -6,6 +6,7 @@
 # TuiTracker
 
 [![CI Status](https://github.com/AY2627S1-CS2103T-T13-2/tp/actions/workflows/gradle.yml/badge.svg?branch=master)](https://github.com/AY2627S1-CS2103T-T13-2/tp/actions/workflows/gradle.yml)
+[![codecov](https://codecov.io/gh/AY2627S1-CS2103T-T13-2/tp/branch/master/graph/badge.svg)](https://codecov.io/gh/AY2627S1-CS2103T-T13-2/tp)
 
 ![Ui](images/Ui.png)
 
