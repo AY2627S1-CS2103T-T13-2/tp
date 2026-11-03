@@ -590,8 +590,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | tutor | sort lessons by chronological time, fee, subject, level, or ID | review my weekly schedule in order or find high-fee classes |
 | `* * *` | fast-typing tutor | traverse previous commands using the Up and Down arrow keys | repeat or edit recently executed commands without retyping them |
 | `* *` | tutor | be notified when a new student has the same name as an existing student, or a new lesson has a fee of 0 | check that it is not a mistake |
-| `* *` | tutor | be shown matching existing students or lessons when adding an enrollment | reuse a record instead of creating a duplicate |
-| `* *` | tutor | use common aliases for education levels | enter levels quickly without creating accidental mismatches |
 | `* *` | tutor | change a student’s current-month status from paid back to unpaid | correct a payment recorded by mistake |
 | `* *` | tutor | mark multiple students or an entire lesson as unpaid | revert accidental bulk payment updates |
 | `* *` | tutor | sort records in ascending or descending order | view highest values or paid students first when needed |
